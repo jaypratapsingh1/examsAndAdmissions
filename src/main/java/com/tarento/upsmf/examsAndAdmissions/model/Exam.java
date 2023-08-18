@@ -7,30 +7,24 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "exam_cycle")
+@Table(name = "exam")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
 @Builder
-public class ExamCycle {
+public class Exam {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "exam_cycle_name", nullable = false)
-    private String examCycleName;
+    @Column(name = "exam_cycle_id")
+    private Long examCycleId;  // Link to the ExamCycle entity
 
-    @Column(name = "course_id")
-    private String courseId;
-
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    @Column(name = "end_date")
-    private LocalDate endDate;
+    @Column(name = "exam_date")
+    private LocalDate examDate;
 
     @Column(name = "created_by")
     private String createdBy;
@@ -44,14 +38,11 @@ public class ExamCycle {
     @Column(name = "modified_on")
     private LocalDateTime modifiedOn;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private Status status;
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    private Course course;
 
     @Column(name = "obsolete", nullable = false, columnDefinition = "int default 0")
     private Integer obsolete = 0;
 
-    public enum Status {
-        PUBLISH, DRAFT
-    }
 }

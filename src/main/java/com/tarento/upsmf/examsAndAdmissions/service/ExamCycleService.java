@@ -1,125 +1,91 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Course;
-import com.tarento.upsmf.examsAndAdmissions.model.CourseDetails;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.CourseDetailDTO;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleDTO;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamDTO;
-import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityNotFoundException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class ExamCycleService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExamCycleService.class);
+
     @Autowired
-    private ExamCycleRepository examCycleRepository;
-    @Autowired
-    private CourseRepository courseRepository;
+    private ExamCycleRepository repository;
 
-    public ExamCycle createExamCycle(ExamCycleDTO examCycleDTO) {
-        ExamCycle examCycle = convertToEntity(examCycleDTO);
-        return examCycleRepository.save(examCycle);
-    }
-    public ExamCycle updateExamCycle(Long id, ExamCycleDTO dto) {
-        ExamCycle existingExamCycle = examCycleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("ExamCycle not found with ID: " + id));
-
-        // Set updated fields from the DTO to the existingExamCycle
-        existingExamCycle.setStartDate(LocalDate.parse(dto.getStartDate()));
-        existingExamCycle.setEndDate(LocalDate.parse(dto.getEndDate()));
-        existingExamCycle.setExamCycleName(dto.getExamCycleName());
-        existingExamCycle.setCreatedBy(dto.getCreatedBy());
-        existingExamCycle.setCreatedOn(LocalDateTime.parse(dto.getCreatedOn()));
-        existingExamCycle.setModifiedBy(dto.getModifiedBy());
-        existingExamCycle.setModifiedOn(LocalDateTime.parse(dto.getModifiedOn()));
-        existingExamCycle.setStatus(dto.getStatus());
-        existingExamCycle.setIsObsolete(dto.getIsObsolete());
-
-        List<CourseDetails> courseDetailsList = new ArrayList<>();
-        for (CourseDetailDTO cdDto : dto.getCourseDetails()) {
-            CourseDetails cd = new CourseDetails();
-            Optional<Course> course = courseRepository.findById(cdDto.getCourseId());
-            if (!course.isPresent()) {
-                throw new EntityNotFoundException("Course not found with ID: " + cdDto.getCourseId());
-            }
-            cd.setCourse(course.get());
-
-            List<Exam> exams = new ArrayList<>();
-            for (ExamDTO eDto : cdDto.getExams()) {
-                Exam exam = new Exam();
-                exam.setExamName(eDto.getExamName());
-                exam.setExamDate(LocalDateTime.parse(eDto.getExamDate()));
-                exam.setExamDuration(Duration.parse(eDto.getExamDuration()));
-                exams.add(exam);
-            }
-            cd.setExams(exams);
-            courseDetailsList.add(cd);
-        }
-        existingExamCycle.setCourseDetails(courseDetailsList);
-
-        return examCycleRepository.save(existingExamCycle);
-    }
-    public void deleteExamCycleById(Long id) {
-        examCycleRepository.deleteById(id);
+    // Create a new exam cycle
+    public ExamCycle createExamCycle(ExamCycle examCycle) {
+        logger.info("Creating new ExamCycle: {}", examCycle);
+        examCycle.setObsolete(0);
+        return repository.save(examCycle);
     }
 
-    private ExamCycle convertToEntity(ExamCycleDTO dto) {
-        ExamCycle examCycle = new ExamCycle();
-        examCycle.setStartDate(LocalDate.parse(dto.getStartDate()));
-        examCycle.setEndDate(LocalDate.parse(dto.getEndDate()));
-        examCycle.setExamCycleName(dto.getExamCycleName());
-        examCycle.setCreatedBy(dto.getCreatedBy());
-        examCycle.setCreatedOn(LocalDateTime.parse(dto.getCreatedOn()));
-        examCycle.setModifiedBy(dto.getModifiedBy());
-        examCycle.setModifiedOn(LocalDateTime.parse(dto.getModifiedOn()));
-        examCycle.setStatus(dto.getStatus());
-        examCycle.setIsObsolete(dto.getIsObsolete());
-
-        List<CourseDetails> courseDetailsList = new ArrayList<>();
-        for (CourseDetailDTO cdDto : dto.getCourseDetails()) {
-            CourseDetails cd = new CourseDetails();
-            Optional<Course> course = courseRepository.findById(cdDto.getCourseId());
-            if (!course.isPresent()) {
-                throw new EntityNotFoundException("Course not found with ID: " + cdDto.getCourseId());
-            }
-            cd.setCourse(course.get());
-
-            List<Exam> exams = new ArrayList<>();
-            for (ExamDTO eDto : cdDto.getExams()) {
-                Exam exam = new Exam();
-                exam.setExamName(eDto.getExamName());
-                exam.setExamDate(LocalDateTime.parse(eDto.getExamDate()));
-                exam.setExamDuration(Duration.parse(eDto.getExamDuration()));
-                exams.add(exam);
-            }
-            cd.setExams(exams);
-            courseDetailsList.add(cd);
-        }
-        examCycle.setCourseDetails(courseDetailsList);
-
-        return examCycle;
-    }
-
-
-
+    // Fetch all active exam cycles
     public List<ExamCycle> getAllExamCycles() {
-        return examCycleRepository.findAll();
+        logger.info("Fetching all active ExamCycles...");
+        return repository.findByObsolete(0);
     }
 
+    // Fetch all soft-deleted exam cycles
+    public List<ExamCycle> getAllObsoleteExamCycles() {
+        logger.info("Fetching all soft-deleted ExamCycles...");
+        return repository.findByObsolete(1);
+    }
+
+    // Fetch a specific exam cycle by its ID
     public ExamCycle getExamCycleById(Long id) {
-        return examCycleRepository.findById(id).orElse(null);
+        logger.info("Fetching ExamCycle by ID: {}", id);
+        return repository.findByIdAndObsolete(id, 0).orElse(null);
+    }
+
+    // Update an existing exam cycle
+    public ExamCycle updateExamCycle(Long id, ExamCycle updatedExamCycle) {
+        logger.info("Updating ExamCycle with ID: {}", id);
+        ExamCycle existingExamCycle = repository.findById(id).orElse(null);
+        if (existingExamCycle != null) {
+            existingExamCycle.setExamCycleName(updatedExamCycle.getExamCycleName());
+            existingExamCycle.setCourseId(updatedExamCycle.getCourseId());
+            existingExamCycle.setStartDate(updatedExamCycle.getStartDate());
+            existingExamCycle.setEndDate(updatedExamCycle.getEndDate());
+            existingExamCycle.setStatus(updatedExamCycle.getStatus());
+
+            // Update auditing metadata
+            // Assuming you have a way to fetch the current user, e.g., a utility method
+            existingExamCycle.setModifiedBy(updatedExamCycle.getModifiedBy());
+            existingExamCycle.setModifiedOn(updatedExamCycle.getModifiedOn()); // Current date/time
+
+            return repository.save(existingExamCycle);
+        }
+        logger.warn("ExamCycle with ID: {} not found!", id);
+        return null;
+    }
+
+    // Soft delete an exam cycle
+    public void deleteExamCycle(Long id) {
+        logger.info("Soft-deleting ExamCycle with ID: {}", id);
+        ExamCycle examCycle = repository.findById(id).orElse(null);
+        if (examCycle != null) {
+            examCycle.setObsolete(1);
+            repository.save(examCycle);
+        } else {
+            logger.warn("ExamCycle with ID: {} not found for deletion!", id);
+        }
+    }
+
+    // Restore a soft-deleted exam cycle
+    public void restoreExamCycle(Long id) {
+        logger.info("Restoring soft-deleted ExamCycle with ID: {}", id);
+        ExamCycle examCycle = repository.findById(id).orElse(null);
+        if (examCycle != null && examCycle.getObsolete() == 1) {
+            examCycle.setObsolete(0);
+            repository.save(examCycle);
+        } else {
+            logger.warn("ExamCycle with ID: {} not found for restoration!", id);
+        }
     }
 }
