@@ -42,7 +42,7 @@ public class AuditServiceImpl implements AuditService {
 				EntityLog entityLog = new EntityLog();
 				entityLog.setId(updatedObj.getId());
 				entityLog.setType(updatedObj.getType());
-				entityLog.setTimestamp(DateUtils.getCurrentTimestamp());
+				entityLog.setTimestamp(Long.parseLong(DateUtils.getCurrentTimestamp()));
 				entityLog.setUpdatedDate(DateUtils.getCurrentDateTime());
 				entityLog.setUpdatedBy(updatedObj.getUpdatedBy());
 				entityLog.setOldObject(oldObj);
