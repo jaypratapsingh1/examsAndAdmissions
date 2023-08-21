@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model.dao;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import lombok.*;
 
 import javax.persistence.*;
