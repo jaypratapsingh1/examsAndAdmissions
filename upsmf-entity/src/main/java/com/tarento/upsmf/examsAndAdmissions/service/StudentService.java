@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,12 +26,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@PropertySource("classpath:application.properties")
 public class StudentService {
 
     private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
-
     private final ModelMapper modelMapper;
 
     @Value("${file.storage.path}")
