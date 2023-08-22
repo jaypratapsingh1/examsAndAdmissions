@@ -30,7 +30,6 @@ import com.tarento.upsmf.examsAndAdmissions.model.dao.ChildEntityDao;
 import com.tarento.upsmf.examsAndAdmissions.model.dao.ParentEntityDao;
 import com.tarento.upsmf.examsAndAdmissions.repository.ChildEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ParentEntityRepository;
-import com.tarento.upsmf.examsAndAdmissions.service.AuditService;
 import com.tarento.upsmf.examsAndAdmissions.service.EntityService;
 import com.tarento.upsmf.examsAndAdmissions.service.WorkflowService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -63,9 +62,6 @@ public class EntityServiceImpl implements EntityService {
 	@Autowired
 	WorkflowService workflowService;
 
-	@Autowired
-	AuditService auditService;
-
 	@Override
 	public EntityDao addUpdateEntity(EntityDao entityDao, String userId) {
 		try {
@@ -88,7 +84,6 @@ public class EntityServiceImpl implements EntityService {
 
 			entityRepo.save(entityDao);
 			saveChildEntity(entityDao);
-			auditService.addEntityAudit(oldEntity, entityDao);
 			return entityDao;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -340,7 +335,6 @@ public class EntityServiceImpl implements EntityService {
 				entityDao.setStatus(entityVerification.getAction());
 				if (checkReviewAccess(entityDao, userProfile.getRoles())) {
 					entityRepo.save(entityDao);
-					auditService.addEntityAudit(oldEntity, entityDao);
 					return Boolean.TRUE;
 				}
 
