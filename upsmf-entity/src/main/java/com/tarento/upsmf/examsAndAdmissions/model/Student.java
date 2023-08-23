@@ -57,6 +57,7 @@ public class Student {
     private String adminRemarks;
     private LocalDate enrollmentDate;
     private LocalDate verificationDate;
+    private boolean requiresRevision;
 
     @ManyToOne
     @JoinColumn(name = "course_id")

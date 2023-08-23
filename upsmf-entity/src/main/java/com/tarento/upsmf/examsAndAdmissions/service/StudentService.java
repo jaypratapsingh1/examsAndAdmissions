@@ -189,6 +189,20 @@ public class StudentService {
         student.setVerificationStatus(status);
         return studentRepository.save(student);
     }
+    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks, LocalDate verificationDate) {
+        Student student = this.findById(studentId);
+        student.setVerificationStatus(status);
+        student.setAdminRemarks(remarks);
+        student.setVerificationDate(verificationDate);
+
+        if (status == VerificationStatus.VERIFIED) {
+            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getCenterCode() + student.getId();
+            student.setProvisionalEnrollmentNumber(enrollmentNumber);
+        } else if (status == VerificationStatus.REJECTED) {
+            student.setRequiresRevision(true);
+        }
+        return this.save(student);
+    }
     public List<Student> findByVerificationStatus(VerificationStatus status) {
         return studentRepository.findByVerificationStatus(status);
     }

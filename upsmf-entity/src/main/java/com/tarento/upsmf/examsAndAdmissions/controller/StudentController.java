@@ -91,13 +91,9 @@ public class StudentController {
     }
 
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks,@RequestParam("verificationDate") LocalDate verificationDate) {
-        Student student = studentService.findById(studentId);
-        student.setVerificationStatus(status);
-        student.setAdminRemarks(remarks);
-        student.setVerificationDate(verificationDate);
-        studentService.save(student);
-        return ResponseEntity.ok(student);
+    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks, @RequestParam("verificationDate") LocalDate verificationDate) {
+        Student updatedStudent = studentService.verifyStudent(studentId, status, remarks, verificationDate);
+        return ResponseEntity.ok(updatedStudent);
     }
     @GetMapping("/pendingVerification")
     public ResponseEntity<List<Student>> getStudentsPendingVerification() {
