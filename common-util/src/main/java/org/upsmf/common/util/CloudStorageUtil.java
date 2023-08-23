@@ -19,7 +19,7 @@ public class CloudStorageUtil {
   private static final Map<String, IStorageService> storageServiceMap = new HashMap<>();
 
   public enum CloudStorageType {
-    AZURE("azure");
+    AZURE("azure"), GCLOUD("gcloud");
     private String type;
 
     private CloudStorageType(String type) {
@@ -33,7 +33,9 @@ public class CloudStorageUtil {
     public static CloudStorageType getByName(String type) {
       if (AZURE.type.equals(type)) {
         return CloudStorageType.AZURE;
-      } else {
+      } else if (GCLOUD.type.equals(type)) {
+        return CloudStorageType.GCLOUD;
+      }else {
         ProjectCommonException.throwClientErrorException(
             ResponseCode.errorUnsupportedCloudStorage,
             ProjectUtil.formatMessage(
