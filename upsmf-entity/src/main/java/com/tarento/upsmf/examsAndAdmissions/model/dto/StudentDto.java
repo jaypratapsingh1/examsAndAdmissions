@@ -39,6 +39,8 @@ public class StudentDto {
     private String highSchoolYearOfPassing;
     private String intermediateRollNo;
     private String intermediateYearOfPassing;
+    private String adminRemarks;
+
 
     private MultipartFile highSchoolMarksheet;
     private MultipartFile highSchoolCertificate;

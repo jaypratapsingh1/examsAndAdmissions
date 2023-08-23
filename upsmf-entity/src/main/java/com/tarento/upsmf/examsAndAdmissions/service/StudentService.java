@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -129,6 +130,23 @@ public class StudentService {
         modelMapper.map(studentDto, existingStudent);
 
         return studentRepository.save(existingStudent);
+    }
+    public List<Student> updateStudentStatusToClosed() {
+        LocalDate cutoffDate = LocalDate.now().minusDays(14);
+        List<Student> studentsToClose = studentRepository.findByVerificationDateBeforeAndVerificationStatusNot(cutoffDate, VerificationStatus.CLOSED);
+
+        logger.info("Students found to close: " + studentsToClose.size());
+
+        for (Student student : studentsToClose) {
+            student.setVerificationStatus(VerificationStatus.CLOSED);
+        }
+
+        return studentRepository.saveAll(studentsToClose);
+    }
+
+    public List<Student> getStudentsPendingForMoreThan21Days() {
+        LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
+        return studentRepository.findByVerificationDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
     }
 
     private void deleteFile(String filePath) {
