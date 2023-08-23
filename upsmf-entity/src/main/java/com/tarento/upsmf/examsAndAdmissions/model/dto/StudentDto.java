@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.model.dto;
 
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -15,12 +16,12 @@ public class StudentDto {
     private String courseName;
     private String session;
     private String examBatch;
-    private String  admissionDate;
+    private LocalDate  admissionDate;
     private String firstName;
     private String surname;
     private String motherName;
     private String fatherName;
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
     private String gender;
     private String caste;
     private String category;
@@ -40,11 +41,11 @@ public class StudentDto {
     private String intermediateRollNo;
     private String intermediateYearOfPassing;
     private String adminRemarks;
-
+    private LocalDate enrollmentDate;
+    private LocalDate verificationDate;
 
     private MultipartFile highSchoolMarksheet;
     private MultipartFile highSchoolCertificate;
     private MultipartFile intermediateMarksheet;
     private MultipartFile intermediateCertificate;
-
 }

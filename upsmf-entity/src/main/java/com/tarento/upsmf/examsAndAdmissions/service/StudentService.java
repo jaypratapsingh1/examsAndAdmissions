@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -133,20 +134,22 @@ public class StudentService {
     }
     public List<Student> updateStudentStatusToClosed() {
         LocalDate cutoffDate = LocalDate.now().minusDays(14);
-        List<Student> studentsToClose = studentRepository.findByVerificationDateBeforeAndVerificationStatusNot(cutoffDate, VerificationStatus.CLOSED);
+        List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
 
-        logger.info("Students found to close: " + studentsToClose.size());
+        logger.info("Rejected students found to potentially close: " + rejectedStudents.size());
 
-        for (Student student : studentsToClose) {
+        List<Student> studentsToUpdate = new ArrayList<>();
+
+        for (Student student : rejectedStudents) {
             student.setVerificationStatus(VerificationStatus.CLOSED);
+            studentsToUpdate.add(student);
         }
 
-        return studentRepository.saveAll(studentsToClose);
+        return studentRepository.saveAll(studentsToUpdate);
     }
-
     public List<Student> getStudentsPendingForMoreThan21Days() {
         LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
-        return studentRepository.findByVerificationDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
+        return studentRepository.findByEnrollmentDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
     }
 
     private void deleteFile(String filePath) {

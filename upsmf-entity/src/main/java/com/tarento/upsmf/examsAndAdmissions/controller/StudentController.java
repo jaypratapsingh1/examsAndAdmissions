@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,14 +91,15 @@ public class StudentController {
     }
 
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks) {
+    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks,@RequestParam("verificationDate") LocalDate verificationDate) {
         Student student = studentService.findById(studentId);
         student.setVerificationStatus(status);
         student.setAdminRemarks(remarks);
+        student.setVerificationDate(verificationDate);
         studentService.save(student);
         return ResponseEntity.ok(student);
     }
-    @GetMapping("/pending-verification")
+    @GetMapping("/pendingVerification")
     public ResponseEntity<List<Student>> getStudentsPendingVerification() {
         List<Student> students = studentService.findByVerificationStatus(VerificationStatus.PENDING);
         return ResponseEntity.ok(students);
