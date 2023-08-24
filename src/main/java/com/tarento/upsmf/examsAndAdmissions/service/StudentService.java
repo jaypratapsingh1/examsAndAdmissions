@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,15 +59,15 @@ public class StudentService {
         Files.copy(file.getInputStream(), path);
         return path.toString();
     }
-        @Transactional
-        public Student enrollStudent(StudentDto studentDto) throws IOException {
-            Student student = modelMapper.map(studentDto, Student.class);
-            Course dbCourse = courseRepository.findByCourseCode(studentDto.getCourseCode());
-            if (dbCourse == null) {
-                throw new RuntimeException("Course with code " + studentDto.getCourseCode() + " not found in the database");
-            }
+    @Transactional
+    public Student enrollStudent(StudentDto studentDto) throws IOException {
+        Student student = modelMapper.map(studentDto, Student.class);
+        Course dbCourse = courseRepository.findByCourseCode(studentDto.getCourseCode());
+        if (dbCourse == null) {
+            throw new RuntimeException("Course with code " + studentDto.getCourseCode() + " not found in the database");
+        }
 
-            student.setCourse(dbCourse);
+        student.setCourse(dbCourse);
 /*
             if (dbCourse.getAvailableSeats() == null) {
                 throw new RuntimeException("Seat information not set for course: " + dbCourse.getCourseName());
@@ -78,20 +80,20 @@ public class StudentService {
             dbCourse.setAvailableSeats(dbCourse.getAvailableSeats() - 1);
             courseRepository.save(dbCourse);*/
 
-            // Generate provisional enrollment number
-            String provisionalNumber = generateProvisionalNumber(student);
-            student.setProvisionalEnrollmentNumber(provisionalNumber);
+        // Generate provisional enrollment number
+        String provisionalNumber = generateProvisionalNumber(student);
+        student.setProvisionalEnrollmentNumber(provisionalNumber);
 
-            // Set initial verification status to PENDING
+        // Set initial verification status to PENDING
 
-            student.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
-            student.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
-            student.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
-            student.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
-            student.setVerificationStatus(VerificationStatus.PENDING);
+        student.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
+        student.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
+        student.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
+        student.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
+        student.setVerificationStatus(VerificationStatus.PENDING);
 
-            return studentRepository.save(student);
-        }
+        return studentRepository.save(student);
+    }
     private String generateProvisionalNumber(Student student) {
         return student.getCourse().getCourseCode() + "-" + UUID.randomUUID().toString();
     }
@@ -130,6 +132,25 @@ public class StudentService {
 
         return studentRepository.save(existingStudent);
     }
+    public List<Student> updateStudentStatusToClosed() {
+        LocalDate cutoffDate = LocalDate.now().minusDays(14);
+        List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
+
+        logger.info("Rejected students found to potentially close: " + rejectedStudents.size());
+
+        List<Student> studentsToUpdate = new ArrayList<>();
+
+        for (Student student : rejectedStudents) {
+            student.setVerificationStatus(VerificationStatus.CLOSED);
+            studentsToUpdate.add(student);
+        }
+
+        return studentRepository.saveAll(studentsToUpdate);
+    }
+    public List<Student> getStudentsPendingForMoreThan21Days() {
+        LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
+        return studentRepository.findByEnrollmentDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
+    }
 
     private void deleteFile(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
@@ -167,6 +188,20 @@ public class StudentService {
     public Student updateVerificationStatus(Student student, VerificationStatus status) {
         student.setVerificationStatus(status);
         return studentRepository.save(student);
+    }
+    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks, LocalDate verificationDate) {
+        Student student = this.findById(studentId);
+        student.setVerificationStatus(status);
+        student.setAdminRemarks(remarks);
+        student.setVerificationDate(verificationDate);
+
+        if (status == VerificationStatus.VERIFIED) {
+            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getCenterCode() + student.getId();
+            student.setProvisionalEnrollmentNumber(enrollmentNumber);
+        } else if (status == VerificationStatus.REJECTED) {
+            student.setRequiresRevision(true);
+        }
+        return this.save(student);
     }
     public List<Student> findByVerificationStatus(VerificationStatus status) {
         return studentRepository.findByVerificationStatus(status);
