@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,13 +12,14 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/students")
+@Slf4j
 public class StudentController {
-
     @Autowired
     private StudentService studentService;
 
@@ -56,7 +58,27 @@ public class StudentController {
             return ResponseEntity.badRequest().build();
         }
     }
+    @PutMapping("/closePendingFor14Days")
+    public ResponseEntity<?> updateStudentStatusToClosed() {
+        try {
+            List<Student> updatedStudents = studentService.updateStudentStatusToClosed();
+            return ResponseEntity.ok(updatedStudents);
+        } catch (Exception e) {
+            log.error("Error updating student status based on days", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating student status.");
+        }
+    }
 
+    @GetMapping("/pendingFor21Days")
+    public ResponseEntity<?> getStudentsPendingFor21Days() {
+        try {
+            List<Student> students = studentService.getStudentsPendingForMoreThan21Days();
+            return ResponseEntity.ok(students);
+        } catch (Exception e) {
+            log.error("Error fetching students pending for 21 days", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching students.");
+        }
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         try {
@@ -68,13 +90,11 @@ public class StudentController {
     }
 
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status) {
-        Student student = studentService.findById(studentId);
-        student.setVerificationStatus(status);
-        studentService.save(student);
-        return ResponseEntity.ok(student);
+    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks, @RequestParam("verificationDate") LocalDate verificationDate) {
+        Student updatedStudent = studentService.verifyStudent(studentId, status, remarks, verificationDate);
+        return ResponseEntity.ok(updatedStudent);
     }
-    @GetMapping("/pending-verification")
+    @GetMapping("/pendingVerification")
     public ResponseEntity<List<Student>> getStudentsPendingVerification() {
         List<Student> students = studentService.findByVerificationStatus(VerificationStatus.PENDING);
         return ResponseEntity.ok(students);

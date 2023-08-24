@@ -6,9 +6,8 @@ import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -21,15 +20,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @PropertySource("classpath:application.properties")
+@Slf4j
 public class StudentService {
-
-    private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final ModelMapper modelMapper;
@@ -130,6 +130,25 @@ public class StudentService {
 
         return studentRepository.save(existingStudent);
     }
+    public List<Student> updateStudentStatusToClosed() {
+        LocalDate cutoffDate = LocalDate.now().minusDays(14);
+        List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
+
+        log.info("Rejected students found to potentially close: " + rejectedStudents.size());
+
+        List<Student> studentsToUpdate = new ArrayList<>();
+
+        for (Student student : rejectedStudents) {
+            student.setVerificationStatus(VerificationStatus.CLOSED);
+            studentsToUpdate.add(student);
+        }
+
+        return studentRepository.saveAll(studentsToUpdate);
+    }
+    public List<Student> getStudentsPendingForMoreThan21Days() {
+        LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
+        return studentRepository.findByEnrollmentDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
+    }
 
     private void deleteFile(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
@@ -167,6 +186,20 @@ public class StudentService {
     public Student updateVerificationStatus(Student student, VerificationStatus status) {
         student.setVerificationStatus(status);
         return studentRepository.save(student);
+    }
+    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks, LocalDate verificationDate) {
+        Student student = this.findById(studentId);
+        student.setVerificationStatus(status);
+        student.setAdminRemarks(remarks);
+        student.setVerificationDate(verificationDate);
+
+        if (status == VerificationStatus.VERIFIED) {
+            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getCenterCode() + student.getId();
+            student.setEnrollmentNumber(enrollmentNumber);
+        } else if (status == VerificationStatus.REJECTED) {
+            student.setRequiresRevision(true);
+        }
+        return this.save(student);
     }
     public List<Student> findByVerificationStatus(VerificationStatus status) {
         return studentRepository.findByVerificationStatus(status);
