@@ -6,9 +6,8 @@ import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -29,9 +28,8 @@ import java.util.UUID;
 
 @Service
 @PropertySource("classpath:application.properties")
+@Slf4j
 public class StudentService {
-
-    private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final ModelMapper modelMapper;
@@ -136,7 +134,7 @@ public class StudentService {
         LocalDate cutoffDate = LocalDate.now().minusDays(14);
         List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
 
-        logger.info("Rejected students found to potentially close: " + rejectedStudents.size());
+        log.info("Rejected students found to potentially close: " + rejectedStudents.size());
 
         List<Student> studentsToUpdate = new ArrayList<>();
 
@@ -197,7 +195,7 @@ public class StudentService {
 
         if (status == VerificationStatus.VERIFIED) {
             String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getCenterCode() + student.getId();
-            student.setProvisionalEnrollmentNumber(enrollmentNumber);
+            student.setEnrollmentNumber(enrollmentNumber);
         } else if (status == VerificationStatus.REJECTED) {
             student.setRequiresRevision(true);
         }
