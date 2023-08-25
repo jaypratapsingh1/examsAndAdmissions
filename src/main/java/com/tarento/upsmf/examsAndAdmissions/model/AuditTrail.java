@@ -3,9 +3,6 @@ package com.tarento.upsmf.examsAndAdmissions.model;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-import javax.persistence.*;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "audit_trail")
 public class AuditTrail {

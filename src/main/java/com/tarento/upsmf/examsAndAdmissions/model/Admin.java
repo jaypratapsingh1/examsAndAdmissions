@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 import javax.persistence.*;
@@ -20,7 +21,8 @@ public class Admin {
     @Column(name = "password")
     private String password;
 
-    @OneToMany(mappedBy = "admin")
+    @OneToMany
+    @JoinColumn(name = "audit_trail_id")
     private List<AuditTrail> auditTrails;
 
     public void setId(Long id) {
