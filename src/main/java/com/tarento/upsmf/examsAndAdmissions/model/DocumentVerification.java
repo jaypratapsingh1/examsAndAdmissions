@@ -27,7 +27,7 @@ public class DocumentVerification {
     private VerificationStatus verificationStatus;
 
     @Column(name = "approval_status")
-    private ApprovalStatus approvalStatus;
+    private VerificationStatus approvalStatus;
 
     @Column(name = "approval_datetime")
     private LocalDateTime approvalDatetime;

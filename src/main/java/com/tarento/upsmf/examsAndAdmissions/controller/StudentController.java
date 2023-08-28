@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,9 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/students")
+@RequestMapping("/api/v1/students")
+@Slf4j
 public class StudentController {
-    private final Logger logger = LoggerFactory.getLogger(StudentController.class);
     @Autowired
     private StudentService studentService;
 
@@ -65,7 +66,7 @@ public class StudentController {
             List<Student> updatedStudents = studentService.updateStudentStatusToClosed();
             return ResponseEntity.ok(updatedStudents);
         } catch (Exception e) {
-            logger.error("Error updating student status based on days", e);
+            log.error("Error updating student status based on days", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating student status.");
         }
     }
@@ -76,7 +77,7 @@ public class StudentController {
             List<Student> students = studentService.getStudentsPendingForMoreThan21Days();
             return ResponseEntity.ok(students);
         } catch (Exception e) {
-            logger.error("Error fetching students pending for 21 days", e);
+            log.error("Error fetching students pending for 21 days", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching students.");
         }
     }
