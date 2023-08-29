@@ -44,6 +44,7 @@ public class StudentDto {
     private LocalDate enrollmentDate;
     private LocalDate verificationDate;
     private boolean requiresRevision;
+    private String enrollmentNumber;
 
     private MultipartFile highSchoolMarksheet;
     private MultipartFile highSchoolCertificate;

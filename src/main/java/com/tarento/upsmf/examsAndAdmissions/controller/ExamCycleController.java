@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +82,31 @@ public class ExamCycleController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to restore ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/{id}/addExam")
+    public ResponseEntity<?> addExamToCycle(@PathVariable Long id, @RequestBody Exam exam) {
+        try {
+            ExamCycle examCycle = service.addExamToCycle(id, exam);
+            if (examCycle == null) {
+                return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(exam, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to add exam to ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @DeleteMapping("/{id}/removeExam")
+    public ResponseEntity<?> removeExamFromCycle(@PathVariable Long id, @RequestBody Exam exam) {
+        try {
+            ExamCycle examCycle = service.removeExamFromCycle(id, exam);
+            if (examCycle == null) {
+                return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(exam, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to remove exam from ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
