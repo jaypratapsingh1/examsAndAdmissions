@@ -1,8 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.model.ExamFee;
+import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectResponse;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 
 public interface FeeService {
 
-    public ExamFee initiateFee();
+    public PaymentRedirectResponse initiateFee(ExamFeeDto examFeeDto);
 }

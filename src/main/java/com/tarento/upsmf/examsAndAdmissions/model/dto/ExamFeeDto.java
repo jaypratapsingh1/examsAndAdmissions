@@ -15,12 +15,17 @@ import java.util.Map;
 @Builder
 public class ExamFeeDto implements Serializable {
 
-    private long examId;
+    private Long examCycleId;
 
-    private long instituteId;
+    private Long instituteId;
 
     private Map<Long, List<Long>> studentExam;
 
     private Double amount;
 
+    private PayerType payerType;
+
+    public enum PayerType {
+        INSTITUTE
+    }
 }
