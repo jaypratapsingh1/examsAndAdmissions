@@ -23,11 +23,12 @@ public class StudentExam implements Serializable {
     @Column(name = "reference_no", nullable = false)
     private String referenceNo;
 
-    @OneToOne(targetEntity = Student.class, mappedBy = "student_id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "student_id", referencedColumnName = "id")
     private Student student;
 
-    @ManyToOne
-    @JoinColumn(name = "exam_id")
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "exam_id", referencedColumnName = "id")
     private Exam exam;
 
     @Column(name = "amount", nullable = false, columnDefinition="Decimal(10,2) default 0.00")
