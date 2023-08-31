@@ -32,4 +32,5 @@ public class Institute {
     private String ipAddress;
     private String remarks;
     private boolean cctvVerified;
+    private boolean allowedForExamCentre;
 }
