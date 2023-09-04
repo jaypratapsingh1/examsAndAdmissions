@@ -1,21 +1,19 @@
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.config.Configuration;
 import com.tarento.upsmf.examsAndAdmissions.consumer.NotificationConsumer;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.InstituteList;
-import com.tarento.upsmf.examsAndAdmissions.model.WfRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 
 import com.tarento.upsmf.examsAndAdmissions.model.notification.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationServiceImpl {
@@ -30,9 +28,6 @@ public class NotificationServiceImpl {
 
 	@Autowired
 	private RequestServiceImpl requestService;
-
-	@Autowired
-	private ObjectMapper mapper;
 	private static final String WORK_FLOW_EVENT_NAME = "workflow_service_notification";
 	/**
 	 * Send notification to the user based on state of application
@@ -41,30 +36,20 @@ public class NotificationServiceImpl {
 	 */
 
 	public void sendEmailNotification(InstituteList instituteList) {
+		logger.info("Notification status, {}", instituteList.isApprove());
 
-		try {
-			logger.info("Notification status, {}", mapper.writeValueAsString(instituteList.isApprove()));
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
-		if (!ObjectUtils.isEmpty(instituteList.isApprove()) && instituteList.isApprove()) {
+		if (instituteList.isApprove()) {
 			logger.info("Enters in the email notification block");
-			Set<String> emailSet = new HashSet<>();
+			List<String> emailList =instituteList.getInstitutes().stream().map(Institute::getEmail).collect(Collectors.toList());
 
-			for (Institute institute : instituteList.getInstitutes()) {
-				String email = institute.getEmail();
-				emailSet.add(email);
-			}
-			if (!emailSet.isEmpty()) {
+			if (!emailList.isEmpty()) {
 				HashMap<String, Object> params = new HashMap<>();
 				NotificationRequest request = new NotificationRequest();
 				request.setDeliveryType("message");
-				request.setIds(new ArrayList<>(emailSet));
+				request.setIds(new ArrayList<>(emailList));
 				request.setMode("email");
 				Template template = new Template();
 				template.setId(EMAILTEMPLATE);
-
-				//Placeholders list has to be added into the table
 				String emailBody = configuration.getMailBody();
 				params.put("body", emailBody);
 				template.setParams(params);

@@ -27,12 +27,10 @@ public class NotificationConsumer {
 		try {
 			String message = String.valueOf(data.value());
 			wfRequest = mapper.readValue(message, InstituteList.class);
-			logger.info("Recevied data in notification consumer : {}", mapper.writeValueAsString(wfRequest));
+			logger.info("Received data in notification consumer : {}", mapper.writeValueAsString(wfRequest));
+			notificationService.sendEmailNotification(wfRequest);
 		} catch (Exception ex) {
 			logger.error("Error while deserialization the object value", ex);
 		}
-        assert wfRequest != null;
-        notificationService.sendEmailNotification(wfRequest);
-		logger.info("Profile service notification sent");
 	}
 }
