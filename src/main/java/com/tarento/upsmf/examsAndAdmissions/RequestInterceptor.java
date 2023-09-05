@@ -31,16 +31,15 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 		// authentication
 //		System.out.println("request_token :"+ authToken);
 ////		String userId = verifyRequestData(authToken);
-		String userId = "authToken";
 
-		System.out.println("userId :"+ userId);
-		if (userId.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
+        System.out.println("userId :"+ authToken);
+		if (authToken.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			response.getWriter().write(handleResponse(false, ResponseCode.UNAUTHORIZED));
 			response.setContentType(MediaType.APPLICATION_JSON);
 			return Boolean.FALSE;
 		}
-		request.setAttribute(Constants.Parameters.USER_ID, userId);
+		request.setAttribute(Constants.Parameters.USER_ID, authToken);
 		return Boolean.TRUE;
 	}
 
