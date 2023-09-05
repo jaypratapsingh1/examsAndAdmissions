@@ -27,7 +27,7 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/mark-not-allowed/{instituteId}")
+    @PutMapping("/markNotAllowed/{instituteId}")
     public ResponseEntity<String> markNotAllowedForExamCentre(@PathVariable Long instituteId) {
         try {
             instituteService.markNotAllowedForExamCentre(instituteId);
