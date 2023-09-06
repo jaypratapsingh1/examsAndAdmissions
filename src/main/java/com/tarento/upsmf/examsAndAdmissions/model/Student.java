@@ -62,5 +62,12 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "course_id")
     private Course course;
+    @ManyToOne
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
+    @ManyToOne
+    @JoinColumn(name = "exam_center_id")
+    private Institute examCenter;  // This is where the student will take the exam
+
 
 }
