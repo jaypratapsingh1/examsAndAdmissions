@@ -1,5 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.util;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public class Constants {
 
     // General
@@ -8,6 +12,21 @@ public class Constants {
     public static final String RESPONSE = "response";
     public static final String FAILUREMESSAGE = "failure message";
     public static final String SUCCESSMESSAGE = "Successfully stores the data";
+    public static final String LOCAL_BASE_PATH= "/tmp/";
+    public static final String FAILED = "Failed";
+    public static final String API_USER_BULK_UPLOAD = "api.user.bulk.upload";
+    public static final String API_FILE_UPLOAD = "api.file.upload";
+    public static final String API_FILE_DOWNLOAD = "api.file.download";
+    public static final String NAME = "name";
+    public static final String URL = "url";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String API_VERSION_1 = "1.0";
+
+    public static final int CLIENT_ERROR = 400;
+    public static final int SERVER_ERROR = 500;
+    public static final String UNAUTHORIZED = "Unauthorized";
+
 
     //Exam
     public static final String API_EXAM_ADD = "api.exam.add";
@@ -92,4 +111,24 @@ public class Constants {
         String DRAFT = "DRAFT";
     }
 
+    public static final String IDENTIFIER = "identifier";
+    public static final String FILE_NAME = "fileName";
+    public static final String FILE_PATH = "filePath";
+    public static final String DATE_CREATED_ON = "dateCreatedOn";
+    public static final String DATE_UPDATE_ON = "dateUpdatedOn";
+    public static final String INITIATED_CAPITAL = "INITIATED";
+    public static final String STATUS = "status";
+    public static final String COMMENT = "comment";
+    public static final String CREATED_BY = "createdBy";
+
+    public static final String EMAIL = "email";
+
+    public static final String FIRST_NAME = "first_name";
+
+    public static final String UUID = "wid";
+
+    public static final String ROOT_ORG_CONSTANT = "rootOrg";
+
+    public static final List<String> USER_DEFAULT_FIELDS = Collections
+            .unmodifiableList(Arrays.asList(UUID, FIRST_NAME, EMAIL));
 }

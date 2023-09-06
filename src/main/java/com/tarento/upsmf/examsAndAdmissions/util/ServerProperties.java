@@ -10,6 +10,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class ServerProperties {
 
+	@Value("${cloud.storage.type.name}")
+	private String cloudStorageTypeName;
+
+	@Value("${cloud.storage.key}")
+	private String cloudStorageKey;
+
+	@Value("${cloud.storage.secret}")
+	private String cloudStorageSecret;
+
+	@Value("${cloud.container.name}")
+	private String cloudContainerName;
+
+	@Value("${user.bulk.upload.container.name}")
+	private String bulkUploadContainerName;
+
 	@Value("${storage.key}")
 	private String storageKey;
 

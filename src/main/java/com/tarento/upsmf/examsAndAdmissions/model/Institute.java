@@ -22,12 +22,15 @@ public class Institute {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String instituteName;
     private String instituteCode;
     private String address;
-
+    private String email;
     @OneToMany(mappedBy = "institute")
     @JsonIgnore
     private List<Course> courses;
+    private String ipAddress;
+    private String remarks;
+    private boolean cctvVerified;
+    private boolean allowedForExamCentre;
 }
