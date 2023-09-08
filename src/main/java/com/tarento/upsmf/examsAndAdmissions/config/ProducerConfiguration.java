@@ -12,10 +12,10 @@ import org.springframework.kafka.core.ProducerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-@Configuration
+//@Configuration
 public class ProducerConfiguration {
 
-	@Value("${spring.kafka.bootstrap.servers}")
+	/*@Value("${spring.kafka.bootstrap.servers}")
 	private String kafkabootstrapAddress;
 
 	@Bean
@@ -31,5 +31,5 @@ public class ProducerConfiguration {
 	@Bean
 	public KafkaTemplate<String, String> kafkaTemplate() {
 		return new KafkaTemplate<>(producerFactory());
-	}
+	}*/
 }
