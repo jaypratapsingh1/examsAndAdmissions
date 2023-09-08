@@ -15,10 +15,10 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import java.util.HashMap;
 import java.util.Map;
 
-@Configuration
+//@Configuration
 public class ConsumerConfiguration {
 
-    @Value("${spring.kafka.bootstrap.servers}")
+   /* @Value("${spring.kafka.bootstrap.servers}")
     private String kafkabootstrapAddress;
 
     @Value("${kakfa.offset.reset.value}")
@@ -63,5 +63,5 @@ public class ConsumerConfiguration {
         propsMap.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, kafkaMaxPollInterval);
         propsMap.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, kafkaMaxPollRecords);
         return propsMap;
-    }
+    }*/
 }
