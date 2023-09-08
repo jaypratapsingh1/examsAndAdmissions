@@ -12,7 +12,7 @@ public class Constants {
     public static final String RESPONSE = "response";
     public static final String FAILUREMESSAGE = "failure message";
     public static final String SUCCESSMESSAGE = "Successfully stores the data";
-    public static final String LOCAL_BASE_PATH= "/tmp/";
+    public static final String LOCAL_BASE_PATH = "/tmp/";
     public static final String FAILED = "Failed";
     public static final String API_USER_BULK_UPLOAD = "api.user.bulk.upload";
     public static final String API_FILE_UPLOAD = "api.file.upload";
@@ -36,9 +36,24 @@ public class Constants {
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
 
+    //Question Paper
+    public static final String API_QUESTION_PAPER_GET_ALL = "api.questionPaper.get";
+    public static final String API_QUESTION_PAPER_GET_BY_ID = "api.questionPaper.getById";
+    public static final String API_QUESTION_PAPER_DELETE = "api.questionPaper.delete";
+    public static final String API_QUESTION_PAPER_PREVIEW = "api.questionPaper.preview";
+
 
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
+    public static final String EXAM_CYCLE_ID = "examCycleId";
+    public static final String EXAM_DATE = "examDate";
+    public static final String COURSE_ID = "course_id";
+    public static final String MODIFIED_BY = "modifiedBy";
+    public static final String DATE_MODIFIED_ON = "modifiedOn";
+    public static final String TOTAL_MARKS = "totalMarks";
+    public static final String EXAM_CYCLE_NAME = "examCycleName";
+    public static final String COURSE_NAME = "courseName";
+    public static final String EXAM_NAME = "examName";
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";
@@ -113,6 +128,8 @@ public class Constants {
 
     public static final String IDENTIFIER = "identifier";
     public static final String FILE_NAME = "fileName";
+    public static final String GCP_FILE_NAME = "gcpFileName";
+    public static final String GCP_FILE_NAME_QUERY = "SELECT gcp_file_name FROM public.question_paper WHERE id=?;";
     public static final String FILE_PATH = "filePath";
     public static final String DATE_CREATED_ON = "dateCreatedOn";
     public static final String DATE_UPDATE_ON = "dateUpdatedOn";
