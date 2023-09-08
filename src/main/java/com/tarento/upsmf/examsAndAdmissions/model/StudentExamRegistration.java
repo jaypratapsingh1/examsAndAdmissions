@@ -36,4 +36,10 @@ public class StudentExamRegistration {
     private String remarks;
     private String createdBy;
     private String updatedBy;
+    @ManyToOne
+    @JoinColumn(name = "exam_center_id")
+    private ExamCenter assignedExamCenter;
+    private boolean isFeesPaid;
+
+
 }

@@ -33,4 +33,7 @@ public class Institute {
     private String remarks;
     private boolean cctvVerified;
     private boolean allowedForExamCentre;
+    private String district;
+    @OneToMany(mappedBy = "institute")
+    private List<Student> students;
 }
