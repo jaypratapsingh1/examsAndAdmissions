@@ -19,9 +19,9 @@ public class NotificationConsumer {
     @Autowired
     private NotificationServiceImpl notificationService;
 
-    @KafkaListener(groupId = "workflowNotificationTopic-consumer", topics = "${kafka.topics.workflow.notification}")
+    //@KafkaListener(groupId = "workflowNotificationTopic-consumer", topics = "${kafka.topics.workflow.notification}")
     public void processMessage(ConsumerRecord<String, String> data) {
-        InstituteList wfRequest = null;
+       /* InstituteList wfRequest = null;
         try {
             String message = String.valueOf(data.value());
             wfRequest = mapper.readValue(message, InstituteList.class);
@@ -29,6 +29,6 @@ public class NotificationConsumer {
             notificationService.sendEmailNotification(wfRequest);
         } catch (Exception ex) {
             log.error("Error while deserialization the object value", ex);
-        }
+        }*/
     }
 }
