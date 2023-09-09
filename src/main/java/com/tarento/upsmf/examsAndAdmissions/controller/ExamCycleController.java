@@ -86,9 +86,9 @@ public class ExamCycleController {
     }
 
     @PostMapping("/{id}/addExam")
-    public ResponseEntity<?> addExamToCycle(@PathVariable Long id, @RequestBody Exam exam) {
+    public ResponseEntity<?> addExamToCycle(@PathVariable Long id, @RequestBody List<Exam> exam) {
         try {
-            ExamCycle examCycle = service.addExamToCycle(id, exam);
+            ExamCycle examCycle = service.addExamsToCycle(id, exam);
             if (examCycle == null) {
                 return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
             }

@@ -1,13 +1,13 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -19,12 +19,37 @@ public class ExamCycleService {
     private ExamCycleRepository repository;
     @Autowired
     private ExamRepository examRepository;
+    @Autowired
+    private InstituteRepository instituteRepository;
+    @Autowired
+    private ExamCenterRepository examCenterRepository;
+    @Autowired
+    private CourseRepository courseRepository;
 
     // Create a new exam cycle
     public ExamCycle createExamCycle(ExamCycle examCycle) {
         log.info("Creating new ExamCycle: {}", examCycle);
-        examCycle.setObsolete(0);
-        return repository.save(examCycle);
+
+        if (examCycle != null && examCycle.getId() == null) {
+            examCycle.setObsolete(0);
+            examCycle = repository.save(examCycle);
+        }
+
+        List<Institute> allInstitutes = instituteRepository.findAll();
+
+        // Register each institute as a potential exam center for this exam cycle
+        for (Institute institute : allInstitutes) {
+            ExamCenter examCenter = new ExamCenter();
+            examCenter.setInstitute(institute);
+            examCenter.setExamCycle(examCycle);
+            examCenter.setVerified(null); // marking as pending
+            examCenter.setDistrict(institute.getDistrict());
+            examCenter.setAddress(institute.getAddress());
+            examCenter.setName(institute.getInstituteName());
+            examCenterRepository.save(examCenter);
+        }
+
+        return examCycle;
     }
 
     // Fetch all active exam cycles
@@ -90,15 +115,34 @@ public class ExamCycleService {
             log.warn("ExamCycle with ID: {} not found for restoration!", id);
         }
     }
-    public ExamCycle addExamToCycle(Long id, Exam exam) {
+    public ExamCycle addExamsToCycle(Long id, List<Exam> exams) {
         ExamCycle examCycle = repository.findById(id).orElse(null);
-        if(examCycle != null) {
-            exam.setExamCycleId(examCycle.getId());
-            examRepository.save(exam);
+        if (examCycle != null) {
+            for (Exam exam : exams) {
+                // Fetch the course using courseId
+                Course course = courseRepository.findById(exam.getCourse().getId()).orElse(null);
+                if (course == null) {
+                    // If course doesn't exist, return error or handle it
+                    throw new RuntimeException("Course not found with ID: " + exam.getCourse().getId());
+                }
+                // Link the exam to the course
+                exam.setCourse(course);
+
+                // Convert time strings to LocalTime
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+                exam.setStartTime(LocalTime.parse(exam.getStartTime().format(formatter)));
+                exam.setEndTime(LocalTime.parse(exam.getEndTime().format(formatter)));
+
+                // Link exam to exam cycle
+                exam.setExamCycleId(examCycle.getId());
+
+                examRepository.save(exam);
+            }
             return examCycle;
         }
         return null;
     }
+
     public ExamCycle removeExamFromCycle(Long id, Exam exam) {
         ExamCycle examCycle = repository.findById(id).orElse(null);
         if(examCycle != null) {

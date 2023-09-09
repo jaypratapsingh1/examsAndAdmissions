@@ -109,8 +109,10 @@ public class ExamServiceImpl implements ExamService {
         Exam existingExam = examRepository.findById(id).orElse(null);
         if (existingExam != null) {
             existingExam.setExamCycleId(exam.getExamCycleId());
+            existingExam.setExamName(exam.getExamName());
             existingExam.setExamDate(exam.getExamDate());
-
+            existingExam.setStartTime(exam.getStartTime());
+            existingExam.setEndTime(exam.getEndTime());
             // Update auditing metadata from the payload
             existingExam.setModifiedBy(exam.getModifiedBy());
             existingExam.setModifiedOn(exam.getModifiedOn());

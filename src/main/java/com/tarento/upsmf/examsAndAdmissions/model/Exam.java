@@ -5,6 +5,7 @@ import lombok.*;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "exam")
@@ -20,11 +21,20 @@ public class Exam {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "exam_name")
+    private String examName;
+
     @Column(name = "exam_cycle_id")
     private Long examCycleId;  // Link to the ExamCycle entity
 
     @Column(name = "exam_date")
     private LocalDate examDate;
+
+    @Column(name = "start_time")
+    private LocalTime startTime;
+
+    @Column(name = "end_time")
+    private LocalTime endTime;
 
     @Column(name = "created_by")
     private String createdBy;
