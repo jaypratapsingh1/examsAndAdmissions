@@ -60,29 +60,4 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
         return response;
     }
 
-    @Override
-    public ResponseDto deleteQuestionPaper(Long id) {
-        ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_DELETE);
-        try {
-            QuestionPaper questionPaper = questionPaperRepository.findById(id).orElse(null);
-            if (questionPaper != null) {
-                questionPaper.setObsolete(1);
-                questionPaperRepository.save(questionPaper);
-                response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-                response.put(Constants.RESPONSE, "Question paper id is deleted successfully");
-                response.setResponseCode(HttpStatus.OK);
-            } else {
-                logger.warn("questionPaper with ID: {} not found for deletion!", id);
-                response.put(Constants.MESSAGE, "questionPaper with id not found for deletion!");
-                response.put(Constants.RESPONSE, Constants.MESSAGE);
-                response.setResponseCode(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            response.put(Constants.MESSAGE, "Exception occurred during deleting the questionPaper id");
-            response.put(Constants.RESPONSE, Constants.MESSAGE);
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return response;
-    }
-
 }
