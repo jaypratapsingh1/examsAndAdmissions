@@ -18,7 +18,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -98,12 +97,10 @@ public class AttachmentServiceImpl implements AttachmentService {
                 // Check if the difference is less than 30 minutes
                 if (duration.toMinutes() < 30) {
                     // Set the local file path where you want to save the downloaded file
-                    Path filePath = Files.createTempFile(fileName.split("\\.")[0].substring(fileName.indexOf("/") + 1), fileName.split("\\.")[1]);
                     Blob blob = getBlob(fileName);
                     if (blob != null) {
-                        blob.downloadTo(filePath);
-                        log.info("File downloaded successfully to: " + filePath);
-                        return ResponseEntity.ok().body("File downloaded successfully to: " + filePath);
+                        log.info("File url for downloading : " + blob.getMediaLink());
+                        return ResponseEntity.ok().body("File url for downloading : " + blob.getMediaLink());
                     } else {
                         log.info("File not found in the bucket: " + fileName);
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File not found in the bucket");
@@ -117,14 +114,6 @@ public class AttachmentServiceImpl implements AttachmentService {
         } catch (IOException e) {
             log.error("Failed to read the downloaded file: " + fileName + ", Exception: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } finally {
-            try {
-                File file = new File(Constants.LOCAL_BASE_PATH + fileName);
-                if (file.exists()) {
-                    file.delete();
-                }
-            } catch (Exception e1) {
-            }
         }
     }
 
@@ -155,8 +144,6 @@ public class AttachmentServiceImpl implements AttachmentService {
         try {
             Blob blob = getBlob(fileName);
             if (blob != null) {
-                // Construct the URL for previewing the PDF
-                //return "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.25/web/viewer.html?file=" + blob.getMediaLink();
                 response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
                 response.put(Constants.RESPONSE, blob.getMediaLink());
                 response.setResponseCode(HttpStatus.OK);
@@ -227,7 +214,8 @@ public class AttachmentServiceImpl implements AttachmentService {
             uploadData.setTotalMarks(totalMarks);
 
             questionPaperRepository.save(uploadData);
-
+            //Getting question paper id
+            uploadedFile.put(Constants.ID, uploadData.getId());
             response.getParams().setStatus(Constants.SUCCESSFUL);
             response.setResponseCode(HttpStatus.OK);
             response.getResult().putAll(uploadedFile);
@@ -243,6 +231,45 @@ public class AttachmentServiceImpl implements AttachmentService {
                     log.error("Unable to delete temp file", e);
                 }
             }
+        }
+        return response;
+    }
+
+    @Override
+    public ResponseDto deleteQuestionPaper(Long id) {
+        ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_DELETE);
+        try {
+            String fileName = jdbcTemplate.queryForObject(Constants.GCP_FILE_NAME_QUERY, new Object[]{id}, String.class);
+            ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
+                    gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
+
+            // Initialize Google Cloud Storage client
+            Storage storage = StorageOptions.newBuilder()
+                    .setProjectId(gcpProjectId)
+                    .setCredentials(credentials)
+                    .build()
+                    .getService();
+
+            // Create BlobId for the object you want to download
+            BlobId blobId = BlobId.of(gcpBucketName, fileName);
+            QuestionPaper questionPaper = questionPaperRepository.findById(id).orElse(null);
+            if (questionPaper != null && blobId != null) {
+                questionPaper.setObsolete(1);
+                storage.delete(blobId);
+                questionPaperRepository.save(questionPaper);
+                response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+                response.put(Constants.RESPONSE, "Question paper id is deleted successfully");
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                log.warn("questionPaper with ID: {} not found for deletion!", id);
+                response.put(Constants.MESSAGE, "questionPaper with id not found for deletion!");
+                response.put(Constants.RESPONSE, Constants.MESSAGE);
+                response.setResponseCode(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            response.put(Constants.MESSAGE, "Exception occurred during deleting the questionPaper id");
+            response.put(Constants.RESPONSE, Constants.MESSAGE);
+            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
     }

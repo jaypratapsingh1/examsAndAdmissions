@@ -54,6 +54,7 @@ public class Constants {
     public static final String EXAM_CYCLE_NAME = "examCycleName";
     public static final String COURSE_NAME = "courseName";
     public static final String EXAM_NAME = "examName";
+    public static final String ID = "id";
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";

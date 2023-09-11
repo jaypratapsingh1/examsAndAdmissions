@@ -46,7 +46,7 @@ public class QuestionPaperController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDto> deleteQuestionPaper(@PathVariable Long id) {
-        ResponseDto response = questionPaperService.deleteQuestionPaper(id);
+        ResponseDto response = attachmentService.deleteQuestionPaper(id);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 

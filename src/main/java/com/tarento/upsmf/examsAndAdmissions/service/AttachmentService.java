@@ -12,5 +12,7 @@ public interface AttachmentService {
 
     ResponseDto getPreviewUrl(Long questionPaperId);
 
+    ResponseDto deleteQuestionPaper(Long id);
+
     ResponseDto upload(QuestionPaper questionPaper, String userId, MultipartFile file);
 }
