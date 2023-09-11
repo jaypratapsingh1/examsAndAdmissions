@@ -3,6 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.model;
 import lombok.*;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString
 @Builder
-public class Exam {
+public class Exam implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

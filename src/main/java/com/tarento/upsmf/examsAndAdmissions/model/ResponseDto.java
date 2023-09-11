@@ -24,6 +24,12 @@ public class ResponseDto {
         this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
         this.params = new ResponseParams();
     }
+    public ResponseDto(HttpStatus status, ResponseParams params) {
+        this.ver = "v1";
+        this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
+        this.params = params;
+        this.responseCode = status;
+    }
 
     public ResponseDto(String id) {
         this();

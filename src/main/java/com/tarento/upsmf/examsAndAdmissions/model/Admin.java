@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 import javax.persistence.*;

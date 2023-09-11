@@ -19,27 +19,37 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-
+		if(request.getRequestURI().endsWith("login")) {
+			return Boolean.TRUE;
+		}
 		// read auth token from header
+		/*if(request.getHeader(Constants.Parameters.X_USER_TOKEN) == null
+				|| request.getHeader(Constants.Parameters.X_USER_TOKEN).isBlank()) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().write(handleResponse(false, ResponseCode.TOKEN_MISSING));
+			response.setContentType(MediaType.APPLICATION_JSON);
+			return Boolean.FALSE;
+		}
 		String authToken = request.getHeader(Constants.Parameters.X_USER_TOKEN);
-//		if (StringUtils.isBlank(authToken)) {
-//			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-//			response.getWriter().write(handleResponse(false, ResponseCode.TOKEN_MISSING));
-//			response.setContentType(MediaType.APPLICATION_JSON);
-//			return Boolean.FALSE;
-//		}
+		if (StringUtils.isBlank(authToken)) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().write(handleResponse(false, ResponseCode.TOKEN_MISSING));
+			response.setContentType(MediaType.APPLICATION_JSON);
+			return Boolean.FALSE;
+		}
 		// authentication
-//		System.out.println("request_token :"+ authToken);
-////		String userId = verifyRequestData(authToken);
+		System.out.println("request_token :"+ authToken);
+		String userId = verifyRequestData(authToken);*/
+		String userId = "userId";
 
-        System.out.println("userId :"+ authToken);
-		if (authToken.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
+		System.out.println("userId :"+ userId);
+		if (userId.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			response.getWriter().write(handleResponse(false, ResponseCode.UNAUTHORIZED));
 			response.setContentType(MediaType.APPLICATION_JSON);
 			return Boolean.FALSE;
 		}
-		request.setAttribute(Constants.Parameters.USER_ID, authToken);
+		request.setAttribute(Constants.Parameters.USER_ID, userId);
 		return Boolean.TRUE;
 	}
 
