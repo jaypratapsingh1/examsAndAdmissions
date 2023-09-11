@@ -1,15 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamCycleNotFoundException;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentExamRegistrationRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -138,6 +132,7 @@ public class StudentExamRegistrationService {
         return ResponseEntity.status(500).body("An error occurred while processing registrations.");
     }
 }
+
     @GetMapping
     public ResponseEntity<Page<StudentExamRegistrationDTO>> getAllRegistrations(Pageable pageable) {
         try {

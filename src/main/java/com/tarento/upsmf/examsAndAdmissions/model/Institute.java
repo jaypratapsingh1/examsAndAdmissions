@@ -31,4 +31,7 @@ public class Institute implements Serializable {
     private String remarks;
     private boolean cctvVerified;
     private boolean allowedForExamCentre;
+    private String district;
+    @OneToMany(mappedBy = "institute")
+    private List<Student> students;
 }

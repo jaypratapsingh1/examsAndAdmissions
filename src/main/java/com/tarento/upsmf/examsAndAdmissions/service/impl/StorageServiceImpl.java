@@ -30,14 +30,14 @@ public class StorageServiceImpl implements StorageService {
 	@Autowired
 	private ServerProperties serverProperties;
 
-	@PostConstruct
+	/*@PostConstruct
 	public void init() {
 		if (storageService == null) {
 			storageService = StorageServiceFactory.getStorageService(new StorageConfig(
 					serverProperties.getCloudStorageTypeName(), serverProperties.getCloudStorageKey(),
 					serverProperties.getCloudStorageSecret()));
 		}
-	}
+	}*/
 
 	@Override
 	public ResponseDto uploadFile(MultipartFile mFile, String containerName) {
