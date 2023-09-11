@@ -40,7 +40,6 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 		// authentication
 		System.out.println("request_token :"+ authToken);
 		String userId = verifyRequestData(authToken);
-//		String userId = "authToken";
 
 		System.out.println("userId :"+ userId);
 		if (userId.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {

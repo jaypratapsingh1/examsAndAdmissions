@@ -24,6 +24,10 @@ public class AuditTrail {
     @JoinColumn(name = "student_id")
     private Student student;
 
+    @ManyToOne
+    @JoinColumn(name = "admin_id") // Assuming you have a column named "admin_id" in AuditTrail table
+    private Admin admin;
+
     public Long getId() {
         return id;
     }
