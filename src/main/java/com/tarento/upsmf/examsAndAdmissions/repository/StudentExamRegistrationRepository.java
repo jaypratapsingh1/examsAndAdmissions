@@ -16,7 +16,15 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     List<StudentExamRegistration> findByExamCycleId(Long examCycleId);
     List<StudentExamRegistration> findByStudentAndExamCycle(Student student, ExamCycle examCycle);
     List<Exam> findExamsByStudent(Student student);
-    long countByAssignedExamCenter(ExamCenter center);
+    long countByExamCenter(ExamCenter center);
 
-    Optional<StudentExamRegistration> findByIdAndStudent_DateOfBirth(String examRegistrationNumber, LocalDate localDate);
+    Optional<StudentExamRegistration> findByIdAndStudent_DateOfBirth(Long id, LocalDate localDate);
+
+    List<StudentExamRegistration> findByExamCenter(ExamCenter originalExamCenter);
+
+    List<StudentExamRegistration> findByInstituteIdAndExamCenterIsNull(Long instituteId);
+
+    List<StudentExamRegistration> findByExamCenterInstituteId(Long instituteId);
+
+    List<StudentExamRegistration> findByInstitute(Institute unverifiedInstitute);
 }

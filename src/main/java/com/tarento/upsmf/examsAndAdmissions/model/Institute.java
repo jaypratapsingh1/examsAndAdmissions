@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = {"courses", "students", "registrations"})
 @Builder
 public class Institute implements Serializable {
 
@@ -27,11 +27,12 @@ public class Institute implements Serializable {
     @OneToMany(mappedBy = "institute")
     @JsonIgnore
     private List<Course> courses;
-    private String ipAddress;
-    private String remarks;
-    private boolean cctvVerified;
     private boolean allowedForExamCentre;
     private String district;
     @OneToMany(mappedBy = "institute")
+    @JsonManagedReference
     private List<Student> students;
+    @OneToMany(mappedBy = "institute")
+    @JsonBackReference // To prevent infinite recursion
+    private List<StudentExamRegistration> registrations;
 }

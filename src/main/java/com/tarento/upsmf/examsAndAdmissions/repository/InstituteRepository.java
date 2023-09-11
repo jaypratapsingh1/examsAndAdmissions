@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface InstituteRepository extends JpaRepository<Institute, Long> {
-    List<Institute> findByDistrictAndCctvVerified(String district, boolean b);
+    Institute findByInstituteCode(String instituteCode);
 }

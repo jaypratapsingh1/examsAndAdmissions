@@ -52,6 +52,8 @@ public class StudentExamRegistrationService {
 
         // Convert to maps for easy lookup
         Map<Long, Student> studentMap = students.stream().collect(Collectors.toMap(Student::getId, Function.identity()));
+        // Create a map of studentId to their associated Institute
+        Map<Long, Institute> studentInstituteMap = students.stream().collect(Collectors.toMap(Student::getId, Student::getInstitute));
         Map<Long, Exam> examMap = exams.stream().collect(Collectors.toMap(Exam::getId, Function.identity()));
         Map<Long, ExamCycle> examCycleMap = examCycles.stream().collect(Collectors.toMap(ExamCycle::getId, Function.identity()));
 
@@ -104,6 +106,7 @@ public class StudentExamRegistrationService {
 
             StudentExamRegistration registration = new StudentExamRegistration();
             registration.setStudent(studentMap.get(studentId));
+            registration.setInstitute(studentInstituteMap.get(studentId));
             registration.setExam(examMap.get(examId));
             registration.setExamCycle(examCycleMap.get(request.getExamCycleId()));
             registration.setRegistrationDate(request.getRegistrationDate());

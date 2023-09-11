@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -40,7 +42,7 @@ public class HallTicketService {
     @Autowired
     private ExamCenterRepository examCenterRepository;
 
-    public ResponseEntity<byte[]> getHallTicket(String examRegistrationNumber, String dateOfBirth) {
+    public ResponseEntity<byte[]> getHallTicket(Long id, String dateOfBirth) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
         Date dob;
@@ -53,13 +55,14 @@ public class HallTicketService {
             throw new RuntimeException("Invalid date format", e);
         }
 
-        Optional<StudentExamRegistration> studentOptional = studentExamRegistrationRepository.findByIdAndStudent_DateOfBirth(examRegistrationNumber, localDate);
+        Optional<StudentExamRegistration> studentOptional = studentExamRegistrationRepository.findByIdAndStudent_DateOfBirth(id, localDate);
 
         if (studentOptional.isPresent()) {
+            StudentExamRegistration registration = studentOptional.get();  // Extracting the StudentExamRegistration object from the Optional
             Student student = studentOptional.get().getStudent();
 
-            if (hasPaidFees(student.getId()) && student.getExamCenter()!=null) {
-                byte[] hallTicketData = generateHallTicket(student);  // This is where you generate the hall ticket data dynamically
+            if (studentOptional.get().isFeesPaid() && studentOptional.get().getExamCenter()!=null) {
+                byte[] hallTicketData = generateHallTicket(registration);  // This is where you generate the hall ticket data dynamically
                 return ResponseEntity.ok(hallTicketData);
             } else {
                 // User doesn't meet the criteria for hall ticket issuance
@@ -74,28 +77,45 @@ public class HallTicketService {
                     .body("No student record found for the provided details.".getBytes());
         }
     }
-
-    private byte[] generateHallTicket(Student student) {
+    private byte[] generateHallTicket(StudentExamRegistration studentOptional) { // Added an Exam parameter to provide exam details
         PDDocument document = new PDDocument();
         PDPage page = new PDPage(PDRectangle.A4);
         document.addPage(page);
 
         try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
+            // Title: Hall Ticket
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 20);
             contentStream.beginText();
             contentStream.newLineAtOffset(50, 750);
             contentStream.showText("Hall Ticket");
             contentStream.endText();
 
-            contentStream.setFont(PDType1Font.HELVETICA, 12);
+            // Student Details
+            contentStream.setFont(PDType1Font.HELVETICA, 14);
             contentStream.beginText();
-            contentStream.newLineAtOffset(50, 720);
-            contentStream.showText("Name: " + student.getFirstName()+student.getSurname());
-            contentStream.newLineAtOffset(0, -15);
-            contentStream.showText("Exam Enrollment Number: " + student.getEnrollmentNumber());
-            contentStream.newLineAtOffset(0, -15);
-            contentStream.showText("Date of Birth: " + student.getDateOfBirth());
+            contentStream.newLineAtOffset(50, 700);
+            contentStream.showText("Name: " + studentOptional.getStudent().getFirstName() + " " + studentOptional.getStudent().getSurname());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Exam Enrollment Number: " + studentOptional.getStudent().getEnrollmentNumber());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Date of Birth: " + studentOptional.getStudent().getDateOfBirth());
             contentStream.endText();
+
+            // Exam Details (Assuming an Exam object has these methods)
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 620);
+            contentStream.showText("Exam: " + studentOptional.getExam().getExamName());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Date: " + studentOptional.getExam().getExamDate());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Time: " + studentOptional.getExam().getStartTime() + " - " + studentOptional.getExam().getEndTime());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Venue: " + studentOptional.getExamCenter().getAddress());
+            contentStream.endText();
+
+            // You can continue adding more details as necessary
+
         } catch (IOException e) {
             throw new RuntimeException("Error generating hall ticket", e);
         }
@@ -111,17 +131,8 @@ public class HallTicketService {
         return baos.toByteArray();
     }
 
-    private boolean hasPaidFees(Long registrationId) {
-        Optional<StudentExamRegistration> registrationOptional = studentExamRegistrationRepository.findById(registrationId);
-
-        if (registrationOptional.isPresent()) {
-            return registrationOptional.get().isFeesPaid();
-        } else {
-            throw new RuntimeException("Registration not found with ID: " + registrationId);
-        }
-    }
     private boolean hasCCTVVerification(StudentExamRegistration registration) {
-        return registration.getAssignedExamCenter().isCctvVerified();
+        return registration.getExamCenter().getVerified();
     }
     public void requestHallTicketDataCorrection(Long studentId, String correctionDetails) {
         DataCorrectionRequest request = new DataCorrectionRequest();

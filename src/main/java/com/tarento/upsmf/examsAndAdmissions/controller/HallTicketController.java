@@ -5,6 +5,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequestDTO;
 import com.tarento.upsmf.examsAndAdmissions.service.HallTicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,26 +14,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/hallticket")
+@RequestMapping("/api/v1/admin/hallticket")
 public class HallTicketController {
 
     @Autowired
     HallTicketService hallTicketService;
 
     @GetMapping("/download")
-    public ResponseEntity<ByteArrayResource> getHallTicket(@RequestParam String examRegistrationNumber, @RequestParam String dateOfBirth) {
-        if (examRegistrationNumber == null || dateOfBirth == null || examRegistrationNumber.isEmpty() || dateOfBirth.isEmpty()) {
+    public ResponseEntity<ByteArrayResource> getHallTicket(@RequestParam Long id, @RequestParam String dateOfBirth) {
+        if (id == null || dateOfBirth == null || dateOfBirth.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
-        byte[] data = hallTicketService.getHallTicket(examRegistrationNumber, dateOfBirth).getBody();
+        byte[] data = hallTicketService.getHallTicket(id, dateOfBirth).getBody();
 
         if (data == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
         ByteArrayResource resource = new ByteArrayResource(data);
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=hallticket.pdf");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(resource);
     }
 
     @PostMapping("/dataCorrection/request")

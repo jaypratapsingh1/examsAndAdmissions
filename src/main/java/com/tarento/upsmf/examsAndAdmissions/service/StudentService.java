@@ -1,10 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Course;
+import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -32,16 +34,18 @@ import java.util.UUID;
 public class StudentService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
+    private final InstituteRepository instituteRepository;
     private final ModelMapper modelMapper;
 
     @Value("${file.storage.path}")
     private String storagePath;
 
     @Autowired
-    public StudentService(StudentRepository studentRepository,CourseRepository courseRepository) {
+    public StudentService(StudentRepository studentRepository,CourseRepository courseRepository,InstituteRepository instituteRepository) {
         this.studentRepository = studentRepository;
         this.modelMapper = new ModelMapper();
         this.courseRepository= courseRepository;
+        this.instituteRepository=instituteRepository;
         configureModelMapper();
     }
 
@@ -60,6 +64,14 @@ public class StudentService {
     @Transactional
     public Student enrollStudent(StudentDto studentDto) throws IOException {
         Student student = modelMapper.map(studentDto, Student.class);
+
+        // Fetching the institute and setting it to the student
+        Institute institute = instituteRepository.findByInstituteCode(studentDto.getInstituteCode()); // Assuming findByCode method exists, adjust accordingly
+        if (institute == null) {
+            throw new RuntimeException("Institute with code " + studentDto.getInstituteCode() + " not found in the database");
+        }
+        student.setInstitute(institute);
+
         Course dbCourse = courseRepository.findByCourseCode(studentDto.getCourseCode());
         if (dbCourse == null) {
             throw new RuntimeException("Course with code " + studentDto.getCourseCode() + " not found in the database");

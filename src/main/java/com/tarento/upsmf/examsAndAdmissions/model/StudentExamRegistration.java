@@ -38,8 +38,11 @@ public class StudentExamRegistration {
     private String updatedBy;
     @ManyToOne
     @JoinColumn(name = "exam_center_id")
-    private ExamCenter assignedExamCenter;
+    private ExamCenter examCenter;
     private boolean isFeesPaid;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
 
 
 }

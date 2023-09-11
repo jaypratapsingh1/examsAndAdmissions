@@ -20,8 +20,21 @@ public class ExamCenter {
 
     private String name;
     private String address;
-    private boolean isCctvVerified;
-    private int maxCapacity;
-    private Integer totalSeats;
-    private Integer occupiedSeats = 0; // default to 0
+    private Boolean verified;
+    //private int maxCapacity;
+    //private Integer totalSeats;
+    //private Integer occupiedSeats = 0; // default to 0
+    @ManyToOne
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
+
+    @ManyToOne
+    @JoinColumn(name = "exam_cycle_id")
+    private ExamCycle examCycle;
+
+    private String ipAddress;
+    private String remarks;
+    private boolean allowedForExamCentre;
+    private String district;
+
 }
