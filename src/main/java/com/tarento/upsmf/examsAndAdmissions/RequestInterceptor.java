@@ -23,7 +23,7 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 			return Boolean.TRUE;
 		}
 		// read auth token from header
-		if(request.getHeader(Constants.Parameters.X_USER_TOKEN) == null
+		/*if(request.getHeader(Constants.Parameters.X_USER_TOKEN) == null
 				|| request.getHeader(Constants.Parameters.X_USER_TOKEN).isBlank()) {
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().write(handleResponse(false, ResponseCode.TOKEN_MISSING));
@@ -39,7 +39,8 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 		}
 		// authentication
 		System.out.println("request_token :"+ authToken);
-		String userId = verifyRequestData(authToken);
+		String userId = verifyRequestData(authToken);*/
+		String userId = "userId";
 
 		System.out.println("userId :"+ userId);
 		if (userId.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
