@@ -1,12 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
@@ -15,9 +15,9 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = {"courses", "students", "registrations"})
 @Builder
-public class Institute {
+public class Institute implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,8 +29,12 @@ public class Institute {
     @OneToMany(mappedBy = "institute")
     @JsonIgnore
     private List<Course> courses;
-    private String ipAddress;
-    private String remarks;
-    private boolean cctvVerified;
     private boolean allowedForExamCentre;
+    private String district;
+    @OneToMany(mappedBy = "institute")
+    @JsonManagedReference
+    private List<Student> students;
+    @OneToMany(mappedBy = "institute")
+    @JsonBackReference // To prevent infinite recursion
+    private List<StudentExamRegistration> registrations;
 }

@@ -1,15 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamCycleNotFoundException;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentExamRegistrationRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -58,6 +52,8 @@ public class StudentExamRegistrationService {
 
         // Convert to maps for easy lookup
         Map<Long, Student> studentMap = students.stream().collect(Collectors.toMap(Student::getId, Function.identity()));
+        // Create a map of studentId to their associated Institute
+        Map<Long, Institute> studentInstituteMap = students.stream().collect(Collectors.toMap(Student::getId, Student::getInstitute));
         Map<Long, Exam> examMap = exams.stream().collect(Collectors.toMap(Exam::getId, Function.identity()));
         Map<Long, ExamCycle> examCycleMap = examCycles.stream().collect(Collectors.toMap(ExamCycle::getId, Function.identity()));
 
@@ -110,6 +106,7 @@ public class StudentExamRegistrationService {
 
             StudentExamRegistration registration = new StudentExamRegistration();
             registration.setStudent(studentMap.get(studentId));
+            registration.setInstitute(studentInstituteMap.get(studentId));
             registration.setExam(examMap.get(examId));
             registration.setExamCycle(examCycleMap.get(request.getExamCycleId()));
             registration.setRegistrationDate(request.getRegistrationDate());
@@ -138,6 +135,7 @@ public class StudentExamRegistrationService {
         return ResponseEntity.status(500).body("An error occurred while processing registrations.");
     }
 }
+
     @GetMapping
     public ResponseEntity<Page<StudentExamRegistrationDTO>> getAllRegistrations(Pageable pageable) {
         try {

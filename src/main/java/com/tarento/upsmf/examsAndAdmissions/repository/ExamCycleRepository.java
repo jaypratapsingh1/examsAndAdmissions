@@ -13,4 +13,5 @@ public interface ExamCycleRepository extends JpaRepository<ExamCycle, Long> {
 
     // Fetch a non-obsolete record by ID
     Optional<ExamCycle> findByIdAndObsolete(Long id, Integer value);
+    ExamCycle findByExamCycleName(String name);
 }

@@ -1,7 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.repository;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 
-public interface InstituteRepository extends JpaRepository<Institute,Long> {
+import java.util.List;
+
+@Repository
+public interface InstituteRepository extends JpaRepository<Institute, Long> {
+    Institute findByInstituteCode(String instituteCode);
 }
