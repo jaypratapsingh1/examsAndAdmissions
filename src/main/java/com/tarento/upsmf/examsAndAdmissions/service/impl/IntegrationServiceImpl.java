@@ -37,6 +37,9 @@ public class IntegrationServiceImpl implements IntegrationService {
     @Value("${api.user.loginUserUrl}")
     private String loginUserUrl;
 
+    @Value("${api.user.details}")
+    private String userInfoUrl;
+
     @Autowired
     private ObjectMapper mapper;
 
@@ -134,6 +137,34 @@ public class IntegrationServiceImpl implements IntegrationService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error in logging user.");
+        }
+    }
+
+    @Override
+    public ResponseEntity<String> getUserById(String id) throws Exception {
+        if(id == null || id.isBlank()) {
+            return ResponseEntity.badRequest().body("Invalid Request");
+        }
+        ObjectNode request = mapper.createObjectNode();
+        ObjectNode root = mapper.createObjectNode();
+        root.put("userName", id);
+        request.put("request", root);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        try {
+            restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+            ResponseEntity<String> response = restTemplate.exchange(
+                    userInfoUrl, HttpMethod.POST,
+                    new HttpEntity<>(root, headers), String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                JsonNode responseBody = mapper.readTree(response.getBody());
+                User user = mapper.treeToValue(responseBody, User.class);
+                return ResponseEntity.ok().body(response.getBody());
+            }
+            throw new RuntimeException("Error in geting user info.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error in geting user info.");
         }
     }
 

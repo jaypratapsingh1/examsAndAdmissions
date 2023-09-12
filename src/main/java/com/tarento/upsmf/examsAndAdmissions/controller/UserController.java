@@ -6,9 +6,7 @@ import com.tarento.upsmf.examsAndAdmissions.service.impl.IntegrationServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 
 @Controller
@@ -27,6 +25,16 @@ public class UserController {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e.getLocalizedMessage());
+        }
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity getUsersById(@RequestParam("id") String id) throws RuntimeException{
+        try {
+            return integrationService.getUserById(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.getLocalizedMessage());
         }
     }
 

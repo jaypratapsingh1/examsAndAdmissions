@@ -9,4 +9,6 @@ public interface IntegrationService {
     ResponseEntity<String> searchUsers(JsonNode payload) throws Exception;
 
     ResponseEntity<String> login(JsonNode body) throws Exception;
+
+    ResponseEntity<String> getUserById(String id) throws Exception;
 }
