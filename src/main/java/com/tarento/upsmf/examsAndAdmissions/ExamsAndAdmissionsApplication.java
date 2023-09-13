@@ -35,10 +35,13 @@ public class ExamsAndAdmissionsApplication {
         final String DELETE = "DELETE";
         final String PUT = "PUT";
 
-        return new WebMvcConfigurerAdapter() {
+        return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedMethods(GET, POST, PUT, DELETE, OPTIONS).allowedOrigins("*").allowedHeaders("*");
+                registry.addMapping("/**")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedOriginPatterns("http://localhost:*")
+                        .allowedHeaders("*");
             }
 
             @Autowired
@@ -56,7 +59,7 @@ public class ExamsAndAdmissionsApplication {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
+	config.addAllowedOriginPattern("http://localhost:*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
