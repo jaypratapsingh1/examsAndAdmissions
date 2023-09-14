@@ -35,6 +35,8 @@ public class User {
 
     private List<String> roles;
 
+    private List<String> departments;
+
     private Map<String, List<String>> attributes;
 
     private boolean enabled;
