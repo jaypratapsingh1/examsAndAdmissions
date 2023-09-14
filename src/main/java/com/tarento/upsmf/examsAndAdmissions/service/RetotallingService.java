@@ -2,7 +2,6 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.dao.Payment;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.RetotallingRequestDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.PaymentRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.RetotallingRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
