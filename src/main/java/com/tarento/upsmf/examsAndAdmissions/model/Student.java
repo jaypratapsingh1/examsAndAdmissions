@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 
 import javax.persistence.*;
@@ -64,10 +65,9 @@ public class Student {
     private Course course;
     @ManyToOne
     @JoinColumn(name = "institute_id")
+    @JsonBackReference
     private Institute institute;
     @ManyToOne
     @JoinColumn(name = "exam_center_id")
     private Institute examCenter;  // This is where the student will take the exam
-
-
 }

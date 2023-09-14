@@ -20,6 +20,5 @@ public class StudentExamRegistrationDTO {
     private String remarks;
     private String createdBy;
     private String updatedBy;
-
-    // Getters, Setters, and any other desired methods...
+    private Long instituteId;
 }
