@@ -109,5 +109,4 @@ public class ExamCycleController {
             return new ResponseEntity<>("Failed to remove exam from ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 }

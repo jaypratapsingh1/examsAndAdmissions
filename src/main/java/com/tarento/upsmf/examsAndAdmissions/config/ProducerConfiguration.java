@@ -1,3 +1,4 @@
+/*
 package com.tarento.upsmf.examsAndAdmissions.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -33,3 +34,4 @@ public class ProducerConfiguration {
 		return new KafkaTemplate<>(producerFactory());
 	}*/
 }
+*/

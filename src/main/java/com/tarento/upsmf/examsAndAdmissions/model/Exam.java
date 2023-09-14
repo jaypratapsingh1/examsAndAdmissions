@@ -56,4 +56,12 @@ public class Exam implements Serializable {
     @Column(name = "obsolete", nullable = false, columnDefinition = "int default 0")
     private Integer obsolete = 0;
 
+    @Column(name = "is_results_published")
+    private Boolean isResultsPublished = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "retotalling_request_id")
+    private RetotallingRequest retotallingRequest;
+
+
 }

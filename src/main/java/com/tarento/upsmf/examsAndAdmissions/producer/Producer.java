@@ -1,3 +1,4 @@
+/*
 package com.tarento.upsmf.examsAndAdmissions.producer;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,3 +15,4 @@ public class Producer {
         //kafkaTemplate.send(topic, value);
     }
 }
+*/

@@ -1,3 +1,4 @@
+/*
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,11 +30,13 @@ public class NotificationServiceImpl {
 	@Autowired
 	private RequestServiceImpl requestService;
 	private static final String WORK_FLOW_EVENT_NAME = "workflow_service_notification";
-	/**
+	*/
+/**
 	 * Send notification to the user based on state of application
 	 *
 	 * @param instituteList notification request
-	 */
+	 *//*
+
 
 	public void sendEmailNotification(InstituteList instituteList) {
 		logger.info("Notification status, {}", instituteList.isApprove());
@@ -68,10 +71,12 @@ public class NotificationServiceImpl {
 			}
 		}
 	}
-		/**
+		*/
+/**
          * Post to the Notification service
          * @param request
-         */
+         *//*
+
 	public void sendNotification(Map<String, Object> request) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(configuration.getNotifyServiceHost()).append(configuration.getNotifyServicePath());
@@ -83,3 +88,4 @@ public class NotificationServiceImpl {
 
 	}
 }
+*/

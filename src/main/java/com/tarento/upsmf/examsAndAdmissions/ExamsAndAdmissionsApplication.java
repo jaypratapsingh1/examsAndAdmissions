@@ -59,7 +59,7 @@ public class ExamsAndAdmissionsApplication {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-	config.addAllowedOriginPattern("http://localhost:*");
+    	config.addAllowedOriginPattern("http://localhost:*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
@@ -68,4 +68,5 @@ public class ExamsAndAdmissionsApplication {
         bean.setOrder(0);
         return bean;
     }
+
 }
