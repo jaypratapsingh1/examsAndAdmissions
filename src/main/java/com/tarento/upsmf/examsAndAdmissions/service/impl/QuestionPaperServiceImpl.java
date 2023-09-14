@@ -28,7 +28,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
         if (questionPapers.isEmpty()) {
             response.put(Constants.MESSAGE, "Getting Error in fetching Question papers details");
             response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setResponseCode(HttpStatus.NOT_FOUND);
         } else {
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, questionPapers);

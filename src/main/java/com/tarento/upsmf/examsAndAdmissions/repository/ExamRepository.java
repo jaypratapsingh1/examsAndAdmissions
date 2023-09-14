@@ -11,4 +11,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByObsolete(Integer value);
 
     Optional<Exam> findByIdAndObsolete(Long id, Integer value);
+
+    Optional<Exam> findByExamCycleIdAndObsolete(Long examCycleId, Integer value);
 }
