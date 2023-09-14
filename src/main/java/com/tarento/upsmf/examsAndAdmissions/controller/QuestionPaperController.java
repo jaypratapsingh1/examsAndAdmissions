@@ -19,7 +19,7 @@ public class QuestionPaperController {
     @Autowired
     private AttachmentService attachmentService;
 
-    @PostMapping("/download/{questionPaperId}")
+    @GetMapping("/download/{questionPaperId}")
     public ResponseEntity<?> downloadFile(@PathVariable Long questionPaperId) {
         ResponseEntity response = attachmentService.downloadQuestionPaper(questionPaperId);
         return new ResponseEntity<>(response, response.getStatusCode());
