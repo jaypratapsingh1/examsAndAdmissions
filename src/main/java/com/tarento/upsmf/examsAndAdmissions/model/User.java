@@ -1,7 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import lombok.*;
+import org.springframework.data.redis.core.RedisHash;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +13,8 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @ToString
-public class User {
+@RedisHash("User")
+public class User implements Serializable {
 
     private String id;
 
@@ -32,6 +35,8 @@ public class User {
     private String phoneNumber;
 
     private List<String> roles;
+
+    private List<String> departments;
 
     private Map<String, List<String>> attributes;
 

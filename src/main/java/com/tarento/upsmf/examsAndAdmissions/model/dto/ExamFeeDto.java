@@ -19,11 +19,13 @@ public class ExamFeeDto implements Serializable {
 
     private Long instituteId;
 
-    private Map<Long, List<Long>> studentExam;
+    private Map<String, List<Long>> studentExam;
 
     private Double amount;
 
     private PayerType payerType;
+
+    private String createdBy;
 
     public enum PayerType {
         INSTITUTE
