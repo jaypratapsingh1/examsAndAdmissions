@@ -2,7 +2,6 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.QuestionPaper;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.DownloadDto;
 import com.tarento.upsmf.examsAndAdmissions.service.AttachmentService;
 import com.tarento.upsmf.examsAndAdmissions.service.QuestionPaperService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +19,15 @@ public class QuestionPaperController {
     @Autowired
     private AttachmentService attachmentService;
 
-    @PostMapping("/download")
-    public ResponseEntity<?> downloadFile(@RequestBody DownloadDto downloadDto) {
-        ResponseEntity response = attachmentService.downloadQuestionPaper(downloadDto);
+    @GetMapping("/download/{questionPaperId}")
+    public ResponseEntity<?> downloadFile(@PathVariable Long questionPaperId) {
+        ResponseEntity response = attachmentService.downloadQuestionPaper(questionPaperId);
         return new ResponseEntity<>(response, response.getStatusCode());
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<ResponseDto> upload(QuestionPaper questionPaper, String userId, MultipartFile file) {
-        ResponseDto response = attachmentService.upload(questionPaper, userId, file);
+    public ResponseEntity<ResponseDto> upload(QuestionPaper questionPaper, String createdBy, MultipartFile file) {
+        ResponseDto response = attachmentService.upload(questionPaper, createdBy, file);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 
