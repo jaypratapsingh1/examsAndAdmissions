@@ -37,4 +37,12 @@ public class InstituteService {
         institute.setAllowedForExamCentre(false);
         instituteRepository.save(institute);
     }
+
+    public Institute getInstituteById(Long instituteId) {
+        Optional<Institute> optionalInstitute = instituteRepository.findById(instituteId);
+        if(optionalInstitute.isPresent()) {
+            return optionalInstitute.get();
+        }
+        return null;
+    }
 }
