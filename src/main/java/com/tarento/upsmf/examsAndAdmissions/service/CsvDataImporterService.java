@@ -1,123 +1,99 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 @Service
 public class CsvDataImporterService {
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private ObjectMapper objectMapper;
 
-    public JSONArray excelToJson(String filePath) throws IOException, JSONException {
-        JSONArray jsonArray = new JSONArray();
 
-        try (InputStream inputStream = new FileInputStream(filePath);
+    public JSONArray excelToJson(MultipartFile excelFile) throws IOException, JSONException {
+        try (InputStream inputStream = excelFile.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> iterator = sheet.iterator();
-            List<String> columnNames = new ArrayList<>();
+            List<String> columnNames = StreamSupport.stream(sheet.getRow(0).spliterator(), false)
+                    .map(Cell::getStringCellValue)
+                    .collect(Collectors.toList());
 
-            if (iterator.hasNext()) {
-                Row headerRow = iterator.next();
-                Iterator<Cell> cellIterator = headerRow.iterator();
+            JSONArray jsonArray = StreamSupport.stream(sheet.spliterator(), false)
+                    .skip(1) // Skip the header row
+                    .map(row -> {
+                        JSONObject jsonObject = new JSONObject();
+                        IntStream.range(0, row.getLastCellNum())
+                                .forEach(columnIndex -> {
+                                    Cell currentCell = row.getCell(columnIndex);
+                                    String columnName = columnNames.get(columnIndex);
 
-                while (cellIterator.hasNext()) {
-                    Cell currentCell = cellIterator.next();
-                    columnNames.add(currentCell.getStringCellValue());
-                }
-            }
+                                    try {
+                                        switch (currentCell.getCellType()) {
+                                            case STRING:
+                                                jsonObject.put(columnName, currentCell.getStringCellValue());
+                                                break;
+                                            case NUMERIC:
+                                                if (DateUtil.isCellDateFormatted(currentCell)) {
+                                                    jsonObject.put(columnName, currentCell.getDateCellValue());
+                                                } else {
+                                                    jsonObject.put(columnName, currentCell.getNumericCellValue());
+                                                }
+                                                break;
+                                            case BOOLEAN:
+                                                jsonObject.put(columnName, currentCell.getBooleanCellValue());
+                                                break;
+                                            case BLANK:
+                                                jsonObject.put(columnName, "");
+                                                break;
+                                            default:
+                                                jsonObject.put(columnName, "");
+                                        }
+                                    } catch (JSONException e) {
+                                        // Handle JSONException if needed
+                                    }
+                                });
+                        return jsonObject;
+                    })
+                    .collect(Collectors.collectingAndThen(Collectors.toList(), JSONArray::new));
 
-            while (iterator.hasNext()) {
-                Row currentRow = iterator.next();
-                JSONObject jsonObject = new JSONObject();
-
-                Iterator<Cell> cellIterator = currentRow.iterator();
-                int columnIndex = 0;
-
-                while (cellIterator.hasNext()) {
-                    Cell currentCell = cellIterator.next();
-
-                    String columnName = columnNames.get(columnIndex);
-
-                    switch (currentCell.getCellType()) {
-                        case STRING:
-                            jsonObject.put(columnName, currentCell.getStringCellValue());
-                            break;
-                        case NUMERIC:
-                            if (DateUtil.isCellDateFormatted(currentCell)) {
-                                jsonObject.put(columnName, currentCell.getDateCellValue());
-                            } else {
-                                jsonObject.put(columnName, currentCell.getNumericCellValue());
-                            }
-                            break;
-                        case BOOLEAN:
-                            jsonObject.put(columnName, currentCell.getBooleanCellValue());
-                            break;
-                        case BLANK:
-                            jsonObject.put(columnName, "");
-                            break;
-                        default:
-                            jsonObject.put(columnName, "");
-                    }
-
-                    columnIndex++;
-                }
-
-                jsonArray.put(jsonObject);
-                jsonArray.put("");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            return jsonArray;
         }
-
-        return jsonArray;
     }
+    public JSONArray csvToJson(MultipartFile csvFile) throws IOException {
+        try (Reader reader = new InputStreamReader(csvFile.getInputStream());
+             CSVParser csvParser = CSVFormat.DEFAULT.withHeader().parse(reader)) {
 
-    public JSONArray csvToJson(String filePath) throws IOException {
-        JSONArray jsonArray = new JSONArray();
-
-        try (Reader reader = new FileReader(filePath);
-             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader())) {
-
-            Map<String, Integer> headerMap = csvParser.getHeaderMap();
-
-            for (CSVRecord csvRecord : csvParser) {
-                JSONObject jsonObject = getJsonObject(csvRecord, headerMap);
-                jsonArray.put(jsonObject);
-            }
-        }
-        return jsonArray;
-    }
-
-    private static JSONObject getJsonObject(CSVRecord csvRecord, Map<String, Integer> headerMap) {
-        JSONObject jsonObject = new JSONObject();
-
-        for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
-            String header = entry.getKey();
-            int columnIndex = entry.getValue();
-            String value = csvRecord.get(columnIndex);
+            List<Map<String, String>> records = csvParser.getRecords().stream()
+                    .map(CSVRecord::toMap)
+                    .collect(Collectors.toList());
             try {
-                jsonObject.put(header, value);
+                return new JSONArray(objectMapper.writeValueAsString(records));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
         }
-        return jsonObject;
     }
 }

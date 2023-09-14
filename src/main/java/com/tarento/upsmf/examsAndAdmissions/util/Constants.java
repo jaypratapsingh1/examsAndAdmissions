@@ -149,4 +149,7 @@ public class Constants {
 
     public static final List<String> USER_DEFAULT_FIELDS = Collections
             .unmodifiableList(Arrays.asList(UUID, FIRST_NAME, EMAIL));
+
+    public static final String CSV = "csv";
+    public static final String EXCEL = "excel";
 }
