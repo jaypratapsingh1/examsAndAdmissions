@@ -13,14 +13,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 @Component
 public class RedisUtil {
 
-    public static final String ROLES_CAMELCASE = "Roles";
-    public static final String ROLES_LOWERCASE = "roles";
+    public static final String ROLES_CAMELCASE = "Role";
+    public static final String ROLES_LOWERCASE = "role";
     @Resource(name="redisTemplate")
     private HashOperations<String, Integer, User> hashOperations;
 
@@ -45,11 +46,11 @@ public class RedisUtil {
         if(id == null || id.isBlank()) {
             throw new RuntimeException("Invalid Request");
         }
-        // check in redis
-        boolean keyExists = hashOperations.getOperations().hasKey(id);
+        // TODO check in redis
+        /*boolean keyExists = hashOperations.getOperations().hasKey(id);
         if(keyExists) {
             return hashOperations.get(id, userRedisHashKey);
-        }
+        }*/
         ObjectNode request = mapper.createObjectNode();
         ObjectNode root = mapper.createObjectNode();
         root.put("userName", id);
@@ -60,12 +61,13 @@ public class RedisUtil {
             restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
             ResponseEntity<String> response = restTemplate.exchange(
                     userInfoUrl, HttpMethod.POST,
-                    new HttpEntity<>(root, headers), String.class);
+                    new HttpEntity<>(request, headers), String.class);
             if (response.getStatusCode() == HttpStatus.OK) {
                 JsonNode responseBody = mapper.readTree(response.getBody());
                 User user = mapper.treeToValue(responseBody, User.class);
                 if(user != null) {
-                    hashOperations.put(user.getId(), Integer.valueOf(userRedisHashKey), user);
+                    // todo enable later
+                    //hashOperations.put(user.getId(), Integer.valueOf(userRedisHashKey), user);
                     return user;
                 }
             }
@@ -82,7 +84,7 @@ public class RedisUtil {
      * @return
      */
     public List<String> getRolesByUserId(String id) {
-        List<String> roles = Collections.emptyList();
+        List<String> roles = new ArrayList<>();
         User user = getUserById(id);
         if(user != null) {
             if(user.getAttributes() != null && !user.getAttributes().isEmpty()) {

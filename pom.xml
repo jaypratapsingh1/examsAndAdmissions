@@ -14,6 +14,7 @@
     <description>Module for examination purpose</description>
     <properties>
         <java.version>11</java.version>
+        <jedis.version>3.9.0</jedis.version>
     </properties>
     <dependencies>
         <dependency>
@@ -84,6 +85,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${jedis.version}</version>
         </dependency>
         <dependency>
             <groupId>org.sunbird</groupId>

@@ -23,7 +23,7 @@ import java.util.Map;
 public class AccessTokenValidator {
 
 	@Autowired
-	private static ObjectMapper mapper;
+	private ObjectMapper mapper;
 
 	@Autowired
 	private RestTemplate restTemplate;
@@ -47,7 +47,7 @@ public class AccessTokenValidator {
 		String userId = Constants.Parameters.UNAUTHORIZED;
 		try {
 			Map<String, Object> payload = validateToken(token, checkActive);
-			log.debug(" request interceptor payload", payload);
+			log.debug(" request interceptor payload - {}", payload);
 			if (!CollectionUtils.isEmpty(payload) && checkIss((String) payload.get(Constants.Parameters.ISS))) {
 				userId = (String) payload.get(Constants.Parameters.SUB);
 				if (StringUtils.isNotBlank(userId)) {
@@ -89,7 +89,7 @@ public class AccessTokenValidator {
 	 * @return Map<String, Object>
 	 * @throws Exception
 	 */
-	private static Map<String, Object> validateToken(String token, boolean checkActive) throws Exception {
+	private Map<String, Object> validateToken(String token, boolean checkActive) throws Exception {
 		String[] tokenElements = token.split("\\.");
 		String header = tokenElements[0];
 		System.out.println("header : "+header);

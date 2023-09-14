@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import com.tarento.upsmf.examsAndAdmissions.util.ResponseCode;
 
 @Component
+@Slf4j
 public class RequestInterceptor extends BaseController implements HandlerInterceptor {
 
 	@Autowired
@@ -24,6 +26,10 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 		if(request.getRequestURI().endsWith("login")) {
+			return Boolean.TRUE;
+		}
+		log.info("Request type - {}", request.getMethod());
+		if(request.getMethod().equalsIgnoreCase("options")){
 			return Boolean.TRUE;
 		}
 		// read auth token from header
