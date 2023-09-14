@@ -13,7 +13,7 @@ import java.util.Map;
 @ToString
 public class UserResponseDto implements Serializable {
 
-    private Long id;
+    private String id;
 
     private String keycloakId;
 

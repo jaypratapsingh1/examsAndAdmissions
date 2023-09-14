@@ -1,14 +1,18 @@
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
+import com.tarento.upsmf.examsAndAdmissions.model.Department;
 import com.tarento.upsmf.examsAndAdmissions.model.User;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.CreateUserDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.UserCredentials;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.UserResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.IntegrationService;
+import com.tarento.upsmf.examsAndAdmissions.util.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,13 +21,13 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
 public class IntegrationServiceImpl implements IntegrationService {
+
+    public static final String ROLE = "role";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -37,11 +41,17 @@ public class IntegrationServiceImpl implements IntegrationService {
     @Value("${api.user.loginUserUrl}")
     private String loginUserUrl;
 
+    @Value("${api.user.createUrl}")
+    private String createUserUrl;
+
     @Value("${api.user.details}")
     private String userInfoUrl;
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
 
     private ResponseEntity<String> getUserDetailsFromKeycloak(ResponseEntity response, ObjectMapper mapper) throws Exception {
@@ -194,6 +204,164 @@ public class IntegrationServiceImpl implements IntegrationService {
         if (userCredentials == null) {
             throw new InvalidRequestException("Invalid Request");
         }
+    }
+
+    @Override
+    public ResponseEntity getRolesById(String id) {
+        try {
+            List<String> roles = redisUtil.getRolesByUserId(id);
+            ObjectNode objectNode = mapper.createObjectNode();
+            if (roles != null && !roles.isEmpty()) {
+                objectNode.put("response", mapper.writeValueAsString(roles));
+                return ResponseEntity.ok().body(mapper.writeValueAsString(objectNode));
+            }
+            objectNode.put("response", mapper.writeValueAsString(Collections.EMPTY_LIST));
+            return ResponseEntity.ok().body(objectNode);
+        } catch (Exception e) {
+            log.error("Error in processing request", e);
+            return ResponseEntity.internalServerError().body("Unable to get roles.");
+        }
+    }
+
+    @Override
+    public ResponseEntity<User> createUser(CreateUserDto user) throws Exception {
+        // check for department
+        String module = user.getAttributes().get("module");
+        if (module != null) {
+            user.getAttributes().put("module", module);
+        } else {
+            user.getAttributes().put("module", "exams");
+        }
+        String departmentName = user.getAttributes().get("departmentName");
+        List<Department> departmentList = new ArrayList<>();
+        if (departmentName != null) {
+            departmentList = Department.getById(Integer.valueOf(departmentName));
+            if (departmentList != null && !departmentList.isEmpty()) {
+                user.getAttributes().put("departmentName", departmentList.get(0).getCode());
+            }
+        }
+        String generatePassword = validateAndCreateDefaultPassword(user);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        JsonNode jsonNodeObject = mapper.convertValue(user, JsonNode.class);
+        JsonNode root = mapper.createObjectNode();
+        ((ObjectNode) root).put("request", jsonNodeObject);
+        log.info("Create user Request - {}", root);
+        ResponseEntity response = restTemplate.exchange(createUserUrl, HttpMethod.POST,
+                new HttpEntity<>(root, headers), String.class);
+        log.info("Create user Response - {}", response);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            String userContent = response.getBody().toString();
+            JsonNode responseNode = null;
+            try {
+                responseNode = mapper.readTree(userContent);
+            } catch (JsonParseException jp) {
+                log.error("Error while parsing success response", jp);
+            }
+            if (responseNode != null) {
+                if (responseNode.has("errorMessage")) {
+                    throw new RuntimeException(responseNode.get("errorMessage").textValue());
+                }
+            }
+            ObjectNode requestNode = mapper.createObjectNode();
+            requestNode.put("userName", userContent);
+            JsonNode payload = requestNode;
+            JsonNode payloadRoot = mapper.createObjectNode();
+            ((ObjectNode) payloadRoot).put("request", payload);
+            ResponseEntity<String> getUsersResponse = searchUsers(payloadRoot);
+            if (getUsersResponse.getStatusCode() == HttpStatus.OK) {
+                String getUsersResponseBody = getUsersResponse.getBody();
+                JsonNode getUsersJsonNode = mapper.readTree(getUsersResponseBody);
+                if (getUsersJsonNode.size() > 0) {
+                    JsonNode userContentData = getUsersJsonNode;
+                    User newUser = createUserWithApiResponse(userContentData);
+                    return new ResponseEntity<>(newUser, HttpStatus.OK);
+                }
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            } else {
+                // Handle error cases here
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String validateAndCreateDefaultPassword(CreateUserDto user) {
+        if (user != null) {
+            if (user.getCredentials() != null && !user.getCredentials().isEmpty()) {
+                boolean autoCreate = true;
+                String existingPassword = null;
+                for (UserCredentials credentials : user.getCredentials()) {
+                    if (credentials.getType() != null && credentials.getType().equalsIgnoreCase("password")) {
+                        if (credentials.getValue() != null && !credentials.getValue().isBlank()) {
+                            autoCreate = false;
+                            existingPassword = credentials.getValue();
+                        }
+                    }
+                }
+                if (autoCreate) {
+                    return generatePassword(user);
+                }
+                return existingPassword;
+            } else {
+                // generate random password and set in user
+                return generatePassword(user);
+            }
+        }
+        throw new RuntimeException("Error while generating password");
+    }
+
+    private String generatePassword(CreateUserDto user) {
+        String randomPassword = generateRandomPassword();
+        UserCredentials userCredential = UserCredentials.builder().type("password").value(randomPassword).temporary(false).build();
+        user.setCredentials(Collections.singletonList(userCredential));
+        return randomPassword;
+    }
+
+    private String generateRandomPassword() {
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+        String generatedString = random.ints(leftLimit, rightLimit + 1)
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+        log.debug("random password - {}", generatedString);
+        return generatedString;
+    }
+
+    private User createUserWithApiResponse(JsonNode userContent) throws Exception {
+        List<String> rolesArray = new ArrayList<>();
+        List<String> departmentArray = new ArrayList<>();
+
+        JsonNode rolesNode = userContent.path("attributes").path(ROLE);
+        JsonNode departmentNode = userContent.path("attributes").path("departmentName");
+        if (rolesNode.isArray()) {
+            for (int i = 0; i < rolesNode.size(); i++) {
+                rolesArray.add(rolesNode.get(i).asText());
+            }
+        }
+
+        if (userContent.path("attributes").has("departmentName") && departmentNode.isArray() && !departmentNode.isEmpty()) {
+            for (int i = 0; i < departmentNode.size(); i++) {
+                departmentArray.add(departmentNode.get(i).asText());
+            }
+        }
+
+        return User.builder()
+                .id(userContent.path("id").asText())
+                .firstName(userContent.path("firstName").asText())
+                .lastName(userContent.path("lastName").asText())
+                .username(userContent.path("username").asText())
+                .phoneNumber(userContent.path("attributes").path("phoneNumber").get(0).asText())
+                .email(userContent.path("email").asText())
+                .emailVerified(userContent.path("emailVerified").asBoolean())
+                .status(userContent.path("enabled").asInt())
+                .roles(rolesArray)
+                .departments(departmentArray)
+                .build();
 
     }
 }
