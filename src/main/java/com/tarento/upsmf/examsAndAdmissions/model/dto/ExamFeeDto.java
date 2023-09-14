@@ -25,6 +25,8 @@ public class ExamFeeDto implements Serializable {
 
     private PayerType payerType;
 
+    private String createdBy;
+
     public enum PayerType {
         INSTITUTE
     }

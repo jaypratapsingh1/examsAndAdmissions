@@ -1,6 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import lombok.*;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @ToString
+@RedisHash("User")
 public class User {
 
     private String id;

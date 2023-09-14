@@ -1,11 +1,13 @@
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeException;
-import com.tarento.upsmf.examsAndAdmissions.model.MandatoryFields;
-import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectRequest;
-import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectResponse;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamFeeRepository;
+import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
+import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +47,18 @@ public class FeeServiceImpl implements FeeService {
     @Value("${payment.initiate.fee.payer.id}")
     private String payerId;
 
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Autowired
+    private ExamFeeRepository examFeeRepository;
+
+    @Autowired
+    private ExamCycleService examCycleService;
+
+    @Autowired
+    private InstituteService instituteService;
+
     /**
      * API to save and return payment redirect URL
      *
@@ -67,11 +81,27 @@ public class FeeServiceImpl implements FeeService {
         // save details
         if(response.getStatusCode() == HttpStatus.OK) {
             // save details
+            saveExamFee(referenceNumber, examFeeDto);
             // send response
             return PaymentRedirectResponse.builder().redirectUrl(response.getBody().getRedirectUrl()).referenceNo(referenceNumber).build();
         }
         // return error
         throw new ExamFeeException("Payment failed");
+    }
+
+    private void saveExamFee(String referenceNumber, ExamFeeDto examFeeDto) {
+        ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
+        Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
+        ExamFee examFee = ExamFee.builder()
+                .examCycle(examCycleById)
+                .amount(examFeeDto.getAmount())
+                .referenceNo(referenceNumber)
+                .createdBy(examFeeDto.getCreatedBy())
+                .modifiedBy(examFeeDto.getCreatedBy())
+                .institute(instituteById)
+                .status(ExamFee.Status.INITIATED)
+                .build();
+        examFeeRepository.save(examFee);
     }
 
     private ResponseEntity<PaymentRedirectResponse> getPaymentRedirectResponse(ExamFeeDto examFeeDto, String referenceNumber) {
@@ -128,6 +158,14 @@ public class FeeServiceImpl implements FeeService {
         }
         if(examFeeDto.getPayerType() == null) {
             throw new ExamFeeException("Missing Payer Type Information");
+        }
+        ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
+        if(examCycleById == null) {
+            throw new ExamFeeException("Invalid Exam cycle id");
+        }
+        Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
+        if(instituteById == null) {
+            throw new ExamFeeException("Invalid institute id");
         }
     }
 }
