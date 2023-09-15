@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment,Integer> {
     @Query(value = "SELECT * FROM fee_details f LEFT JOIN exam_details e ON f.fee_id = e.fee_id WHERE f.fee_id = :id", nativeQuery = true)
     Optional<Payment> findByIdWithExamsNative(@Param("id") Integer id);
+    Payment findByEnrollmentNumber(String enrollmentNumber);
 }

@@ -17,7 +17,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +41,8 @@ public class StudentService {
     private final CourseRepository courseRepository;
     private final InstituteRepository instituteRepository;
     private final ModelMapper modelMapper;
+    @Autowired
+    private EntityManager entityManager;
 
     @Value("${file.storage.path}")
     private String storagePath;
@@ -101,14 +108,38 @@ public class StudentService {
         student.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
         student.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
         student.setVerificationStatus(VerificationStatus.PENDING);
+        student.setVerificationDate(LocalDate.now());
 
         return studentRepository.save(student);
     }
     private String generateProvisionalNumber(Student student) {
         return student.getCourse().getCourseCode() + "-" + UUID.randomUUID().toString();
     }
-    public List<Student> getAllStudents() {
-        return (List<Student>) studentRepository.findAll();
+    public List<Student> getFilteredStudents(Long instituteId, Long courseId, String academicYear, VerificationStatus verificationStatus) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
+        Root<Student> studentRoot = criteriaQuery.from(Student.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (instituteId != null) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("institute").get("id"), instituteId));
+        }
+        if (courseId != null) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
+        }
+        if (academicYear != null && !academicYear.trim().isEmpty()) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
+        } else if (academicYear != null) {
+            predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+        }
+        if (verificationStatus != null) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), verificationStatus));
+        }
+
+        criteriaQuery.where(predicates.toArray(new Predicate[0]));
+
+        return entityManager.createQuery(criteriaQuery).getResultList();
     }
 
     public Optional<Student> getStudentById(Long id) {
@@ -139,7 +170,7 @@ public class StudentService {
         }
 
         modelMapper.map(studentDto, existingStudent);
-
+        existingStudent.setVerificationDate(LocalDate.now());
         return studentRepository.save(existingStudent);
     }
     public List<Student> updateStudentStatusToClosed() {
@@ -157,9 +188,30 @@ public class StudentService {
 
         return studentRepository.saveAll(studentsToUpdate);
     }
-    public List<Student> getStudentsPendingForMoreThan21Days() {
+    public List<Student> getStudentsPendingForMoreThan21Days(Long courseId, String academicYear) {
         LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
-        return studentRepository.findByEnrollmentDateBeforeAndVerificationStatus(twentyOneDaysAgo, VerificationStatus.PENDING);
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
+        Root<Student> studentRoot = criteriaQuery.from(Student.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        // Adding the condition for students pending for more than 21 days
+        predicates.add(criteriaBuilder.lessThanOrEqualTo(studentRoot.get("enrollmentDate"), twentyOneDaysAgo));
+        predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), VerificationStatus.PENDING));
+
+        if (courseId != null) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
+        }
+        if (academicYear != null && !academicYear.trim().isEmpty()) {
+            predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
+        } else if (academicYear != null) {
+            predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+        }
+
+        criteriaQuery.where(predicates.toArray(new Predicate[0]));
+
+        return entityManager.createQuery(criteriaQuery).getResultList();
     }
 
     private void deleteFile(String filePath) {
@@ -199,11 +251,11 @@ public class StudentService {
         student.setVerificationStatus(status);
         return studentRepository.save(student);
     }
-    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks, LocalDate verificationDate) {
+    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks) {
         Student student = this.findById(studentId);
         student.setVerificationStatus(status);
         student.setAdminRemarks(remarks);
-        student.setVerificationDate(verificationDate);
+        student.setVerificationDate(LocalDate.now());
 
         if (status == VerificationStatus.VERIFIED) {
             String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getCenterCode() + student.getId();

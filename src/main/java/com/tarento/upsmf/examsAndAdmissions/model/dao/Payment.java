@@ -17,7 +17,7 @@ import java.util.List;
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer feeId;
+    private Long feeId;
 
     private String fullName;
 
@@ -27,4 +27,5 @@ public class Payment {
 
     private Integer noOfExams;
     private Integer feeAmount;
+    private String enrollmentNumber;
 }

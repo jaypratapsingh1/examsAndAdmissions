@@ -17,4 +17,6 @@ public interface ExamService {
     public ResponseDto deleteExam(Long id);
 
     public ResponseDto restoreExam(Long id);
+
+    void publishExamResults(Long examId);
 }

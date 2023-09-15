@@ -156,4 +156,9 @@ public class ExamServiceImpl implements ExamService {
         }
         return response;
     }
+    public void publishExamResults(Long examId) {
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new RuntimeException("Exam not found"));
+        exam.setIsResultsPublished(true);
+        examRepository.save(exam);
+    }
 }
