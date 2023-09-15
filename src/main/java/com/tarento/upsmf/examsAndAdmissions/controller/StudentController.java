@@ -34,16 +34,21 @@ public class StudentController {
             return ResponseEntity.badRequest().build();
         }
     }
+    @GetMapping("/find")
+    public ResponseEntity<List<Student>> getFilteredStudents(
+            @RequestParam(required = false) Long instituteId,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String academicYear,
+            @RequestParam(required = false) VerificationStatus verificationStatus) {
 
-    @GetMapping("/findAll")
-    public ResponseEntity<List<Student>> getAllStudents() {
-        List<Student> students = studentService.getAllStudents();
+        List<Student> students = studentService.getFilteredStudents(instituteId, courseId, academicYear, verificationStatus);
         if (students != null && !students.isEmpty()) {
             return ResponseEntity.ok(students);
         } else {
             return ResponseEntity.noContent().build();
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Student> getStudentById(@PathVariable Long id) {
@@ -72,9 +77,10 @@ public class StudentController {
     }
 
     @GetMapping("/pendingFor21Days")
-    public ResponseEntity<?> getStudentsPendingFor21Days() {
+    public ResponseEntity<?> getStudentsPendingFor21Days(@RequestParam(required = false) Long courseId,
+                                                         @RequestParam(required = false) String academicYear) {
         try {
-            List<Student> students = studentService.getStudentsPendingForMoreThan21Days();
+            List<Student> students = studentService.getStudentsPendingForMoreThan21Days(courseId, academicYear);
             return ResponseEntity.ok(students);
         } catch (Exception e) {
             log.error("Error fetching students pending for 21 days", e);
@@ -92,8 +98,8 @@ public class StudentController {
     }
 
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks, @RequestParam("verificationDate") LocalDate verificationDate) {
-        Student updatedStudent = studentService.verifyStudent(studentId, status, remarks, verificationDate);
+    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks) {
+        Student updatedStudent = studentService.verifyStudent(studentId, status, remarks);
         return ResponseEntity.ok(updatedStudent);
     }
     @GetMapping("/pendingVerification")

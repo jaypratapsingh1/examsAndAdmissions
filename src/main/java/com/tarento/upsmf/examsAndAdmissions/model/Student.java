@@ -54,11 +54,13 @@ public class Student {
     private String intermediateYearOfPassing;
     @Enumerated(EnumType.STRING)
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+    @Column(unique = true)
     private String provisionalEnrollmentNumber;
     private String adminRemarks;
     private LocalDate enrollmentDate;
     private LocalDate verificationDate;
     private boolean requiresRevision;
+    @Column(unique = true)
     private String enrollmentNumber;
     @ManyToOne
     @JoinColumn(name = "course_id")
@@ -70,4 +72,5 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "exam_center_id")
     private Institute examCenter;  // This is where the student will take the exam
+    private String academicYear;
 }

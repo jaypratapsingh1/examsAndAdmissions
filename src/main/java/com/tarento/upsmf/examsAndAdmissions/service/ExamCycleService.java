@@ -10,6 +10,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -119,6 +120,11 @@ public class ExamCycleService {
         ExamCycle examCycle = repository.findById(id).orElse(null);
         if (examCycle != null) {
             for (Exam exam : exams) {
+                Optional<Exam> existingExam = examRepository.findByExamNameAndExamDateAndStartTimeAndEndTime(
+                        exam.getExamName(), exam.getExamDate(), exam.getStartTime(), exam.getEndTime());
+                if (existingExam.isPresent()) {
+                    throw new RuntimeException("Exam already exists with same details: " + exam.getExamName());
+                }
                 // Fetch the course using courseId
                 Course course = courseRepository.findById(exam.getCourse().getId()).orElse(null);
                 if (course == null) {
