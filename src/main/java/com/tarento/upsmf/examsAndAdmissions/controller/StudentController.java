@@ -1,9 +1,11 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -88,12 +90,12 @@ public class StudentController {
         }
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
-        try {
-            studentService.deleteStudent(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<String> deleteStudent(@PathVariable Long id) {
+        ResponseDto response = studentService.deleteStudent(id);
+        if (response.getResponseCode() == HttpStatus.OK) {
+            return ResponseEntity.ok(response.get(Constants.RESPONSE).toString());
+        } else {
+            return ResponseEntity.status(response.getResponseCode()).body(response.get(Constants.RESPONSE).toString());
         }
     }
 
