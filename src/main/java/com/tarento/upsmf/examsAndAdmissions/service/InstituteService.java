@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.exception.DuplicateInstituteException;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
@@ -17,16 +18,7 @@ public class InstituteService {
     public void updateVerificationStatus(ApprovalRejectionDTO dto) {
         Institute institute = instituteRepository.findById(dto.getInstituteId())
                 .orElseThrow(() -> new EntityNotFoundException("Institute not found"));
-
-        if ("approve".equalsIgnoreCase(dto.getAction())) {
-            institute.setCctvVerified(true);
-        } else if ("reject".equalsIgnoreCase(dto.getAction())) {
-            institute.setCctvVerified(false);
-        }
-
-        institute.setIpAddress(dto.getIpAddress());
-        institute.setRemarks(dto.getRemarks());
-
+        institute.handleAction(dto.getAction(), dto.getIpAddress(), dto.getRemarks());
         instituteRepository.save(institute);
     }
 
@@ -40,9 +32,29 @@ public class InstituteService {
 
     public Institute getInstituteById(Long instituteId) {
         Optional<Institute> optionalInstitute = instituteRepository.findById(instituteId);
-        if(optionalInstitute.isPresent()) {
-            return optionalInstitute.get();
+        return optionalInstitute.orElse(null);
+    }
+
+    public Institute createInstitute(Institute institute) {
+        // Validate for existing institute
+        Institute existingInstitute = instituteRepository.findByInstituteCode(institute.getInstituteCode());
+
+        if (existingInstitute != null) {
+            throw new DuplicateInstituteException("An institute with the same code already exists.");
         }
-        return null;
+        return instituteRepository.save(institute);
+    }
+
+    public Institute updateInstitute(Long id, Institute updatedInstitute) {
+
+        Institute existingInstitute = instituteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Institute not found with ID: " + id));
+
+        // Update the properties of the existing institute with the provided values
+        existingInstitute.setInstituteName(updatedInstitute.getInstituteName());
+        existingInstitute.setAddress(updatedInstitute.getAddress());
+        existingInstitute.setEmail(updatedInstitute.getEmail());
+
+        return instituteRepository.save(existingInstitute);
     }
 }
