@@ -32,8 +32,8 @@ public class QuestionPaperController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ResponseDto> getAllQuestionPapers() {
-        ResponseDto response = questionPaperService.getAllQuestionPapers();
+    public ResponseEntity<ResponseDto> getAllQuestionPapers(@RequestParam(required = true) Long examCycleId, Long examId) {
+        ResponseDto response = questionPaperService.getAllQuestionPapers(examCycleId, examId);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 

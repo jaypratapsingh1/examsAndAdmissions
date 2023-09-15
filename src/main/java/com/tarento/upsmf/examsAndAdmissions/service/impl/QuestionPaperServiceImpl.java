@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
     private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
     @Override
-    public ResponseDto getAllQuestionPapers() {
+    public ResponseDto getAllQuestionPapers(Long examCycleId, Long examId) {
         ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_GET_ALL);
         logger.info("Fetching all Question papers...");
         List<QuestionPaper> questionPapers = questionPaperRepository.findAll();
@@ -30,9 +31,24 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
             response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
             response.setResponseCode(HttpStatus.NOT_FOUND);
         } else {
-            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, questionPapers);
-            response.setResponseCode(HttpStatus.OK);
+            Boolean filterFlag = false;
+            List<QuestionPaper> questionPaperList = new ArrayList<>();
+            for(int i=0; i<questionPapers.size(); i++){
+                QuestionPaper questionPaper = questionPapers.get(i);
+                if(questionPaper.getExamCycleId().equals(examCycleId) && questionPaper.getExam().getId().equals(examId)){
+                    filterFlag = true;
+                    questionPaperList.add(questionPaper);
+                }else {
+                    response.put(Constants.MESSAGE, "Data is not there related to filters applied");
+                    response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
+                    response.setResponseCode(HttpStatus.NOT_FOUND);
+                }
+            }
+            if(filterFlag){
+                response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+                response.put(Constants.RESPONSE, questionPaperList);
+                response.setResponseCode(HttpStatus.OK);
+            }
         }
         return response;
     }
