@@ -2,6 +2,8 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
@@ -29,10 +31,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @PropertySource("classpath:application.properties")
@@ -237,6 +237,7 @@ public class StudentService {
 
         modelMapper.map(studentDto, existingStudent);
         existingStudent.setVerificationDate(LocalDate.now());
+        existingStudent.setVerificationStatus(VerificationStatus.PENDING);
         return studentRepository.save(existingStudent);
     }
 

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,11 +23,13 @@ public class ExamServiceImpl implements ExamService {
     private ExamRepository examRepository;
 
     @Override
-    public ResponseDto createExam(Exam exam) {
+    public ResponseDto createExam(Exam exam, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_ADD);
         try {
             logger.info("Creating new Exam: {}", exam);
             exam.setObsolete(0);
+            exam.setCreatedOn(LocalDateTime.now());
+            exam.setCreatedBy(userId);
             examRepository.save(exam);
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, "Successfully created exam");
@@ -103,7 +106,7 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
-    public ResponseDto updateExam(Long id, Exam exam) {
+    public ResponseDto updateExam(Long id, Exam exam, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_UPDATE);
         logger.info("Updating Exam with ID: {}", id);
         Exam existingExam = examRepository.findById(id).orElse(null);
@@ -114,8 +117,8 @@ public class ExamServiceImpl implements ExamService {
             existingExam.setStartTime(exam.getStartTime());
             existingExam.setEndTime(exam.getEndTime());
             // Update auditing metadata from the payload
-            existingExam.setModifiedBy(exam.getModifiedBy());
-            existingExam.setModifiedOn(exam.getModifiedOn());
+            existingExam.setModifiedBy(userId);
+            existingExam.setModifiedOn(LocalDateTime.now());
 
             // Soft delete or status flag, if you want to allow it from the payload:
             existingExam.setObsolete(exam.getObsolete());

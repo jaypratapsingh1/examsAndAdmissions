@@ -2,7 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
 import com.tarento.upsmf.examsAndAdmissions.model.AuditTrail;
 import com.tarento.upsmf.examsAndAdmissions.model.DocumentVerification;
-import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.repository.AuditTrailRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DocumentVerificationService;
 import com.tarento.upsmf.examsAndAdmissions.repository.DocumentVerificationRepository;

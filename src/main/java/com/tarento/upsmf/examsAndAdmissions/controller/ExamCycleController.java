@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +19,9 @@ public class ExamCycleController {
     private ExamCycleService service;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createExamCycle(@RequestBody ExamCycle examCycle) {
+    public ResponseEntity<?> createExamCycle(@RequestBody ExamCycle examCycle, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
         try {
-            ExamCycle createdExamCycle = service.createExamCycle(examCycle);
+            ExamCycle createdExamCycle = service.createExamCycle(examCycle,userId);
             return new ResponseEntity<>(createdExamCycle, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to create ExamCycle.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -53,9 +54,9 @@ public class ExamCycleController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateExamCycle(@PathVariable Long id, @RequestBody ExamCycle examCycle) {
+    public ResponseEntity<?> updateExamCycle(@PathVariable Long id, @RequestBody ExamCycle examCycle, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
         try {
-            ExamCycle updatedExamCycle = service.updateExamCycle(id, examCycle);
+            ExamCycle updatedExamCycle = service.updateExamCycle(id, examCycle, userId);
             if (updatedExamCycle == null) {
                 return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
             }
@@ -86,13 +87,13 @@ public class ExamCycleController {
     }
 
     @PostMapping("/{id}/addExam")
-    public ResponseEntity<?> addExamToCycle(@PathVariable Long id, @RequestBody List<Exam> exam) {
+    public ResponseEntity<?> addExamToCycle(@PathVariable Long id, @RequestBody List<Exam> exams, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
         try {
-            ExamCycle examCycle = service.addExamsToCycle(id, exam);
+            ExamCycle examCycle = service.addExamsToCycle(id, exams, userId);
             if (examCycle == null) {
                 return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(exam, HttpStatus.CREATED);
+            return new ResponseEntity<>(exams, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to add exam to ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -107,6 +108,18 @@ public class ExamCycleController {
             return new ResponseEntity<>(exam, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to remove exam from ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PutMapping("/{id}/publish")
+    public ResponseEntity<?> publishExamCycle(@PathVariable Long id) {
+        try {
+            ExamCycle publishedExamCycle = service.publishExamCycle(id);
+            if (publishedExamCycle == null) {
+                return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(publishedExamCycle, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to publish ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
