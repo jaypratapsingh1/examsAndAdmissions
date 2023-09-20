@@ -1,6 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -20,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,7 +31,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 @Service
-public class CsvDataImporterService {
+public class DataImporterService {
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -96,4 +100,48 @@ public class CsvDataImporterService {
             }
         }
     }
+
+    public <T> List<T> convertJsonToDtoList(JSONArray jsonArray, Class<T> dtoClass) {
+        try {
+            System.out.println("JSON data before deserialization: " + jsonArray.toString());
+            List<T> dtoList = objectMapper.readValue(jsonArray.toString(), objectMapper.getTypeFactory().constructCollectionType(List.class, dtoClass));
+            System.out.println("DTOs after deserialization: " + dtoList);
+            return dtoList;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert JSON to DTO list: " + e.getMessage(), e);
+        }
+    }
+
+    public Boolean saveDtoListToPostgres(List<ExamUploadData> dtoList, ExamEntityRepository repository) {
+        try {
+            List<ExamUploadData> entityList = convertDtoListToEntities(dtoList);
+            repository.saveAll(entityList);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    private List<ExamUploadData> convertDtoListToEntities(List<ExamUploadData> dtoList) {
+        List<ExamUploadData> entityList = new ArrayList<>();
+
+        for (ExamUploadData dto : dtoList) {
+            ExamUploadData entity = new ExamUploadData();
+
+            // Map ExamUploadData fields to ExamEntity fields
+            entity.setExamcycleName(dto.getExamcycleName());
+            entity.setCourse(dto.getCourse());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            entity.setExamName(dto.getExamName());
+            entity.setDate(dto.getDate());
+            entity.setStartTime(dto.getStartTime());
+            entity.setEndTime(dto.getEndTime());
+            entity.setMaximumMarks(dto.getMaximumMarks());
+
+            entityList.add(entity);
+        }
+
+        return entityList;
+    }
+
 }

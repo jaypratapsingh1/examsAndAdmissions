@@ -2,13 +2,21 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
+import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
+import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/examCycle")
@@ -16,6 +24,11 @@ public class ExamCycleController {
 
     @Autowired
     private ExamCycleService service;
+    @Autowired
+    private DataImporterService dataImporterService;
+    @Autowired
+    ExamEntityRepository repository;
+
 
     @PostMapping("/create")
     public ResponseEntity<?> createExamCycle(@RequestBody ExamCycle examCycle) {
@@ -107,6 +120,39 @@ public class ExamCycleController {
             return new ResponseEntity<>(exam, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to remove exam from ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/bulkUpload")
+    public ResponseEntity<Map<String, Object>> processBulkExamUploads(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+        Map<String, Object> response = new HashMap<>();
+        JSONArray jsonArray = null;
+        Class<ExamUploadData> dtoClass = ExamUploadData.class;
+        try {
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    // Handle unsupported file type
+                    response.put("error", "Unsupported file type");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            List<ExamUploadData> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, ExamUploadData.class);
+            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, repository);
+
+            if (success) {
+                response.put("message", "File processed successfully.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "File processing failed.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+        } catch (Exception e) {
+            response.put("error", "An error occurred while processing the file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
