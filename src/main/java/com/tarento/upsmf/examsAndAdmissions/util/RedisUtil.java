@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -23,7 +22,7 @@ public class RedisUtil {
     public static final String ROLES_CAMELCASE = "Role";
     public static final String ROLES_LOWERCASE = "role";
     @Resource(name="redisTemplate")
-    private HashOperations<String, Integer, User> hashOperations;
+    private HashOperations<String, String, User> hashOperations;
 
     @Value("${api.user.details}")
     private String userInfoUrl;
@@ -46,11 +45,11 @@ public class RedisUtil {
         if(id == null || id.isBlank()) {
             throw new RuntimeException("Invalid Request");
         }
-        // TODO check in redis
-        /*boolean keyExists = hashOperations.getOperations().hasKey(id);
+        // check in redis
+        boolean keyExists = hashOperations.getOperations().hasKey(id);
         if(keyExists) {
-            return hashOperations.get(id, userRedisHashKey);
-        }*/
+            return hashOperations.get(userRedisHashKey, id);
+        }
         ObjectNode request = mapper.createObjectNode();
         ObjectNode root = mapper.createObjectNode();
         root.put("userName", id);
@@ -66,8 +65,7 @@ public class RedisUtil {
                 JsonNode responseBody = mapper.readTree(response.getBody());
                 User user = mapper.treeToValue(responseBody, User.class);
                 if(user != null) {
-                    // todo enable later
-                    //hashOperations.put(user.getId(), Integer.valueOf(userRedisHashKey), user);
+                    hashOperations.put(userRedisHashKey, user.getId(), user);
                     return user;
                 }
             }
