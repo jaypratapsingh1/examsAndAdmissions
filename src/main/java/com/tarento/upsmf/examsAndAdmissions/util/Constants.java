@@ -42,6 +42,12 @@ public class Constants {
     public static final String API_QUESTION_PAPER_DELETE = "api.questionPaper.delete";
     public static final String API_QUESTION_PAPER_PREVIEW = "api.questionPaper.preview";
 
+    //InstituteCourseMapping
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_ALL = "api.instituteCourseMapping.get";
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_BY_ID = "api.instituteCourseMapping.getById";
+    public static final String API_INSTITUTE_COURSE_MAPPING_DELETE = "api.instituteCourseMapping.delete";
+    public static final String API_INSTITUTE_COURSE_MAPPING_CREATE = "api.instituteCourseMapping.create";
+
 
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
