@@ -8,6 +8,7 @@ import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.*;
 
 import java.util.List;
 
@@ -120,6 +121,21 @@ public class ExamCycleController {
             return new ResponseEntity<>(publishedExamCycle, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to publish ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/createExamCycleWithExams")
+    public ResponseEntity<?> createExamCycleWithExams(@RequestBody ExamCycleWithExamsDTO examCycleWithExamsDTO, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
+        try {
+            // Create the ExamCycle
+            ExamCycle createdExamCycle = service.createExamCycle(examCycleWithExamsDTO.getExamCycle(), userId);
+
+            // Add Exams to the ExamCycle
+            service.addExamsToCycle(createdExamCycle.getId(), examCycleWithExamsDTO.getExams(), userId);
+
+            return ResponseEntity.ok("ExamCycle with Exams created successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to create ExamCycle with Exams.");
         }
     }
 }
