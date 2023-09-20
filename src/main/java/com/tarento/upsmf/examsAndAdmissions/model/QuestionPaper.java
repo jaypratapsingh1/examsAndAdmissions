@@ -5,6 +5,7 @@ import lombok.*;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -20,6 +21,18 @@ public class QuestionPaper {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "exam_cycle", referencedColumnName = "id")
+    private ExamCycle examCycle;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "exam_id", referencedColumnName = "id")
+    private Exam exam;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "course_id", referencedColumnName = "id")
+    private Course course;
+
     @Column(name = "file_name")
     private String fileName;
 
@@ -28,6 +41,9 @@ public class QuestionPaper {
 
     @Column(name = "exam_date")
     private LocalDate examDate;
+
+    @Column(name = "exam_start_time")
+    private LocalTime examStartTime;
 
     @Column(name = "exam_cycle_name", nullable = false)
     private String examCycleName;
@@ -40,9 +56,6 @@ public class QuestionPaper {
 
     @Column(name = "course_name")
     private String courseName;
-
-    @Column(name = "file_path")
-    private String filePath;
 
     @Column(name = "created_by")
     private String createdBy;

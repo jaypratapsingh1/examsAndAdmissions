@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,7 +51,13 @@ public class ExamController {
         ResponseDto response = examService.restoreExam(id);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
-
-    // Add more endpoints and methods as needed
-
+/*    @PostMapping("/admin/publishResults/{examId}")
+    public ResponseEntity<String> publishExamResults(@PathVariable Long examId) {
+        try {
+            examService.publishExamResults(examId);
+            return ResponseEntity.ok("Exam results published successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error publishing results: " + e.getMessage());
+        }
+    }*/
 }

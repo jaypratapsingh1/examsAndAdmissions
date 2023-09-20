@@ -2,9 +2,10 @@ package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
-import com.tarento.upsmf.examsAndAdmissions.model.QuestionPaper;
-import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.DownloadDto;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.QuestionPaperRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.AttachmentService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -73,20 +74,29 @@ public class AttachmentServiceImpl implements AttachmentService {
     @Autowired
     private QuestionPaperRepository questionPaperRepository;
 
+    @Autowired
+    private ExamRepository examRepository;
+
+    @Autowired
+    private ExamCycleRepository examCycleRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
+
     @Override
-    public ResponseEntity<?> downloadQuestionPaper(DownloadDto downloadDto) {
-        LocalDate examDate = downloadDto.getExamDate();
-        LocalTime examTime = downloadDto.getExamStartingTime();
-        Long questionPaperId = downloadDto.getQuestionPaperId();
+    public ResponseEntity<?> downloadQuestionPaper(Long questionPaperId) {
         //Query to get gcpFileName
-        String fileName = jdbcTemplate.queryForObject(Constants.GCP_FILE_NAME_QUERY, new Object[]{questionPaperId}, String.class);
+        QuestionPaper questionPaperDetails = questionPaperRepository.findById(questionPaperId).orElse(null);
+        LocalDate examDate = questionPaperDetails.getExamDate();
+        LocalTime examTime = questionPaperDetails.getExamStartTime();
+        String fileName = questionPaperDetails.getGcpFileName();
         try {
-            Calendar currentCalendar = Calendar.getInstance();
+            LocalDate currentDate = LocalDate.now();
 
             // Check if the current date is the same as the exam date
-            if (currentCalendar.get(Calendar.YEAR) == examDate.getYear() &&
-                    currentCalendar.get(Calendar.MONTH) == examDate.getMonthValue() &&
-                    currentCalendar.get(Calendar.DAY_OF_MONTH) == examDate.getDayOfMonth()) {
+            if (currentDate.getYear() == examDate.getYear() &&
+                    currentDate.getMonthValue() == examDate.getMonthValue() &&
+                    currentDate.getDayOfMonth() == examDate.getDayOfMonth()) {
                 ZoneId zoneId = ZoneId.systemDefault();
                 ZonedDateTime currentTime = ZonedDateTime.now(zoneId);
                 LocalTime currentLocalTime = currentTime.toLocalTime();
@@ -103,13 +113,13 @@ public class AttachmentServiceImpl implements AttachmentService {
                         return ResponseEntity.ok().body("File url for downloading : " + blob.getMediaLink());
                     } else {
                         log.info("File not found in the bucket: " + fileName);
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File not found in the bucket");
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found in the bucket");
                     }
                 } else {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Institutes will not be allow to view the question paper on their portal 30 minutes before an exam");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Institutes will not be allow to view the question paper on their portal 30 minutes before an exam");
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Today is not the exam date.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Today is not the exam date.");
             }
         } catch (IOException e) {
             log.error("Failed to read the downloaded file: " + fileName + ", Exception: ", e);
@@ -140,7 +150,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     public ResponseDto getPreviewUrl(Long questionPaperId) {
         ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_PREVIEW);
         //Query to get gcpFileName
-        String fileName = jdbcTemplate.queryForObject(Constants.GCP_FILE_NAME_QUERY, new Object[]{questionPaperId}, String.class);
+        QuestionPaper questionPaperDetails = questionPaperRepository.findById(questionPaperId).orElse(null);
+        String fileName = questionPaperDetails.getGcpFileName();
         try {
             Blob blob = getBlob(fileName);
             if (blob != null) {
@@ -163,7 +174,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public ResponseDto upload(QuestionPaper questionPaper, String userId, MultipartFile file) {
+    public ResponseDto upload(QuestionPaper questionPaper, String createdBy, MultipartFile file) {
         ResponseDto response = new ResponseDto(Constants.API_USER_BULK_UPLOAD);
         Path filePath = null;
         try {
@@ -183,34 +194,51 @@ public class AttachmentServiceImpl implements AttachmentService {
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
             storage.create(blobInfo, new FileInputStream(filePath.toFile()));
 
+            //Get Details from other table
+            Long examCycleId = questionPaper.getExamCycleId();
+            Exam examDetails = examRepository.findByExamCycleIdAndObsolete(examCycleId, 0).orElse(null);
+            LocalDate examDate = examDetails.getExamDate();
+            String examName = examDetails.getExamName();
+            LocalTime examStartTime = examDetails.getStartTime();
+
+            ExamCycle examCycleDetails = examCycleRepository.findByIdAndObsolete(examCycleId, 0).orElse(null);
+            String examCycleName = examCycleDetails.getExamCycleName();
+            String courseId = examCycleDetails.getCourseId();
+
+            Course courseDetails = courseRepository.findByCourseCode(courseId);
+            String courseName = courseDetails.getCourseName();
+
             Map<String, Object> uploadedFile = new HashMap<>();
             uploadedFile.put(Constants.FILE_NAME, fileName);
             uploadedFile.put(Constants.GCP_FILE_NAME, gcpFileName);
-            uploadedFile.put(Constants.EXAM_CYCLE_ID, questionPaper.getExamCycleId());
-            uploadedFile.put(Constants.EXAM_CYCLE_NAME, questionPaper.getExamCycleName());
-            uploadedFile.put(Constants.EXAM_DATE, questionPaper.getExamDate());
-            uploadedFile.put(Constants.COURSE_NAME, questionPaper.getCourseName());
-            uploadedFile.put(Constants.EXAM_NAME, questionPaper.getExamName());
-            uploadedFile.put(Constants.FILE_PATH, filePath);
-            uploadedFile.put(Constants.CREATED_BY, userId);
+            uploadedFile.put(Constants.EXAM_CYCLE_ID, examCycleId);
+            uploadedFile.put(Constants.EXAM_CYCLE_NAME, examCycleName);
+            uploadedFile.put(Constants.EXAM_DATE, examDate);
+            uploadedFile.put(Constants.EXAM_START_TIME, examStartTime);
+            uploadedFile.put(Constants.COURSE_NAME, courseName);
+            uploadedFile.put(Constants.EXAM_NAME, examName);
+            uploadedFile.put(Constants.CREATED_BY, createdBy);
             uploadedFile.put(Constants.DATE_CREATED_ON, new Timestamp(System.currentTimeMillis()));
-            uploadedFile.put(Constants.MODIFIED_BY, userId);
+            uploadedFile.put(Constants.MODIFIED_BY, createdBy);
             uploadedFile.put(Constants.DATE_MODIFIED_ON, new Timestamp(System.currentTimeMillis()));
             uploadedFile.put(Constants.TOTAL_MARKS, totalMarks);
 
             QuestionPaper uploadData = new QuestionPaper();
+            uploadData.setExam(examDetails);
+            uploadData.setExamCycle(examCycleDetails);
+            uploadData.setCourse(courseDetails);
             uploadData.setFileName(fileName);
             uploadData.setGcpFileName(gcpFileName);
-            uploadData.setExamDate(questionPaper.getExamDate());
-            uploadData.setExamCycleId(questionPaper.getExamCycleId());
-            uploadData.setExamCycleName(questionPaper.getExamCycleName());
-            uploadData.setCourseName(questionPaper.getCourseName());
-            uploadData.setExamName(questionPaper.getExamName());
-            uploadData.setFilePath(filePath.toString());
+            uploadData.setExamDate(examDate);
+            uploadData.setExamStartTime(examStartTime);
+            uploadData.setExamCycleId(examCycleId);
+            uploadData.setExamCycleName(examCycleName);
+            uploadData.setCourseName(courseName);
+            uploadData.setExamName(examName);
             uploadData.setCreatedOn(new Timestamp(System.currentTimeMillis()));
             uploadData.setModifiedOn(new Timestamp(System.currentTimeMillis()));
-            uploadData.setCreatedBy(userId);
-            uploadData.setModifiedBy(userId);
+            uploadData.setCreatedBy(createdBy);
+            uploadData.setModifiedBy(createdBy);
             uploadData.setTotalMarks(totalMarks);
 
             questionPaperRepository.save(uploadData);
@@ -239,7 +267,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     public ResponseDto deleteQuestionPaper(Long id) {
         ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_DELETE);
         try {
-            String fileName = jdbcTemplate.queryForObject(Constants.GCP_FILE_NAME_QUERY, new Object[]{id}, String.class);
+            QuestionPaper questionPaperDetails = questionPaperRepository.findById(id).orElse(null);
+            String fileName = questionPaperDetails.getGcpFileName();
             ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
                     gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
 
