@@ -22,11 +22,6 @@ public class InstituteCourseMapping implements Serializable {
     @JoinColumn(name = "institute_id", referencedColumnName = "id")
     private Institute institute;
 
-//    @OneToMany(targetEntity = Course.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    @JoinColumn(name = "institute_id", referencedColumnName = "institute_id")
-//    @Fetch(value = FetchMode.SUBSELECT)
-//    private List<Course> courses;
-
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", referencedColumnName = "id")
     private Course course;
