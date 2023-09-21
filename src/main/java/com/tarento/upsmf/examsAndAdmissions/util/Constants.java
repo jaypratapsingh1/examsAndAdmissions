@@ -42,6 +42,24 @@ public class Constants {
     public static final String API_QUESTION_PAPER_DELETE = "api.questionPaper.delete";
     public static final String API_QUESTION_PAPER_PREVIEW = "api.questionPaper.preview";
 
+    //Subject
+    public static final String API_SUBJECT_GET_ALL = "api.subject.get";
+    public static final String API_SUBJECT_GET_BY_ID = "api.subject.getById";
+    public static final String API_SUBJECT_DELETE = "api.subject.delete";
+    public static final String API_SUBJECT_CREATE = "api.subject.create";
+
+    //InstituteCourseMapping
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_ALL = "api.instituteCourseMapping.get";
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_BY_ID = "api.instituteCourseMapping.getById";
+    public static final String API_INSTITUTE_COURSE_MAPPING_DELETE = "api.instituteCourseMapping.delete";
+    public static final String API_INSTITUTE_COURSE_MAPPING_CREATE = "api.instituteCourseMapping.create";
+
+    //CourseSubjectMapping
+    public static final String API_COURSE_SUBJECT_MAPPING_GET_ALL = "api.courseSubjectMapping.get";
+    public static final String API_COURSE_SUBJECT_MAPPING_GET_BY_ID = "api.courseSubjectMapping.getById";
+    public static final String API_COURSE_SUBJECT_MAPPING_DELETE = "api.courseSubjectMapping.delete";
+    public static final String API_COURSE_SUBJECT_MAPPING_CREATE = "api.courseSubjectMapping.create";
+
 
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
