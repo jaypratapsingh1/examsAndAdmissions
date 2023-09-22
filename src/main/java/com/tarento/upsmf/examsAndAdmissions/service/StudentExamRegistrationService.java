@@ -31,7 +31,7 @@ public class StudentExamRegistrationService {
     @Autowired
     private StudentRepository studentRepository;
     @Transactional
-    public ResponseEntity<?> registerStudentsForExams(List<StudentExamRegistrationDTO> requests)
+    public ResponseEntity<?> registerStudentsForExams(List<StudentExamRegistrationDTO> requests, String userId)
     {
     // Validate input
     if (requests == null || requests.isEmpty()) {
@@ -112,8 +112,7 @@ public class StudentExamRegistrationService {
             registration.setRegistrationDate(request.getRegistrationDate());
             registration.setStatus(request.getStatus());
             registration.setRemarks(request.getRemarks());
-            registration.setCreatedBy(request.getCreatedBy());
-            registration.setUpdatedBy(request.getUpdatedBy());
+            registration.setUpdatedBy(userId);
 
             newRegistrations.add(registration);
         });

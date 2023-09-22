@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ExamCycleStatus;
 import lombok.*;
 
 import javax.persistence.*;
@@ -46,12 +47,8 @@ public class ExamCycle {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private Status status;
+    private ExamCycleStatus status;
 
     @Column(name = "obsolete", nullable = false, columnDefinition = "int default 0")
     private Integer obsolete = 0;
-
-    public enum Status {
-        PUBLISH, DRAFT
-    }
 }
