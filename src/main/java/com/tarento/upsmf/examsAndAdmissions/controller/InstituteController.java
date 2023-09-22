@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/institutes")
+@RequestMapping("/api/v1/admin/institutes")
 public class InstituteController {
 
     private final InstituteService instituteService;
