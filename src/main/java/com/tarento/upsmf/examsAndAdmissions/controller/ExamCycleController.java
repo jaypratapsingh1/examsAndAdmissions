@@ -149,6 +149,8 @@ public class ExamCycleController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to create ExamCycle with Exams.");
+        }
+    }
     @PostMapping("/bulkUpload")
     public ResponseEntity<Map<String, Object>> processBulkExamUploads(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
         Map<String, Object> response = new HashMap<>();
