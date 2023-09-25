@@ -24,8 +24,9 @@ public class ExamCycle {
     @Column(name = "exam_cycle_name", nullable = false)
     private String examCycleName;
 
-    @Column(name = "course_id")
-    private String courseId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_code")
+    private Course course;
 
     @Column(name = "start_date")
     private LocalDate startDate;

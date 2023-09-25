@@ -203,7 +203,7 @@ public class AttachmentServiceImpl implements AttachmentService {
 
             ExamCycle examCycleDetails = examCycleRepository.findByIdAndObsolete(examCycleId, 0).orElse(null);
             String examCycleName = examCycleDetails.getExamCycleName();
-            String courseId = examCycleDetails.getCourseId();
+            String courseId = examCycleDetails.getCourse().getId().toString();
 
             Course courseDetails = courseRepository.findByCourseCode(courseId);
             String courseName = courseDetails.getCourseName();
