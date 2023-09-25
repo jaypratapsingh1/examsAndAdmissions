@@ -1,7 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.repository;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.VerificationStatus;
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

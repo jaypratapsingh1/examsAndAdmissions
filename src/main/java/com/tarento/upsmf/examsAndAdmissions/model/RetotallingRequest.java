@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import lombok.*;
 
 import javax.persistence.*;
@@ -35,7 +36,7 @@ public class RetotallingRequest {
     private LocalDate requestDate;
 
     @Column(name = "status")
-    private String status;  // PENDING, COMPLETED, etc.
+    private RetotallingStatus status;
     
     @Column(name = "remarks")
     private String remarks; // Any additional information or comments

@@ -1,6 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import lombok.*;
 
 import javax.persistence.*;

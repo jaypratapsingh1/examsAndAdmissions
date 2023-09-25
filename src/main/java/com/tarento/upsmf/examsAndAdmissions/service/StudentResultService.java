@@ -1,13 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Course;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
-import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentResultRepository;
+import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
+import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -40,6 +36,8 @@ public class StudentResultService {
 
     @Autowired
     private ExamRepository examRepository;
+    @Autowired
+    private RetotallingRequestRepository retotallingRequestRepository;
 
     public void importInternalMarksFromExcel(MultipartFile file) throws IOException {
         // Parse the Excel file
@@ -257,9 +255,15 @@ public class StudentResultService {
         existingResult.setTotalMarksObtained(updatedResult.getTotalMarksObtained());
         existingResult.setGrade(updatedResult.getGrade());
         existingResult.setResult(updatedResult.getResult());
-        existingResult.setStatus(updatedResult.getStatus());
+        existingResult.setStatus(ResultStatus.REVALUATED);
 
         studentResultRepository.save(existingResult);
+        // Update the RetotallingRequest status
+        RetotallingRequest retotallingRequest = retotallingRequestRepository.findByStudentAndExams(existingResult.getStudent(), updatedResult.getExam())
+                .orElseThrow(() -> new EntityNotFoundException("No RetotallingRequest found for student and exam"));
+
+        retotallingRequest.setStatus(RetotallingStatus.COMPLETED);
+        retotallingRequestRepository.save(retotallingRequest);
     }
 
 }

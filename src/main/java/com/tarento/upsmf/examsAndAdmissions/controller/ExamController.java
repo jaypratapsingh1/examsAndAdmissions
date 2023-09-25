@@ -3,6 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +19,8 @@ public class ExamController {
     private ExamService examService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createExam(@RequestBody Exam exam) {
-        ResponseDto response = examService.createExam(exam);
+    public ResponseEntity<?> createExam(@RequestBody Exam exam, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
+        ResponseDto response = examService.createExam(exam, userId);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
     @GetMapping("/list")
@@ -41,8 +42,8 @@ public class ExamController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateExam(@PathVariable Long id, @RequestBody Exam exam) {
-        ResponseDto response = examService.updateExam(id, exam);
+    public ResponseEntity<?> updateExam(@PathVariable Long id, @RequestBody Exam exam, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
+        ResponseDto response = examService.updateExam(id, exam, userId);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 

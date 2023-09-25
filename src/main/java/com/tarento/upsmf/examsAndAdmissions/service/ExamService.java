@@ -6,13 +6,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface ExamService {
-    public ResponseDto createExam(Exam exam);
+    public ResponseDto createExam(Exam exam, String userId);
 
     public ResponseDto getAllExams();
 
     public ResponseDto getExamById(Long id);
 
-    public ResponseDto updateExam(Long id, Exam updatedExam);
+    public ResponseDto updateExam(Long id, Exam updatedExam, String userId);
 
     public ResponseDto deleteExam(Long id);
 

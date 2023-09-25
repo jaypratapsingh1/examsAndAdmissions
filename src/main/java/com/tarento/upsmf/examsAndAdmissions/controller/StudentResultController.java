@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +33,6 @@ public class StudentResultController {
 
     @Autowired
     private StudentResultService studentResultService;
-
     @Autowired
     private RetotallingService retotallingService;
     @Autowired
@@ -104,37 +105,14 @@ public class StudentResultController {
         }
     }
 
-    @PostMapping("/retotalling")
-    public ResponseEntity<String> requestRetotalling(@RequestBody RetotallingRequest retotallingRequest) {
+    @PostMapping("/requestRetotalling")
+    public ResponseEntity<?> requestRetotalling(@RequestBody RetotallingRequest request) {
         try {
-            // Fetch the student from the database using the enrollmentNumber
-            Student existingStudent = studentResultService.fetchStudentByEnrollmentNumber(retotallingRequest.getStudent().getEnrollmentNumber());
-            if (existingStudent == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student not found.");
-            }
-
-            // Set the fetched student to the retotallingRequest
-            retotallingRequest.setStudent(existingStudent);
-
-            // Check for each exam
-            for (Exam exam : retotallingRequest.getExams()) {
-                // Check if payment was successful
-                if (!retotallingService.isPaymentSuccessful(existingStudent.getEnrollmentNumber(), exam.getId())) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Payment not completed for exam ID: " + exam.getId() + ". Please make the payment before requesting re-totalling.");
-                }
-
-                // Check if a re-totalling request already exists
-                if (retotallingService.hasAlreadyRequestedRetotalling(existingStudent.getEnrollmentNumber(), exam.getId())) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already requested re-totalling for exam ID: " + exam.getId());
-                }
-            }
-
-            // Save the re-totalling request
-            retotallingService.requestRetotalling(retotallingRequest);
-            return ResponseEntity.ok("Re-totalling request submitted successfully.");
-
+            RetotallingRequest result = retotallingService.requestRetotalling(request);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            log.error("Error processing re-totalling request", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process re-totalling request.");
         }
     }
