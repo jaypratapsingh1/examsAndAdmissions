@@ -10,8 +10,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class StudentDto {
-    private String centerCode;
-    private String centerName;
     private String courseCode;
     private String courseName;
     private String session;
