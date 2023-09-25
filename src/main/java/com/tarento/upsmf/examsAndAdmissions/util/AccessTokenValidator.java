@@ -34,6 +34,9 @@ public class AccessTokenValidator {
 	@Value("${api.user.details}")
 	private String userInfoUrl;
 
+	@Value("${admin.allowed.endpoints}")
+	private String adminAllowedEndpoints;
+
 	@Value("${user.roles}")
 	private String userRoles;
 
@@ -43,7 +46,7 @@ public class AccessTokenValidator {
 	@Autowired
 	private RedisUtil redisUtil;
 
-	public String verifyUserToken(String token, boolean checkActive) {
+	public String verifyUserToken(String token, boolean checkActive, String uri) {
 		String userId = Constants.Parameters.UNAUTHORIZED;
 		try {
 			Map<String, Object> payload = validateToken(token, checkActive);
@@ -53,7 +56,7 @@ public class AccessTokenValidator {
 				if (StringUtils.isNotBlank(userId)) {
 					int pos = userId.lastIndexOf(":");
 					userId = userId.substring(pos + 1);
-					return matchUserRole(userId);
+					return matchUserRole(userId, uri);
 				}
 			}
 		} catch (Exception ex) {
@@ -62,7 +65,7 @@ public class AccessTokenValidator {
 		return userId;
 	}
 
-	private String matchUserRole(String userId) {
+	private String matchUserRole(String userId, String uri) {
 		List<String> roles = redisUtil.getRolesByUserId(userId);
 		if(roles.isEmpty()) {
 			log.error("Missing Appropriate Roles.");
@@ -73,6 +76,13 @@ public class AccessTokenValidator {
 		log.debug("Role matched - {}", roleMatches);
 		if(roleMatches) {
 			log.info("Role matched for userId - {}", userId);
+			boolean isAdmin = roles.stream().anyMatch(x -> "admin".contains(x.toLowerCase()));
+			if(isAdmin) {
+				List<String> adminEndpoints = Arrays.asList(adminAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}
 			return userId;
 		}
 		return Constants.Parameters.UNAUTHORIZED;
