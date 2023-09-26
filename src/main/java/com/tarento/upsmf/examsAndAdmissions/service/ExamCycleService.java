@@ -1,14 +1,15 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ExamCycleStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,11 +29,17 @@ public class ExamCycleService {
     private CourseRepository courseRepository;
 
     // Create a new exam cycle
-    public ExamCycle createExamCycle(ExamCycle examCycle) {
+    public ExamCycle createExamCycle(ExamCycle examCycle, String userId) {
         log.info("Creating new ExamCycle: {}", examCycle);
+        Course course = courseRepository.findById(examCycle.getCourse().getId())
+                .orElseThrow(() -> new RuntimeException("Course not found"));
 
         if (examCycle != null && examCycle.getId() == null) {
             examCycle.setObsolete(0);
+            examCycle.setCreatedOn(LocalDateTime.now());
+            examCycle.setStatus(ExamCycleStatus.DRAFT);
+            examCycle.setCreatedBy(userId);
+            examCycle.setCourse(course);
             examCycle = repository.save(examCycle);
         }
 
@@ -56,7 +63,13 @@ public class ExamCycleService {
     // Fetch all active exam cycles
     public List<ExamCycle> getAllExamCycles() {
         log.info("Fetching all active ExamCycles...");
-        return repository.findByObsolete(0);
+        List<ExamCycle> examCycles = repository.findByObsolete(0);
+        for(ExamCycle examCycle : examCycles) {
+            if (examCycle.getCourse() != null) {
+                examCycle.getCourse().getCourseName(); // This will force initialization if it's LAZY
+            }
+        }
+        return examCycles;
     }
 
     // Fetch all soft-deleted exam cycles
@@ -72,20 +85,20 @@ public class ExamCycleService {
     }
 
     // Update an existing exam cycle
-    public ExamCycle updateExamCycle(Long id, ExamCycle updatedExamCycle) {
+    public ExamCycle updateExamCycle(Long id, ExamCycle updatedExamCycle, String userId) {
         log.info("Updating ExamCycle with ID: {}", id);
         ExamCycle existingExamCycle = repository.findById(id).orElse(null);
         if (existingExamCycle != null) {
             existingExamCycle.setExamCycleName(updatedExamCycle.getExamCycleName());
-            existingExamCycle.setCourseId(updatedExamCycle.getCourseId());
+            existingExamCycle.setCourse(updatedExamCycle.getCourse());
             existingExamCycle.setStartDate(updatedExamCycle.getStartDate());
             existingExamCycle.setEndDate(updatedExamCycle.getEndDate());
-            existingExamCycle.setStatus(updatedExamCycle.getStatus());
+            //existingExamCycle.setStatus(updatedExamCycle.getStatus());
 
             // Update auditing metadata
             // Assuming you have a way to fetch the current user, e.g., a utility method
-            existingExamCycle.setModifiedBy(updatedExamCycle.getModifiedBy());
-            existingExamCycle.setModifiedOn(updatedExamCycle.getModifiedOn()); // Current date/time
+            existingExamCycle.setModifiedBy(userId);
+            existingExamCycle.setModifiedOn(LocalDateTime.now()); // Current date/time
 
             return repository.save(existingExamCycle);
         }
@@ -116,7 +129,7 @@ public class ExamCycleService {
             log.warn("ExamCycle with ID: {} not found for restoration!", id);
         }
     }
-    public ExamCycle addExamsToCycle(Long id, List<Exam> exams) {
+    public ExamCycle addExamsToCycle(Long id, List<Exam> exams, String userId) {
         ExamCycle examCycle = repository.findById(id).orElse(null);
         if (examCycle != null) {
             for (Exam exam : exams) {
@@ -138,6 +151,8 @@ public class ExamCycleService {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                 exam.setStartTime(LocalTime.parse(exam.getStartTime().format(formatter)));
                 exam.setEndTime(LocalTime.parse(exam.getEndTime().format(formatter)));
+                exam.setCreatedBy(userId);
+                exam.setCreatedOn(LocalDateTime.now());
 
                 // Link exam to exam cycle
                 exam.setExamCycleId(examCycle.getId());
@@ -158,4 +173,14 @@ public class ExamCycleService {
         }
         return null;
     }
+    public ExamCycle publishExamCycle(Long id) {
+        Optional<ExamCycle> optionalExamCycle = repository.findById(id);
+        if(!optionalExamCycle.isPresent()) {
+            return null;
+        }
+        ExamCycle examCycle = optionalExamCycle.get();
+        examCycle.setStatus(ExamCycleStatus.PUBLISHED);
+        return repository.save(examCycle);
+    }
+
 }

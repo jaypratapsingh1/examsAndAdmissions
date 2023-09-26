@@ -1,6 +1,5 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.InstituteCourseMapping;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteCourseMappingDTO;
 import com.tarento.upsmf.examsAndAdmissions.service.InstituteCourseMappingService;
@@ -9,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/instituteCourseMap")
+
+@RequestMapping("/api/v1/admin/instituteCourseMap")
+
 public class InstituteCourseMappingController {
 
     @Autowired

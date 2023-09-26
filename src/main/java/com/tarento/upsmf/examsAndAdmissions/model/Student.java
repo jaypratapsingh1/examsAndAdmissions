@@ -1,13 +1,14 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "students", indexes = {@Index(columnList = "centerCode")})
+@Table(name = "students")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,8 +21,6 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String centerCode;
-    private String centerName;
     private String session;
     private String examBatch;
     private LocalDate admissionDate;

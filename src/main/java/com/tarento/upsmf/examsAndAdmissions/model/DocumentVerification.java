@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 
