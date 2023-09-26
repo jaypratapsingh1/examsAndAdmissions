@@ -1,8 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.*;
-import com.tarento.upsmf.examsAndAdmissions.model.dao.Payment;
-import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
+import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
+import com.tarento.upsmf.examsAndAdmissions.model.Student;
+import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
 import com.tarento.upsmf.examsAndAdmissions.repository.ResultRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
@@ -11,8 +12,6 @@ import com.tarento.upsmf.examsAndAdmissions.service.StudentService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.codehaus.jettison.json.JSONArray;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/studentResults")
