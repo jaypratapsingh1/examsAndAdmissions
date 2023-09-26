@@ -1,9 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
+import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
+import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.ResultRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -114,14 +117,32 @@ public class DataImporterService {
 
     public Boolean saveDtoListToPostgres(List<ExamUploadData> dtoList, ExamEntityRepository repository) {
         try {
-            List<ExamUploadData> entityList = convertDtoListToEntities(dtoList);
+            List<ExamUploadData> entityList = convertExamDtoListToEntities(dtoList);
             repository.saveAll(entityList);
             return true;
         } catch (Exception e) {
             return false;
         }
     }
-    private List<ExamUploadData> convertDtoListToEntities(List<ExamUploadData> dtoList) {
+    public Boolean saveDtoListToPostgres(List<AttendanceRecord> dtoList, AttendanceRepository repository) {
+        try {
+            List<AttendanceRecord> entityList = convertAttendenceDtoListToEntities(dtoList);
+            repository.saveAll(entityList);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    public Boolean saveDtoListToPostgres(List<StudentResult> dtoList, ResultRepository repository) {
+        try {
+            List<StudentResult> entityList = convertResultDtoListToEntities(dtoList);
+            repository.saveAll(entityList);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    private List<ExamUploadData> convertExamDtoListToEntities(List<ExamUploadData> dtoList) {
         List<ExamUploadData> entityList = new ArrayList<>();
 
         for (ExamUploadData dto : dtoList) {
@@ -144,4 +165,67 @@ public class DataImporterService {
         return entityList;
     }
 
+    private List<AttendanceRecord> convertAttendenceDtoListToEntities(List<AttendanceRecord> dtoList) {
+        List<AttendanceRecord> entityList = new ArrayList<>();
+
+        for (AttendanceRecord dto : dtoList) {
+            AttendanceRecord entity = new AttendanceRecord();
+
+            entity.setFirstName(dto.getFirstName());
+            entity.setLastName(dto.getLastName());
+            entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
+            entity.setMothersName(dto.getMothersName());
+            entity.setFathersName(dto.getFathersName());
+            entity.setCourseName(dto.getCourseName());
+            entity.setExamCycleData(dto.getExamCycleData());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
+            entity.setPresentDays(dto.getPresentDays()) ;
+            entity.setAbsentDays(dto.getAbsentDays());
+            entity.setAttendancePercentage(dto.getAttendancePercentage());
+
+            entityList.add(entity);
+        }
+
+        return entityList;
+    }
+
+    private List<StudentResult> convertResultDtoListToEntities(List<StudentResult> dtoList) {
+        List<StudentResult> entityList = new ArrayList<>();
+
+        for (StudentResult dto : dtoList) {
+            StudentResult entity = new StudentResult();
+
+            entity.setFirstName(dto.getFirstName());
+            entity.setLastName(dto.getLastName());
+            entity.setEnrollmentNumber(dto.getEnrollmentNumber());
+            entity.setMotherName(dto.getMotherName());
+            entity.setFatherName(dto.getFatherName());
+            entity.setCourseValue(dto.getCourseValue());
+            entity.setExamCycleValue(dto.getExamCycleValue());
+            entity.setExamValue(dto.getExamValue());
+            entity.setInternalMarks(dto.getInternalMarks());
+            entity.setPassingInternalMarks(dto.getPassingInternalMarks());
+            entity.setInternalMarksObtained(dto.getInternalMarksObtained()); ;
+            entity.setPracticalMarks(dto.getPracticalMarks());
+            entity.setPassingPracticalMarks(dto.getPassingPracticalMarks());
+            entity.setPracticalMarksObtained(dto.getPracticalMarksObtained()); ;
+            entity.setOtherMarks(dto.getOtherMarks());
+            entity.setPassingOtherMarks(dto.getPassingOtherMarks());
+            entity.setOtherMarksObtained(dto.getOtherMarksObtained()); ;
+            entity.setExternalMarks(dto.getExternalMarks());
+            entity.setPassingExternalMarks(dto.getPassingExternalMarks());
+            entity.setExternalMarksObtained(dto.getExternalMarksObtained());
+            entity.setTotalMarks(dto.getTotalMarks());
+            entity.setPassingTotalMarks(dto.getPassingTotalMarks());
+            entity.setTotalMarksObtained(dto.getTotalMarksObtained());
+            entity.setGrade(dto.getGrade());
+            entity.setResult(dto.getResult());
+
+            entityList.add(entity);
+        }
+
+        return entityList;
+    }
 }

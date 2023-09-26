@@ -97,7 +97,7 @@ public class InstituteCourseMappingServiceImpl implements InstituteCourseMapping
                                 responseMap.put("email", instituteCourseMappings.get(i).getInstitute().getEmail());
                                 responseMap.put("allowedForExamCentre", instituteCourseMappings.get(i).getInstitute().isAllowedForExamCentre());
                                 responseMap.put("district", instituteCourseMappings.get(i).getInstitute().getDistrict());
-                                responseMap.put("cctvVerified", instituteCourseMappings.get(i).getInstitute().isCctvVerified());
+                                responseMap.put("cctvVerified", instituteCourseMappings.get(i).getInstitute().getCctvVerified());
                                 responseMap.put("ipAddress", instituteCourseMappings.get(i).getInstitute().getIpAddress());
                                 responseMap.put("remarks", instituteCourseMappings.get(i).getInstitute().getRemarks());
                             }
@@ -159,7 +159,7 @@ public class InstituteCourseMappingServiceImpl implements InstituteCourseMapping
                             responseMap.put("email", instituteCourseMappings.get(i).getInstitute().getEmail());
                             responseMap.put("allowedForExamCentre", instituteCourseMappings.get(i).getInstitute().isAllowedForExamCentre());
                             responseMap.put("district", instituteCourseMappings.get(i).getInstitute().getDistrict());
-                            responseMap.put("cctvVerified", instituteCourseMappings.get(i).getInstitute().isCctvVerified());
+                            responseMap.put("cctvVerified", instituteCourseMappings.get(i).getInstitute().getCctvVerified());
                             responseMap.put("ipAddress", instituteCourseMappings.get(i).getInstitute().getIpAddress());
                             responseMap.put("remarks", instituteCourseMappings.get(i).getInstitute().getRemarks());
                         }

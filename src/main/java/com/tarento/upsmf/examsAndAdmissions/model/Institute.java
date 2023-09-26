@@ -38,7 +38,7 @@ public class Institute implements Serializable {
     @JsonBackReference // To prevent infinite recursion
     private List<StudentExamRegistration> registrations;
 
-    private boolean cctvVerified;
+    private Boolean cctvVerified;
     private String ipAddress;
     private String remarks;
     public void handleAction(String action, String ipAddress, String remarks) {
