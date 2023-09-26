@@ -1,17 +1,19 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
+
 import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
-import com.tarento.upsmf.examsAndAdmissions.model.dao.Payment;
+import com.tarento.upsmf.examsAndAdmissions.repository.ResultRepository;
+import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentResultService;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/studentResults")
@@ -37,7 +36,10 @@ public class StudentResultController {
     private RetotallingService retotallingService;
     @Autowired
     private StudentService studentService;
-
+    @Autowired
+    private DataImporterService dataImporterService;
+    @Autowired
+    ResultRepository repository;
     @PostMapping("/upload/internal")
     public ResponseEntity<String> uploadInternalMarks(@RequestParam("file") MultipartFile file) {
         try {
@@ -136,6 +138,39 @@ public class StudentResultController {
         } catch (Exception e) {
             log.error("Error updating results after re-totalling", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update results.");
+        }
+    }
+    @PostMapping("/bulkUpload")
+    public ResponseEntity<Map<String, Object>> processBulkResultUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+        Map<String, Object> response = new HashMap<>();
+        JSONArray jsonArray = null;
+        Class<StudentResult> dtoClass = StudentResult.class;
+        try {
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    // Handle unsupported file type
+                    response.put("error", "Unsupported file type");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
+            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, repository);
+
+            if (success) {
+                response.put("message", "File processed successfully.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "File processing failed.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+        } catch (Exception e) {
+            response.put("error", "An error occurred while processing the file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
