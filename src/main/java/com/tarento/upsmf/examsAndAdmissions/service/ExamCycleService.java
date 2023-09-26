@@ -12,6 +12,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleDTO;
 
 @Service
 @Slf4j
@@ -61,15 +64,12 @@ public class ExamCycleService {
     }
 
     // Fetch all active exam cycles
-    public List<ExamCycle> getAllExamCycles() {
+    public List<ExamCycleDTO> getAllExamCycles() {
         log.info("Fetching all active ExamCycles...");
         List<ExamCycle> examCycles = repository.findByObsolete(0);
-        for(ExamCycle examCycle : examCycles) {
-            if (examCycle.getCourse() != null) {
-                examCycle.getCourse().getCourseName(); // This will force initialization if it's LAZY
-            }
-        }
-        return examCycles;
+        return examCycles.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     // Fetch all soft-deleted exam cycles
@@ -182,5 +182,29 @@ public class ExamCycleService {
         examCycle.setStatus(ExamCycleStatus.PUBLISHED);
         return repository.save(examCycle);
     }
+    public ExamCycleDTO toDTO(ExamCycle examCycle) {
+        ExamCycleDTO dto = new ExamCycleDTO();
+        dto.setId(examCycle.getId());
+        dto.setExamCycleName(examCycle.getExamCycleName());
+
+        // Set Course related fields
+        if (examCycle.getCourse() != null) {
+            dto.setCourseId(examCycle.getCourse().getId());
+            dto.setCourseCode(examCycle.getCourse().getCourseCode());
+            dto.setCourseName(examCycle.getCourse().getCourseName());  // Assuming your Course entity has a getCourseName() method
+        }
+
+        dto.setStartDate(examCycle.getStartDate());
+        dto.setEndDate(examCycle.getEndDate());
+        dto.setCreatedBy(examCycle.getCreatedBy());
+        dto.setCreatedOn(examCycle.getCreatedOn());
+        dto.setModifiedBy(examCycle.getModifiedBy());
+        dto.setModifiedOn(examCycle.getModifiedOn());
+        dto.setStatus(examCycle.getStatus());
+        dto.setObsolete(examCycle.getObsolete());
+
+        return dto;
+    }
+
 
 }
