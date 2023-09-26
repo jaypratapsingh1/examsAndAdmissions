@@ -31,12 +31,15 @@ public class ExamCycleService {
     // Create a new exam cycle
     public ExamCycle createExamCycle(ExamCycle examCycle, String userId) {
         log.info("Creating new ExamCycle: {}", examCycle);
+        Course course = courseRepository.findById(examCycle.getCourse().getId())
+                .orElseThrow(() -> new RuntimeException("Course not found"));
 
         if (examCycle != null && examCycle.getId() == null) {
             examCycle.setObsolete(0);
             examCycle.setCreatedOn(LocalDateTime.now());
             examCycle.setStatus(ExamCycleStatus.DRAFT);
             examCycle.setCreatedBy(userId);
+            examCycle.setCourse(course);
             examCycle = repository.save(examCycle);
         }
 
@@ -60,7 +63,13 @@ public class ExamCycleService {
     // Fetch all active exam cycles
     public List<ExamCycle> getAllExamCycles() {
         log.info("Fetching all active ExamCycles...");
-        return repository.findByObsolete(0);
+        List<ExamCycle> examCycles = repository.findByObsolete(0);
+        for(ExamCycle examCycle : examCycles) {
+            if (examCycle.getCourse() != null) {
+                examCycle.getCourse().getCourseName(); // This will force initialization if it's LAZY
+            }
+        }
+        return examCycles;
     }
 
     // Fetch all soft-deleted exam cycles
@@ -81,7 +90,7 @@ public class ExamCycleService {
         ExamCycle existingExamCycle = repository.findById(id).orElse(null);
         if (existingExamCycle != null) {
             existingExamCycle.setExamCycleName(updatedExamCycle.getExamCycleName());
-            existingExamCycle.setCourseId(updatedExamCycle.getCourseId());
+            existingExamCycle.setCourse(updatedExamCycle.getCourse());
             existingExamCycle.setStartDate(updatedExamCycle.getStartDate());
             existingExamCycle.setEndDate(updatedExamCycle.getEndDate());
             //existingExamCycle.setStatus(updatedExamCycle.getStatus());
