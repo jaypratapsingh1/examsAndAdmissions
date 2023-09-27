@@ -37,6 +37,12 @@ public class AccessTokenValidator {
 	@Value("${admin.allowed.endpoints}")
 	private String adminAllowedEndpoints;
 
+	@Value("${institute.allowed.endpoints}")
+	private String instituteAllowedEndpoints;
+
+	@Value("${student.allowed.endpoints}")
+	private String studentAllowedEndpoints;
+
 	@Value("${user.roles}")
 	private String userRoles;
 
@@ -76,9 +82,24 @@ public class AccessTokenValidator {
 		log.debug("Role matched - {}", roleMatches);
 		if(roleMatches) {
 			log.info("Role matched for userId - {}", userId);
-			boolean isAdmin = roles.stream().anyMatch(x -> "admin".contains(x.toLowerCase()));
+			boolean isAdmin = roles.stream().anyMatch(x -> "exams_admin".equalsIgnoreCase(x));
+			boolean isSuperAdmin = roles.stream().anyMatch(x -> "admin_superadmin".equalsIgnoreCase(x));
 			if(isAdmin) {
 				List<String> adminEndpoints = Arrays.asList(adminAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}
+			boolean isInstitute = roles.stream().anyMatch(x -> "exams_institute".equalsIgnoreCase(x));
+			if(isInstitute) {
+				List<String> adminEndpoints = Arrays.asList(instituteAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}
+			boolean isStudent = roles.stream().anyMatch(x -> "exams_student".equalsIgnoreCase(x.toLowerCase()));
+			if(isStudent) {
+				List<String> adminEndpoints = Arrays.asList(studentAllowedEndpoints.split(","));
 				if(!adminEndpoints.contains(uri)) {
 					return Constants.Parameters.UNAUTHORIZED;
 				}
