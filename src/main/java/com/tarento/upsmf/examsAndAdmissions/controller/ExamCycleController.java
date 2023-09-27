@@ -1,8 +1,10 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Course;
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
+import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
@@ -30,7 +32,8 @@ public class ExamCycleController {
     private DataImporterService dataImporterService;
     @Autowired
     ExamEntityRepository repository;
-
+    @Autowired
+    private CourseRepository courseRepository;
 
     @PostMapping("/create")
     public ResponseEntity<?> createExamCycle(@RequestBody ExamCycle examCycle, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
@@ -44,7 +47,7 @@ public class ExamCycleController {
     @GetMapping("/list")
     public ResponseEntity<?> getAllExamCycles() {
         try {
-            List<ExamCycle> examCycles = service.getAllExamCycles();
+            List<ExamCycleDTO> examCycles = service.getAllExamCycles();
             if (examCycles.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
@@ -139,6 +142,9 @@ public class ExamCycleController {
     @PostMapping("/createExamCycleWithExams")
     public ResponseEntity<?> createExamCycleWithExams(@RequestBody ExamCycleWithExamsDTO examCycleWithExamsDTO, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
         try {
+            Course course = courseRepository.findById(examCycleWithExamsDTO.getExamCycle().getCourse().getId())
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
             // Create the ExamCycle
             ExamCycle createdExamCycle = service.createExamCycle(examCycleWithExamsDTO.getExamCycle(), userId);
 
