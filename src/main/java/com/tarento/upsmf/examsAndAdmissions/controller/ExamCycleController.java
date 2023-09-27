@@ -110,7 +110,7 @@ public class ExamCycleController {
             if (examCycle == null) {
                 return new ResponseEntity<>("ExamCycle not found with ID: " + id, HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(exams, HttpStatus.CREATED);
+            return ResponseEntity.ok("Exams added to the ExamCycle successfully.");
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to add exam to ExamCycle with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -142,9 +142,6 @@ public class ExamCycleController {
     @PostMapping("/createExamCycleWithExams")
     public ResponseEntity<?> createExamCycleWithExams(@RequestBody ExamCycleWithExamsDTO examCycleWithExamsDTO, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
         try {
-            Course course = courseRepository.findById(examCycleWithExamsDTO.getExamCycle().getCourse().getId())
-                    .orElseThrow(() -> new RuntimeException("Course not found"));
-
             // Create the ExamCycle
             ExamCycle createdExamCycle = service.createExamCycle(examCycleWithExamsDTO.getExamCycle(), userId);
 
