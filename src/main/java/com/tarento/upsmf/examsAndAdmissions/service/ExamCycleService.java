@@ -33,18 +33,30 @@ public class ExamCycleService {
 
     // Create a new exam cycle
     public ExamCycle createExamCycle(ExamCycle examCycle, String userId) {
+        // Check if an ExamCycle with the same details already exists
+        ExamCycle existingExamCycle = repository.findByExamCycleNameAndCourseAndStartDateAndEndDate(
+                examCycle.getExamCycleName(),
+                examCycle.getCourse(),
+                examCycle.getStartDate(),
+                examCycle.getEndDate()
+        );
+
+        if (existingExamCycle != null) {
+            // If an ExamCycle with the same details exists, return it
+            return existingExamCycle;
+        }
+
+        // Create a new ExamCycle
         log.info("Creating new ExamCycle: {}", examCycle);
         Course course = courseRepository.findById(examCycle.getCourse().getId())
                 .orElseThrow(() -> new RuntimeException("Course not found"));
 
-        if (examCycle != null && examCycle.getId() == null) {
-            examCycle.setObsolete(0);
-            examCycle.setCreatedOn(LocalDateTime.now());
-            examCycle.setStatus(ExamCycleStatus.DRAFT);
-            examCycle.setCreatedBy(userId);
-            examCycle.setCourse(course);
-            examCycle = repository.save(examCycle);
-        }
+        examCycle.setObsolete(0);
+        examCycle.setCreatedOn(LocalDateTime.now());
+        examCycle.setStatus(ExamCycleStatus.DRAFT);
+        examCycle.setCreatedBy(userId);
+        examCycle.setCourse(course);
+        examCycle = repository.save(examCycle);
 
         List<Institute> allInstitutes = instituteRepository.findAll();
 
