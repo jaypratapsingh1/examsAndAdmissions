@@ -13,4 +13,6 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
     List<StudentResult> findByCourse_IdAndExam_ExamCycleIdAndPublished(Long courseId, Long examCycleId, boolean b);
 
     StudentResult findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(String enrollmentNumber, LocalDate dateOfBirth, boolean b);
+
+    boolean existsByEnrollmentNumber(String enrollmentNumber);
 }
