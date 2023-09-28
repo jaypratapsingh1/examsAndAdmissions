@@ -1,12 +1,8 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
-
 import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
-import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
-import com.tarento.upsmf.examsAndAdmissions.repository.ResultRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.StudentResultRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentResultService;
@@ -22,8 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.*;
-import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/studentResults")
@@ -39,7 +36,7 @@ public class StudentResultController {
     @Autowired
     private DataImporterService dataImporterService;
     @Autowired
-    ResultRepository repository;
+    StudentResultRepository repository;
     @PostMapping("/upload/internal")
     public ResponseEntity<String> uploadInternalMarks(@RequestParam("file") MultipartFile file) {
         try {
