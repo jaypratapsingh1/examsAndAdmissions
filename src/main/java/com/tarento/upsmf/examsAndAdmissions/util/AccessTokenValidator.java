@@ -34,6 +34,15 @@ public class AccessTokenValidator {
 	@Value("${api.user.details}")
 	private String userInfoUrl;
 
+	@Value("${admin.allowed.endpoints}")
+	private String adminAllowedEndpoints;
+
+	@Value("${institute.allowed.endpoints}")
+	private String instituteAllowedEndpoints;
+
+	@Value("${student.allowed.endpoints}")
+	private String studentAllowedEndpoints;
+
 	@Value("${user.roles}")
 	private String userRoles;
 
@@ -43,7 +52,7 @@ public class AccessTokenValidator {
 	@Autowired
 	private RedisUtil redisUtil;
 
-	public String verifyUserToken(String token, boolean checkActive) {
+	public String verifyUserToken(String token, boolean checkActive, String uri) {
 		String userId = Constants.Parameters.UNAUTHORIZED;
 		try {
 			Map<String, Object> payload = validateToken(token, checkActive);
@@ -53,7 +62,7 @@ public class AccessTokenValidator {
 				if (StringUtils.isNotBlank(userId)) {
 					int pos = userId.lastIndexOf(":");
 					userId = userId.substring(pos + 1);
-					return matchUserRole(userId);
+					return matchUserRole(userId, uri);
 				}
 			}
 		} catch (Exception ex) {
@@ -62,7 +71,7 @@ public class AccessTokenValidator {
 		return userId;
 	}
 
-	private String matchUserRole(String userId) {
+	private String matchUserRole(String userId, String uri) {
 		List<String> roles = redisUtil.getRolesByUserId(userId);
 		if(roles.isEmpty()) {
 			log.error("Missing Appropriate Roles.");
@@ -73,6 +82,29 @@ public class AccessTokenValidator {
 		log.debug("Role matched - {}", roleMatches);
 		if(roleMatches) {
 			log.info("Role matched for userId - {}", userId);
+			boolean isAdmin = roles.stream().anyMatch(x -> "exams_admin".equalsIgnoreCase(x));
+			boolean isSuperAdmin = roles.stream().anyMatch(x -> "admin_superadmin".equalsIgnoreCase(x));
+			// todo enable later
+			/*if(isAdmin) {
+				List<String> adminEndpoints = Arrays.asList(adminAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}
+			boolean isInstitute = roles.stream().anyMatch(x -> "exams_institute".equalsIgnoreCase(x));
+			if(isInstitute) {
+				List<String> adminEndpoints = Arrays.asList(instituteAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}
+			boolean isStudent = roles.stream().anyMatch(x -> "exams_student".equalsIgnoreCase(x.toLowerCase()));
+			if(isStudent) {
+				List<String> adminEndpoints = Arrays.asList(studentAllowedEndpoints.split(","));
+				if(!adminEndpoints.contains(uri)) {
+					return Constants.Parameters.UNAUTHORIZED;
+				}
+			}*/
 			return userId;
 		}
 		return Constants.Parameters.UNAUTHORIZED;
