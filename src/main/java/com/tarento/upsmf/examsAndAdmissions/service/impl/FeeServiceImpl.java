@@ -14,6 +14,8 @@ import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -154,7 +156,10 @@ public class FeeServiceImpl implements FeeService {
     private ResponseEntity<PaymentRedirectResponse> getPaymentRedirectResponse(ExamFeeDto examFeeDto, String referenceNumber) {
         // create payment request
         PaymentRedirectRequest request = createRequest(examFeeDto, referenceNumber);
-        return restTemplate.postForEntity(feeRedirectURL, request, PaymentRedirectResponse.class);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBearerAuth("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJSR3RkMkZzeG1EMnJER3I4dkJHZ0N6MVhyalhZUzBSSyJ9.kMLn6177rvY53i0RAN3SPD5m3ctwaLb32pMYQ65nBdA");
+        HttpEntity<PaymentRedirectRequest> entity = new HttpEntity<PaymentRedirectRequest>(request, httpHeaders);
+        return restTemplate.postForEntity(feeRedirectURL, entity, PaymentRedirectResponse.class);
     }
 
     private PaymentRedirectRequest createRequest(ExamFeeDto examFeeDto, String referenceNumber) {

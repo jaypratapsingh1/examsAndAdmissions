@@ -84,7 +84,8 @@ public class AccessTokenValidator {
 			log.info("Role matched for userId - {}", userId);
 			boolean isAdmin = roles.stream().anyMatch(x -> "exams_admin".equalsIgnoreCase(x));
 			boolean isSuperAdmin = roles.stream().anyMatch(x -> "admin_superadmin".equalsIgnoreCase(x));
-			if(isAdmin) {
+			// todo enable later
+			/*if(isAdmin) {
 				List<String> adminEndpoints = Arrays.asList(adminAllowedEndpoints.split(","));
 				if(!adminEndpoints.contains(uri)) {
 					return Constants.Parameters.UNAUTHORIZED;
@@ -103,7 +104,7 @@ public class AccessTokenValidator {
 				if(!adminEndpoints.contains(uri)) {
 					return Constants.Parameters.UNAUTHORIZED;
 				}
-			}
+			}*/
 			return userId;
 		}
 		return Constants.Parameters.UNAUTHORIZED;
