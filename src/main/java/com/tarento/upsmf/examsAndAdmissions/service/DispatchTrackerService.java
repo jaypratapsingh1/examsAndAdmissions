@@ -8,12 +8,15 @@ import com.google.cloud.storage.StorageOptions;
 import com.tarento.upsmf.examsAndAdmissions.model.DispatchTracker;
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.DispatchTrackerRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,7 +57,8 @@ public class DispatchTrackerService {
     private String gcpPrivateKeyId;
     @Value("${gcp.project.id}")
     private String gcpProjectId;
-    public void uploadDispatchProof(Long examCycleId, Long examId, MultipartFile dispatchProofFile, LocalDate dispatchDate) throws IOException {
+    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId, MultipartFile dispatchProofFile, LocalDate dispatchDate) throws IOException {
+        ResponseDto response = new ResponseDto(Constants.API_UPLOAD_DISPATCH_DETAILS);
         ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElseThrow(() -> new EntityNotFoundException("Exam cycle not found"));
         Exam exam = examRepository.findById(examId).orElseThrow(() -> new EntityNotFoundException("Exam not found"));
 
@@ -80,9 +84,15 @@ public class DispatchTrackerService {
         dispatchTracker.setDispatchProofFileLocation(gcpFileName);
 
         dispatchTrackerRepository.save(dispatchTracker);
+        return response;
     }
 
-    public List<DispatchTracker> getDispatchList(Long examCycleId, Long examId) {
-        return dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
+    public ResponseDto getDispatchList(Long examCycleId, Long examId) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_DISPATCH_LIST);
+        List<DispatchTracker> list =  dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
+        response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+        response.put(Constants.RESPONSE, list);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
     }
 }
