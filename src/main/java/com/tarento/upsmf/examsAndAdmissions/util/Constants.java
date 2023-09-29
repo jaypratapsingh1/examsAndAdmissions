@@ -37,6 +37,19 @@ public class Constants {
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
 
+    // ExamCycle
+    public static final String API_EXAM_CYCLE_ADD = "api.examCycle.add";
+    public static final String API_EXAM_CYCLE_GET_ALL = "api.examCycle.getAll";
+    public static final String API_EXAM_CYCLE_GET_BY_ID = "api.examCycle.getById";
+    public static final String API_EXAM_CYCLE_DELETE = "api.examCycle.delete";
+    public static final String API_EXAM_CYCLE_UPDATE = "api.examCycle.update";
+    public static final String API_EXAM_CYCLE_RESTORE = "api.examCycle.restore";
+    public static final String API_EXAM_CYCLE_ADD_EXAMS = "api.examCycle.addExams";
+    public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
+    public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
+
+
+
     //Question Paper
     public static final String API_QUESTION_PAPER_GET_ALL = "api.questionPaper.get";
     public static final String API_QUESTION_PAPER_GET_BY_ID = "api.questionPaper.getById";

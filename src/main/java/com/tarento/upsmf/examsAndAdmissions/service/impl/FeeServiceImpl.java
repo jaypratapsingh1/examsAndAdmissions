@@ -11,6 +11,7 @@ import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
 import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -103,10 +104,10 @@ public class FeeServiceImpl implements FeeService {
     }
 
     private void saveExamFee(String referenceNumber, ExamFeeDto examFeeDto) {
-        ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
+        ResponseDto examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
         Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
         ExamFee examFee = ExamFee.builder()
-                .examCycle(examCycleById)
+                .examCycle((ExamCycle) examCycleById.get(Constants.RESPONSE))
                 .amount(examFeeDto.getAmount())
                 .referenceNo(referenceNumber)
                 .createdBy(examFeeDto.getCreatedBy())
@@ -211,7 +212,7 @@ public class FeeServiceImpl implements FeeService {
         if(examFeeDto.getPayerType() == null) {
             throw new ExamFeeException("Missing Payer Type Information");
         }
-        ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
+        ResponseDto examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
         if(examCycleById == null) {
             throw new ExamFeeException("Invalid Exam Cycle ID");
         }
