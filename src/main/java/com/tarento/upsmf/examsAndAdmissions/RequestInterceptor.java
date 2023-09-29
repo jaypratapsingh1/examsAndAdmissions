@@ -48,11 +48,11 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 			return Boolean.FALSE;
 		}
 		// authentication
-		System.out.println("request_token :"+ authToken);
-		String userId = verifyRequestData(authToken);
+		log.debug("request_token :"+ authToken);
+		String userId = verifyRequestData(authToken, request.getRequestURI());
 		//String userId = "userId";
 
-		System.out.println("userId :"+ userId);
+		log.debug("userId :"+ userId);
 		if (userId.equalsIgnoreCase(Constants.Parameters.UNAUTHORIZED)) {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			response.getWriter().write(handleResponse(false, ResponseCode.UNAUTHORIZED));
@@ -63,10 +63,10 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 		return Boolean.TRUE;
 	}
 
-	private String verifyRequestData(String accessToken) {
-		System.out.println("verifyRequestData () "+accessToken);
-		String clientAccessTokenId = accessTokenValidator.verifyUserToken(accessToken, true);
-		System.out.println("verifyRequestData clientAccessTokenId (): "+clientAccessTokenId);
+	private String verifyRequestData(String accessToken, String uri) {
+		log.debug("verifyRequestData () "+accessToken);
+		String clientAccessTokenId = accessTokenValidator.verifyUserToken(accessToken, true, uri);
+		log.debug("verifyRequestData clientAccessTokenId (): "+clientAccessTokenId);
 		return StringUtils.isBlank(clientAccessTokenId) ? Constants.Parameters.UNAUTHORIZED : clientAccessTokenId;
 	}
 

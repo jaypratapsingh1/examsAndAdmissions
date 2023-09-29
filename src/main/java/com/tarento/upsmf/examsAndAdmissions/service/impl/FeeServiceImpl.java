@@ -7,6 +7,9 @@ import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamFeeRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.StudentExamFeeRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
 import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
@@ -16,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -68,6 +73,15 @@ public class FeeServiceImpl implements FeeService {
     @Autowired
     private InstituteService instituteService;
 
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private ExamRepository examRepository;
+
+    @Autowired
+    private StudentExamFeeRepository studentExamFeeRepository;
+
     /**
      * API to save and return payment redirect URL
      *
@@ -98,66 +112,6 @@ public class FeeServiceImpl implements FeeService {
         throw new ExamFeeException("Payment failed");
     }
 
-    @Override
-    public ExamSearchResponseDto getAllExamFee(ExamFeeSearchDto examFeeSearchDto) {
-        // validate request
-        validateGetAllPayload(examFeeSearchDto);
-        String sortKey = examFeeSearchDto.getSort().keySet().stream().findFirst().get();
-        Sort.Order order = Sort.Order.asc(sortKey);
-        if(examFeeSearchDto.getSort().get(sortKey)!=null
-                && examFeeSearchDto.getSort().get(sortKey).equalsIgnoreCase("asc")) {
-            order = Sort.Order.asc(sortKey);
-        }
-        PageRequest pageRequest = PageRequest.of(examFeeSearchDto.getPage(), examFeeSearchDto.getSize(), Sort.by(order));
-        Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
-        return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
-    }
-
-    private void validateGetAllPayload(ExamFeeSearchDto examFeeSearchDto) {
-        if(examFeeSearchDto == null) {
-            examFeeSearchDto = ExamFeeSearchDto.builder()
-                    .page(0).size(50).build();
-        }
-        if(examFeeSearchDto.getPage() <= 0) {
-            examFeeSearchDto.setPage(0);
-        }
-        if(examFeeSearchDto.getSize() <= 0) {
-            examFeeSearchDto.setSize(50);
-        }
-        if(examFeeSearchDto.getSort() == null || examFeeSearchDto.getSort().isEmpty()) {
-            Map<String, String> sortMap = new HashMap<>();
-            sortMap.put("modifiedNo", "desc");
-            examFeeSearchDto.setSort(sortMap);
-        } else {
-            boolean isKeyMatched = examFeeSearchDto.getSort().entrySet().stream().anyMatch(x -> x.getKey().equalsIgnoreCase("referenceNo") ||
-                    x.getKey().equalsIgnoreCase("modifiedOn"));
-            if(!isKeyMatched) {
-                throw new ExamFeeException("Sort not supported for provided key.");
-            }
-        }
-    }
-
-    @Override
-    public ExamFee getExamFeeByRefNo(String refNo) {
-        log.info("ref no - {}", refNo);
-        // get transaction details from local db
-        ExamFee examFee = examFeeRepository.findByReferenceNo(refNo);
-        log.info("exam fee - {}", examFee);
-        // get latest status from user management
-        ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
-        log.info("response - {}", paymentUpdateResponse);
-        if(paymentUpdateResponse.getStatusCode() == HttpStatus.OK) {
-            // update record in DB
-            log.info("response body - {}", paymentUpdateResponse.getBody());
-        }
-        return examFee;
-    }
-
-    private ResponseEntity<Transaction> getPaymentUpdate(String refNo) {
-        String uri = feeStatusURL.concat(refNo);
-        return restTemplate.getForEntity(uri, Transaction.class);
-    }
-
     private void saveExamFee(String referenceNumber, ExamFeeDto examFeeDto) {
         ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
         Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
@@ -170,13 +124,52 @@ public class FeeServiceImpl implements FeeService {
                 .institute(instituteById)
                 .status(ExamFee.Status.INITIATED)
                 .build();
-        examFeeRepository.save(examFee);
+        examFee = examFeeRepository.save(examFee);
+        // save student to exam mapping
+        saveStudentExamFeeMapping(referenceNumber, examFeeDto);
+    }
+
+    private void saveStudentExamFeeMapping(String referenceNumber, ExamFeeDto examFeeDto) {
+        List<StudentExam> studentExams = new ArrayList<>();
+        // iterate through student and exam map
+        examFeeDto.getStudentExam().entrySet().stream().forEach(entry -> {
+            String studentId = entry.getKey();
+            Map<Long, Double> exams = entry.getValue();
+            Optional<Student> student = studentRepository.findById(Long.parseLong(studentId));
+            if(student.isPresent() && exams!=null && !exams.isEmpty()) {
+                // iterate through inner map to get exam id and corresponding fee
+                exams.entrySet().stream().forEach(examEntry -> {
+                    // get exam by id
+                    Optional<Exam> examDetails = examRepository.findById(examEntry.getKey());
+                    //validate
+                    if(examDetails.isPresent() && examEntry.getValue() != null && examEntry.getValue() > 0) {
+                        // create student exam object
+                        StudentExam studentExam = StudentExam.builder()
+                                .referenceNo(referenceNumber)
+                                .exam(examDetails.get())
+                                .student(student.get())
+                                .amount(examEntry.getValue())
+                                .status(StudentExam.Status.INITIATED)
+                                .build();
+                        // add to the list
+                        studentExams.add(studentExam);
+                    }
+                });
+            }
+        });
+        // save student exams
+        if(!studentExams.isEmpty()) {
+            studentExamFeeRepository.saveAll(studentExams);
+        }
     }
 
     private ResponseEntity<PaymentRedirectResponse> getPaymentRedirectResponse(ExamFeeDto examFeeDto, String referenceNumber) {
         // create payment request
         PaymentRedirectRequest request = createRequest(examFeeDto, referenceNumber);
-        return restTemplate.postForEntity(feeRedirectURL, request, PaymentRedirectResponse.class);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBearerAuth("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJSR3RkMkZzeG1EMnJER3I4dkJHZ0N6MVhyalhZUzBSSyJ9.kMLn6177rvY53i0RAN3SPD5m3ctwaLb32pMYQ65nBdA");
+        HttpEntity<PaymentRedirectRequest> entity = new HttpEntity<PaymentRedirectRequest>(request, httpHeaders);
+        return restTemplate.postForEntity(feeRedirectURL, entity, PaymentRedirectResponse.class);
     }
 
     private PaymentRedirectRequest createRequest(ExamFeeDto examFeeDto, String referenceNumber) {
@@ -230,11 +223,11 @@ public class FeeServiceImpl implements FeeService {
         }
         ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
         if(examCycleById == null) {
-            throw new ExamFeeException("Invalid Exam cycle id");
+            throw new ExamFeeException("Invalid Exam Cycle ID");
         }
         Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
         if(instituteById == null) {
-            throw new ExamFeeException("Invalid institute id");
+            throw new ExamFeeException("Invalid Institute ID");
         }
     }
 }
