@@ -1,19 +1,19 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeValidationException;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamFee;
 import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectResponse;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseParams;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/fee")
@@ -27,6 +27,26 @@ public class FeeController {
         try {
             PaymentRedirectResponse paymentRedirectResponse = feeService.initiateFee(examFeeDto);
             return handleSuccessResponse(paymentRedirectResponse);
+        } catch (Exception e) {
+            return handleErrorResponse(e);
+        }
+    }
+
+    @PostMapping("/all")
+    public ResponseEntity<ResponseDto> getAllExamFee(@RequestBody ExamFeeSearchDto examFeeSearchDto) {
+        try {
+            ExamSearchResponseDto examFees = feeService.getAllExamFee(examFeeSearchDto);
+            return handleSuccessResponse(examFees);
+        } catch (Exception e) {
+            return handleErrorResponse(e);
+        }
+    }
+
+    @GetMapping("/status/{refNo}")
+    public ResponseEntity<ResponseDto> getExamFeeByRefNo(@PathVariable("refNo") String refNo) {
+        try {
+            ExamFee examFee = feeService.getExamFeeByRefNo(refNo);
+            return handleSuccessResponse(examFee);
         } catch (Exception e) {
             return handleErrorResponse(e);
         }

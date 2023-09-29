@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamFeeRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
@@ -11,13 +13,15 @@ import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Calendar;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -25,6 +29,11 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Value("${payment.fee.status.url}")
+    private String feeStatusURL;
+    @Value("${payment.fee.all.url}")
+    private String AllFeeTransactionURL;
 
     @Value("${payment.initiate.fee.url}")
     private String feeRedirectURL;
@@ -87,6 +96,66 @@ public class FeeServiceImpl implements FeeService {
         }
         // return error
         throw new ExamFeeException("Payment failed");
+    }
+
+    @Override
+    public ExamSearchResponseDto getAllExamFee(ExamFeeSearchDto examFeeSearchDto) {
+        // validate request
+        validateGetAllPayload(examFeeSearchDto);
+        String sortKey = examFeeSearchDto.getSort().keySet().stream().findFirst().get();
+        Sort.Order order = Sort.Order.asc(sortKey);
+        if(examFeeSearchDto.getSort().get(sortKey)!=null
+                && examFeeSearchDto.getSort().get(sortKey).equalsIgnoreCase("asc")) {
+            order = Sort.Order.asc(sortKey);
+        }
+        PageRequest pageRequest = PageRequest.of(examFeeSearchDto.getPage(), examFeeSearchDto.getSize(), Sort.by(order));
+        Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
+        return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+    }
+
+    private void validateGetAllPayload(ExamFeeSearchDto examFeeSearchDto) {
+        if(examFeeSearchDto == null) {
+            examFeeSearchDto = ExamFeeSearchDto.builder()
+                    .page(0).size(50).build();
+        }
+        if(examFeeSearchDto.getPage() <= 0) {
+            examFeeSearchDto.setPage(0);
+        }
+        if(examFeeSearchDto.getSize() <= 0) {
+            examFeeSearchDto.setSize(50);
+        }
+        if(examFeeSearchDto.getSort() == null || examFeeSearchDto.getSort().isEmpty()) {
+            Map<String, String> sortMap = new HashMap<>();
+            sortMap.put("modifiedNo", "desc");
+            examFeeSearchDto.setSort(sortMap);
+        } else {
+            boolean isKeyMatched = examFeeSearchDto.getSort().entrySet().stream().anyMatch(x -> x.getKey().equalsIgnoreCase("referenceNo") ||
+                    x.getKey().equalsIgnoreCase("modifiedOn"));
+            if(!isKeyMatched) {
+                throw new ExamFeeException("Sort not supported for provided key.");
+            }
+        }
+    }
+
+    @Override
+    public ExamFee getExamFeeByRefNo(String refNo) {
+        log.info("ref no - {}", refNo);
+        // get transaction details from local db
+        ExamFee examFee = examFeeRepository.findByReferenceNo(refNo);
+        log.info("exam fee - {}", examFee);
+        // get latest status from user management
+        ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
+        log.info("response - {}", paymentUpdateResponse);
+        if(paymentUpdateResponse.getStatusCode() == HttpStatus.OK) {
+            // update record in DB
+            log.info("response body - {}", paymentUpdateResponse.getBody());
+        }
+        return examFee;
+    }
+
+    private ResponseEntity<Transaction> getPaymentUpdate(String refNo) {
+        String uri = feeStatusURL.concat(refNo);
+        return restTemplate.getForEntity(uri, Transaction.class);
     }
 
     private void saveExamFee(String referenceNumber, ExamFeeDto examFeeDto) {
