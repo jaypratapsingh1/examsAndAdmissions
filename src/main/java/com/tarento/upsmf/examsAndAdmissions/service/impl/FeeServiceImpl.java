@@ -112,6 +112,66 @@ public class FeeServiceImpl implements FeeService {
         throw new ExamFeeException("Payment failed");
     }
 
+    @Override
+    public ExamSearchResponseDto getAllExamFee(ExamFeeSearchDto examFeeSearchDto) {
+        // validate request
+        validateGetAllPayload(examFeeSearchDto);
+        String sortKey = examFeeSearchDto.getSort().keySet().stream().findFirst().get();
+        Sort.Order order = Sort.Order.asc(sortKey);
+        if(examFeeSearchDto.getSort().get(sortKey)!=null
+                && examFeeSearchDto.getSort().get(sortKey).equalsIgnoreCase("asc")) {
+            order = Sort.Order.asc(sortKey);
+        }
+        PageRequest pageRequest = PageRequest.of(examFeeSearchDto.getPage(), examFeeSearchDto.getSize(), Sort.by(order));
+        Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
+        return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+    }
+
+    private void validateGetAllPayload(ExamFeeSearchDto examFeeSearchDto) {
+        if(examFeeSearchDto == null) {
+            examFeeSearchDto = ExamFeeSearchDto.builder()
+                    .page(0).size(50).build();
+        }
+        if(examFeeSearchDto.getPage() <= 0) {
+            examFeeSearchDto.setPage(0);
+        }
+        if(examFeeSearchDto.getSize() <= 0) {
+            examFeeSearchDto.setSize(50);
+        }
+        if(examFeeSearchDto.getSort() == null || examFeeSearchDto.getSort().isEmpty()) {
+            Map<String, String> sortMap = new HashMap<>();
+            sortMap.put("modifiedNo", "desc");
+            examFeeSearchDto.setSort(sortMap);
+        } else {
+            boolean isKeyMatched = examFeeSearchDto.getSort().entrySet().stream().anyMatch(x -> x.getKey().equalsIgnoreCase("referenceNo") ||
+                    x.getKey().equalsIgnoreCase("modifiedOn"));
+            if(!isKeyMatched) {
+                throw new ExamFeeException("Sort not supported for provided key.");
+            }
+        }
+    }
+
+    @Override
+    public ExamFee getExamFeeByRefNo(String refNo) {
+        log.info("ref no - {}", refNo);
+        // get transaction details from local db
+        ExamFee examFee = examFeeRepository.findByReferenceNo(refNo);
+        log.info("exam fee - {}", examFee);
+        // get latest status from user management
+        ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
+        log.info("response - {}", paymentUpdateResponse);
+        if(paymentUpdateResponse.getStatusCode() == HttpStatus.OK) {
+            // update record in DB
+            log.info("response body - {}", paymentUpdateResponse.getBody());
+        }
+        return examFee;
+    }
+
+    private ResponseEntity<Transaction> getPaymentUpdate(String refNo) {
+        String uri = feeStatusURL.concat(refNo);
+        return restTemplate.getForEntity(uri, Transaction.class);
+    }
+
     private void saveExamFee(String referenceNumber, ExamFeeDto examFeeDto) {
         ExamCycle examCycleById = examCycleService.getExamCycleById(examFeeDto.getExamCycleId());
         Institute instituteById = instituteService.getInstituteById(examFeeDto.getInstituteId());
