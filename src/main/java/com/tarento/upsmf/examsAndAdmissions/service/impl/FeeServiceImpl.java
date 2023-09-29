@@ -117,7 +117,7 @@ public class FeeServiceImpl implements FeeService {
         // validate request
         validateGetAllPayload(examFeeSearchDto);
         String sortKey = examFeeSearchDto.getSort().keySet().stream().findFirst().get();
-        Sort.Order order = Sort.Order.asc(sortKey);
+        Sort.Order order = Sort.Order.desc(sortKey);
         if(examFeeSearchDto.getSort().get(sortKey)!=null
                 && examFeeSearchDto.getSort().get(sortKey).equalsIgnoreCase("asc")) {
             order = Sort.Order.asc(sortKey);
