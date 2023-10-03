@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
-import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ResultRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -38,6 +36,12 @@ public class DataImporterService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private StudentResultRepository studentResultRepository;
+    @Autowired
+    private AttendanceRepository attendanceRepository;
+    @Autowired
+    private ExamEntityRepository examCycleRepository;
 
     public JSONArray excelToJson(MultipartFile excelFile) throws IOException, JSONException {
         try (InputStream inputStream = excelFile.getInputStream();
@@ -133,7 +137,7 @@ public class DataImporterService {
             return false;
         }
     }
-    public Boolean saveDtoListToPostgres(List<StudentResult> dtoList, ResultRepository repository) {
+    public Boolean saveDtoListToPostgres(List<StudentResult> dtoList, StudentResultRepository repository) {
         try {
             List<StudentResult> entityList = convertResultDtoListToEntities(dtoList);
             repository.saveAll(entityList);
@@ -146,22 +150,25 @@ public class DataImporterService {
         List<ExamUploadData> entityList = new ArrayList<>();
 
         for (ExamUploadData dto : dtoList) {
-            ExamUploadData entity = new ExamUploadData();
+            boolean isDuplicate = checkIfDataExists(dto);
 
-            // Map ExamUploadData fields to ExamEntity fields
-            entity.setExamcycleName(dto.getExamcycleName());
-            entity.setCourse(dto.getCourse());
-            entity.setStartDate(dto.getStartDate());
-            entity.setEndDate(dto.getEndDate());
-            entity.setExamName(dto.getExamName());
-            entity.setDate(dto.getDate());
-            entity.setStartTime(dto.getStartTime());
-            entity.setEndTime(dto.getEndTime());
-            entity.setMaximumMarks(dto.getMaximumMarks());
+            if (!isDuplicate) {
+                ExamUploadData entity = new ExamUploadData();
 
-            entityList.add(entity);
+                // Map ExamUploadData fields to ExamEntity fields
+                entity.setExamcycleName(dto.getExamcycleName());
+                entity.setCourse(dto.getCourse());
+                entity.setStartDate(dto.getStartDate());
+                entity.setEndDate(dto.getEndDate());
+                entity.setExamName(dto.getExamName());
+                entity.setDate(dto.getDate());
+                entity.setStartTime(dto.getStartTime());
+                entity.setEndTime(dto.getEndTime());
+                entity.setMaximumMarks(dto.getMaximumMarks());
+
+                entityList.add(entity);
+            }
         }
-
         return entityList;
     }
 
@@ -169,23 +176,27 @@ public class DataImporterService {
         List<AttendanceRecord> entityList = new ArrayList<>();
 
         for (AttendanceRecord dto : dtoList) {
-            AttendanceRecord entity = new AttendanceRecord();
+            boolean isDuplicate = checkIfDataExists(dto);
 
-            entity.setFirstName(dto.getFirstName());
-            entity.setLastName(dto.getLastName());
-            entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
-            entity.setMothersName(dto.getMothersName());
-            entity.setFathersName(dto.getFathersName());
-            entity.setCourseName(dto.getCourseName());
-            entity.setExamCycleData(dto.getExamCycleData());
-            entity.setStartDate(dto.getStartDate());
-            entity.setEndDate(dto.getEndDate());
-            entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
-            entity.setPresentDays(dto.getPresentDays()) ;
-            entity.setAbsentDays(dto.getAbsentDays());
-            entity.setAttendancePercentage(dto.getAttendancePercentage());
+            if (!isDuplicate) {
+                AttendanceRecord entity = new AttendanceRecord();
 
-            entityList.add(entity);
+                entity.setFirstName(dto.getFirstName());
+                entity.setLastName(dto.getLastName());
+                entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
+                entity.setMothersName(dto.getMothersName());
+                entity.setFathersName(dto.getFathersName());
+                entity.setCourseName(dto.getCourseName());
+                entity.setExamCycleData(dto.getExamCycleData());
+                entity.setStartDate(dto.getStartDate());
+                entity.setEndDate(dto.getEndDate());
+                entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
+                entity.setPresentDays(dto.getPresentDays());
+                entity.setAbsentDays(dto.getAbsentDays());
+                entity.setAttendancePercentage(dto.getAttendancePercentage());
+
+                entityList.add(entity);
+            }
         }
 
         return entityList;
@@ -195,37 +206,50 @@ public class DataImporterService {
         List<StudentResult> entityList = new ArrayList<>();
 
         for (StudentResult dto : dtoList) {
-            StudentResult entity = new StudentResult();
+            boolean isDuplicate = checkIfDataExists(dto);
 
-            entity.setFirstName(dto.getFirstName());
-            entity.setLastName(dto.getLastName());
-            entity.setEnrollmentNumber(dto.getEnrollmentNumber());
-            entity.setMotherName(dto.getMotherName());
-            entity.setFatherName(dto.getFatherName());
-            entity.setCourseValue(dto.getCourseValue());
-            entity.setExamCycleValue(dto.getExamCycleValue());
-            entity.setExamValue(dto.getExamValue());
-            entity.setInternalMarks(dto.getInternalMarks());
-            entity.setPassingInternalMarks(dto.getPassingInternalMarks());
-            entity.setInternalMarksObtained(dto.getInternalMarksObtained()); ;
-            entity.setPracticalMarks(dto.getPracticalMarks());
-            entity.setPassingPracticalMarks(dto.getPassingPracticalMarks());
-            entity.setPracticalMarksObtained(dto.getPracticalMarksObtained()); ;
-            entity.setOtherMarks(dto.getOtherMarks());
-            entity.setPassingOtherMarks(dto.getPassingOtherMarks());
-            entity.setOtherMarksObtained(dto.getOtherMarksObtained()); ;
-            entity.setExternalMarks(dto.getExternalMarks());
-            entity.setPassingExternalMarks(dto.getPassingExternalMarks());
-            entity.setExternalMarksObtained(dto.getExternalMarksObtained());
-            entity.setTotalMarks(dto.getTotalMarks());
-            entity.setPassingTotalMarks(dto.getPassingTotalMarks());
-            entity.setTotalMarksObtained(dto.getTotalMarksObtained());
-            entity.setGrade(dto.getGrade());
-            entity.setResult(dto.getResult());
+            if (!isDuplicate) {
+                StudentResult entity = new StudentResult();
 
-            entityList.add(entity);
+                entity.setFirstName(dto.getFirstName());
+                entity.setLastName(dto.getLastName());
+                entity.setEnrollmentNumber(dto.getEnrollmentNumber());
+                entity.setMotherName(dto.getMotherName());
+                entity.setFatherName(dto.getFatherName());
+                entity.setCourseValue(dto.getCourseValue());
+                entity.setExamCycleValue(dto.getExamCycleValue());
+                entity.setExamValue(dto.getExamValue());
+                entity.setInternalMarks(dto.getInternalMarks());
+                entity.setPassingInternalMarks(dto.getPassingInternalMarks());
+                entity.setInternalMarksObtained(dto.getInternalMarksObtained());
+                entity.setPracticalMarks(dto.getPracticalMarks());
+                entity.setPassingPracticalMarks(dto.getPassingPracticalMarks());
+                entity.setPracticalMarksObtained(dto.getPracticalMarksObtained());
+                entity.setOtherMarks(dto.getOtherMarks());
+                entity.setPassingOtherMarks(dto.getPassingOtherMarks());
+                entity.setOtherMarksObtained(dto.getOtherMarksObtained());
+                entity.setExternalMarks(dto.getExternalMarks());
+                entity.setPassingExternalMarks(dto.getPassingExternalMarks());
+                entity.setExternalMarksObtained(dto.getExternalMarksObtained());
+                entity.setTotalMarks(dto.getTotalMarks());
+                entity.setPassingTotalMarks(dto.getPassingTotalMarks());
+                entity.setTotalMarksObtained(dto.getTotalMarksObtained());
+                entity.setGrade(dto.getGrade());
+                entity.setResult(dto.getResult());
+
+                entityList.add(entity);
+            }
         }
 
         return entityList;
+    }
+    private boolean checkIfDataExists(StudentResult dto) {
+        return studentResultRepository.existsByEnrollmentNumber(dto.getEnrollmentNumber());
+    }
+    private boolean checkIfDataExists(AttendanceRecord dto) {
+        return attendanceRepository.existsByStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
+    }
+    private boolean checkIfDataExists(ExamUploadData dto) {
+        return examCycleRepository.findByCourseAndExamcycleName(dto.getCourse(),dto.getExamcycleName());
     }
 }
