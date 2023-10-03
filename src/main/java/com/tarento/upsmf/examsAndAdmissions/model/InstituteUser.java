@@ -1,9 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -11,12 +8,13 @@ import javax.persistence.*;
 @Table(name = "institute_user_mapping",indexes = {@Index(columnList = "user_id")})
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @ToString
 @Builder
 public class InstituteUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column(name = "user_id", nullable = false)

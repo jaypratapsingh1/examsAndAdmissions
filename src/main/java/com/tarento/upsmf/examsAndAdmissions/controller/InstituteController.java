@@ -91,7 +91,7 @@ public class InstituteController {
         }
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     public ResponseEntity<ResponseDto> getInstituteByUser(@PathVariable("userId") String userId) {
         try {
             List<Institute> instituteList = instituteService.getInstituteByUserId(userId);
@@ -101,7 +101,7 @@ public class InstituteController {
         }
     }
 
-    @GetMapping("/assign/user")
+    @PostMapping("/assign/user")
     public ResponseEntity<ResponseDto> addInstituteUserMapping(@RequestBody InstituteUserDto instituteUserDto) {
         try {
             Boolean isAdded = instituteService.addInstituteUserMapping(instituteUserDto);
