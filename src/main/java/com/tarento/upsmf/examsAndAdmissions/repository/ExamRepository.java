@@ -19,4 +19,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     Optional<Exam> findByExamNameAndExamDateAndStartTimeAndEndTime(String examName, LocalDate examDate, LocalTime startTime, LocalTime endTime);
     
     Optional<Exam> findByExamCycleIdAndObsolete(Long examCycleId, Integer value);
+    List<Exam> findByExamCycleId(Long examCycleId);
+
 }
