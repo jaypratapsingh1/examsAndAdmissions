@@ -88,6 +88,8 @@ public class Constants {
     public static final String EXAM_NAME = "examName";
     public static final String ID = "id";
     public static final String EXAM_START_TIME = "examStartTime";
+    public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
+  
     public static final String NOT_FOUND = "not found";
     public static final String INTERNAL_SERVER_ERROR = "internal server error";
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";

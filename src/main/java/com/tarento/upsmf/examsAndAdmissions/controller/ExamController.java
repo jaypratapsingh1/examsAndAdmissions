@@ -52,6 +52,11 @@ public class ExamController {
         ResponseDto response = examService.restoreExam(id);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
+    @GetMapping("/byExamCycle/{examCycleId}")
+    public ResponseEntity<?> getExamsByExamCycleId(@PathVariable Long examCycleId) {
+        ResponseDto response = examService.findByExamCycleId(examCycleId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 /*    @PostMapping("/admin/publishResults/{examId}")
     public ResponseEntity<String> publishExamResults(@PathVariable Long examId) {
         try {
