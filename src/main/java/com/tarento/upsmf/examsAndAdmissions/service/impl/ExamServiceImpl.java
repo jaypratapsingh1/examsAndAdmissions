@@ -164,4 +164,21 @@ public class ExamServiceImpl implements ExamService {
         exam.setIsResultsPublished(true);
         examRepository.save(exam);
     }
+    @Override
+    public ResponseDto findByExamCycleId(Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_EXAM_FIND_BY_CYCLE);
+        try {
+            logger.info("Finding Exams by ExamCycle ID: {}", examCycleId);
+            List<Exam> exams = examRepository.findByExamCycleId(examCycleId);
+            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+            response.put(Constants.RESPONSE, exams);
+            response.setResponseCode(HttpStatus.OK); // Set the response code to HTTP OK (200)
+        } catch (Exception e) {
+            logger.error("Error while finding Exams by ExamCycle ID: {}", examCycleId, e);
+            response.put(Constants.MESSAGE, "Error finding Exams");
+            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
+            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR); // Set the response code to HTTP Internal Server Error (500)
+        }
+        return response;
+    }
 }

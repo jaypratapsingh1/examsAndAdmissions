@@ -93,7 +93,7 @@ public class StudentService {
         });
     }
 
-    private String storeFile(MultipartFile file) throws IOException {
+    String storeFile(MultipartFile file) throws IOException {
         Path filePath = null;
         String fileLocation = null;
         try {

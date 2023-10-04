@@ -39,6 +39,19 @@ public class Constants {
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
 
+    // ExamCycle
+    public static final String API_EXAM_CYCLE_ADD = "api.examCycle.add";
+    public static final String API_EXAM_CYCLE_GET_ALL = "api.examCycle.getAll";
+    public static final String API_EXAM_CYCLE_GET_BY_ID = "api.examCycle.getById";
+    public static final String API_EXAM_CYCLE_DELETE = "api.examCycle.delete";
+    public static final String API_EXAM_CYCLE_UPDATE = "api.examCycle.update";
+    public static final String API_EXAM_CYCLE_RESTORE = "api.examCycle.restore";
+    public static final String API_EXAM_CYCLE_ADD_EXAMS = "api.examCycle.addExams";
+    public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
+    public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
+
+
+
     //Question Paper
     public static final String API_QUESTION_PAPER_GET_ALL = "api.questionPaper.get";
     public static final String API_QUESTION_PAPER_GET_BY_ID = "api.questionPaper.getById";
@@ -78,6 +91,10 @@ public class Constants {
     public static final String ID = "id";
     public static final String EXAM_START_TIME = "examStartTime";
     public static final HttpStatus NOT_FOUND = HttpStatus.NOT_FOUND;
+    public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
+    public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallTicket.getPendingData";
+  
+    public static final String NOT_FOUND = "not found";
     public static final String INTERNAL_SERVER_ERROR = "internal server error";
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
     public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";

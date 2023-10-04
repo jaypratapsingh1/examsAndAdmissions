@@ -27,4 +27,6 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     List<StudentExamRegistration> findByExamCenterInstituteId(Long instituteId);
 
     List<StudentExamRegistration> findByInstitute(Institute unverifiedInstitute);
+    List<StudentExamRegistration> findByIsFeesPaidAndStatus(boolean isFeesPaid, String status);
+
 }

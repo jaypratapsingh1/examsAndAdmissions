@@ -1,16 +1,23 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequestDTO;
 import com.tarento.upsmf.examsAndAdmissions.service.HallTicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
@@ -44,13 +51,23 @@ public class HallTicketController {
     }
 
     @PostMapping("/dataCorrection/request")
-    public ResponseEntity<String> requestDataCorrection(@RequestBody DataCorrectionRequestDTO request) {
-        if (request == null || request.getStudentId() == null || request.getCorrectionDetails() == null || request.getCorrectionDetails().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request data");
-        }
+    public ResponseEntity<String> requestDataCorrection(
+            @RequestParam("studentId") Long studentId,
+            @RequestParam("correctionDetails") String correctionDetails,
+            @RequestParam("proof") MultipartFile proof) {
+        try {
+            if (studentId == null || correctionDetails == null || correctionDetails.isEmpty() || proof.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request data");
+            }
 
-        hallTicketService.requestHallTicketDataCorrection(request.getStudentId(), request.getCorrectionDetails());
-        return ResponseEntity.ok("Data correction requested");
+            hallTicketService.requestHallTicketDataCorrection(studentId, correctionDetails, proof);
+            return ResponseEntity.ok("Data correction requested");
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving proof file");
+        } catch (Exception e) {
+            // Catch other types of exceptions if necessary
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred processing your request");
+        }
     }
 
     @GetMapping("/dataCorrection/requests")
@@ -78,5 +95,39 @@ public class HallTicketController {
 
         hallTicketService.rejectDataCorrection(requestId, rejectionReason);
         return ResponseEntity.ok("Request rejected");
+    }
+
+    @GetMapping("/pendingData")
+    public ResponseEntity<ResponseDto> getPendingData(
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long examCycleId,
+            @RequestParam(required = false) Long instituteId) {
+
+        ResponseDto pendingDataList = hallTicketService.getPendingDataForHallTickets(courseId, examCycleId, instituteId);
+
+        if (pendingDataList != null) {
+            return ResponseEntity.ok(pendingDataList);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
+    }
+    @GetMapping("/downloadProof/{requestId}")
+    public ResponseEntity<Resource> downloadProof(@PathVariable Long requestId) {
+        try {
+            String proofUrl = hallTicketService.getProofUrlByRequestId(requestId);
+
+            RestTemplate restTemplate = new RestTemplate();
+            byte[] bytes = restTemplate.getForObject(proofUrl, byte[].class);
+            ByteArrayResource resource = new ByteArrayResource(bytes);
+
+            String contentType = "image/jpeg";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + "proof.jpg" + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }

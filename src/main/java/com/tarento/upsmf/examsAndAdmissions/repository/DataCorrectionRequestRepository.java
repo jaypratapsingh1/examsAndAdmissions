@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DataCorrectionRequestRepository extends JpaRepository<DataCorrectionRequest, Long> {
+    String getProofAttachmentPathById(Long requestId);
 }
