@@ -15,19 +15,21 @@ public class InstituteService {
     @Autowired
     private InstituteRepository instituteRepository;
 
-    public void updateVerificationStatus(ApprovalRejectionDTO dto) {
+    public Institute updateVerificationStatus(ApprovalRejectionDTO dto) {
         Institute institute = instituteRepository.findById(dto.getInstituteId())
                 .orElseThrow(() -> new EntityNotFoundException("Institute not found"));
         institute.handleAction(dto.getAction(), dto.getIpAddress(), dto.getRemarks());
         instituteRepository.save(institute);
+        return institute;
     }
 
-    public void markNotAllowedForExamCentre(Long instituteId) {
+    public Institute markNotAllowedForExamCentre(Long instituteId) {
         Institute institute = instituteRepository.findById(instituteId)
                 .orElseThrow(() -> new EntityNotFoundException("Institute not found"));
 
         institute.setAllowedForExamCentre(false);
         instituteRepository.save(institute);
+        return institute;
     }
 
     public Institute getInstituteById(Long instituteId) {
@@ -56,5 +58,9 @@ public class InstituteService {
         existingInstitute.setEmail(updatedInstitute.getEmail());
 
         return instituteRepository.save(existingInstitute);
+    }
+
+    public Optional<Institute> getInstituteById(String id) {
+        return Optional.ofNullable(instituteRepository.findByInstituteCode(id));
     }
 }

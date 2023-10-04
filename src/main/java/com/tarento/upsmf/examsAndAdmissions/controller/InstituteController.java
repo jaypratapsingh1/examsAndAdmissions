@@ -1,6 +1,5 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.DispatchTracker;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
@@ -9,23 +8,24 @@ import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/admin/institutes")
+@RequestMapping("/api/v1/institutes")
 public class InstituteController {
 
     @Autowired
     private DispatchTrackerService dispatchTrackerService;
     private final InstituteService instituteService;
+    ResponseDto response = new ResponseDto();
 
     @Autowired
     public InstituteController(InstituteService instituteService) {
@@ -33,28 +33,43 @@ public class InstituteController {
     }
 
     @PostMapping("/create")
-    public Institute createInstitute(@RequestBody Institute institute) {
-        return instituteService.createInstitute(institute);
+    public ResponseEntity<ResponseDto> createInstitute(@RequestBody Institute institute) {
+        Institute result = instituteService.createInstitute(institute);
+        return FeeController.handleSuccessResponse(result);
     }
 
     @PutMapping("/{id}/update")
-    public Institute updateInstitute(@PathVariable Long id, @RequestBody Institute updatedInstitute) {
-        return instituteService.updateInstitute(id, updatedInstitute);
+    public ResponseEntity<ResponseDto> updateInstitute(@PathVariable Long id, @RequestBody Institute updatedInstitute) {
+        Institute result = instituteService.updateInstitute(id, updatedInstitute);
+        return FeeController.handleSuccessResponse(result);
     }
 
     @PostMapping("/verify")
-    public void updateVerificationStatus(@RequestBody ApprovalRejectionDTO dto) {
-        instituteService.updateVerificationStatus(dto);
+    public ResponseEntity<?> updateVerificationStatus(@RequestBody ApprovalRejectionDTO dto) {
+        Institute result = instituteService.updateVerificationStatus(dto);
+        return FeeController.handleSuccessResponse(result);
     }
 
     @PutMapping("/{id}/mark-not-allowed")
-    public void markNotAllowedForExamCentre(@PathVariable Long id) {
-        instituteService.markNotAllowedForExamCentre(id);
+    public ResponseEntity<?> markNotAllowedForExamCentre(@PathVariable Long id) {
+        Institute result = instituteService.markNotAllowedForExamCentre(id);
+        return FeeController.handleSuccessResponse(result);
     }
 
     @GetMapping("/{id}")
-    public Institute getInstituteById(@PathVariable Long id) {
-        return instituteService.getInstituteById(id);
+    public ResponseEntity<?> getInstituteById(@PathVariable String id) {
+        try {
+            Optional<Institute> institute = instituteService.getInstituteById(id);
+            if (institute.isPresent()) {
+                return FeeController.handleSuccessResponse(institute);
+            } else {
+                response.setResponseCode(Constants.NOT_FOUND);
+                response.getResult().put("message", "Institute not found.");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return FeeController.handleErrorResponse(e);
+        }
     }
 
     @PostMapping("/dispatchUpload")
@@ -68,11 +83,11 @@ public class InstituteController {
             ResponseDto responseData = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
             responseData.put("responseCode", Constants.SUCCESSFUL);
             responseData.put("message", "Dispatch proof uploaded successfully.");
-            return new ResponseEntity<>(responseData,response.getResponseCode());
+            return new ResponseEntity<>(responseData, response.getResponseCode());
         } catch (IOException e) {
             response.put("responseCode", Constants.INTERNAL_SERVER_ERROR);
             response.put("message", "Error uploading dispatch proof.");
-            return new ResponseEntity<>(response,response.getResponseCode());
+            return new ResponseEntity<>(response, response.getResponseCode());
         }
     }
 
@@ -80,17 +95,17 @@ public class InstituteController {
     public ResponseEntity<?> getDispatchList(
             @RequestParam Long examCycleId,
             @RequestParam Long examId) {
-        ResponseDto response = new ResponseDto();
+
         ResponseDto responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
 
         if (responseData != null) {
             response.put("responseCode", Constants.SUCCESSFUL);
             response.put("dispatchList", response.getResult());
-            return new ResponseEntity<>(responseData,response.getResponseCode());
+            return new ResponseEntity<>(responseData, response.getResponseCode());
         } else {
             response.put("responseCode", Constants.NOT_FOUND);
             response.put("message", "No dispatch records found.");
-            return new ResponseEntity<>(response,response.getResponseCode());
+            return new ResponseEntity<>(response, response.getResponseCode());
         }
     }
 }

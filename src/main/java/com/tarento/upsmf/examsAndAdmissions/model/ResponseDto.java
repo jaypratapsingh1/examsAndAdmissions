@@ -7,16 +7,16 @@ import java.util.Map;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 
 public class ResponseDto {
 
+
     private String id;
     private String ver;
-    @Getter
 	private String ts;
     private ResponseParams params;
     private HttpStatus responseCode;
-
     private transient Map<String, Object> response = new HashMap<>();
 
     public ResponseDto() {
@@ -36,16 +36,8 @@ public class ResponseDto {
         this.id = id;
     }
 
-    public String getId() {
-        return id;
-    }
-
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getVer() {
-        return ver;
     }
 
     public void setVer(String ver) {
@@ -56,22 +48,13 @@ public class ResponseDto {
         this.ts = ts;
     }
 
-    public ResponseParams getParams() {
-        return params;
-    }
-
     public void setParams(ResponseParams params) {
         this.params = params;
-    }
-
-    public HttpStatus getResponseCode() {
-        return responseCode;
     }
 
     public void setResponseCode(HttpStatus responseCode) {
         this.responseCode = responseCode;
     }
-
     public Map<String, Object> getResult() {
         return response;
     }
@@ -94,5 +77,7 @@ public class ResponseDto {
 
     public boolean containsKey(String key) {
         return response.containsKey(key);
+    }
+    public void setMessage(String s) {
     }
 }

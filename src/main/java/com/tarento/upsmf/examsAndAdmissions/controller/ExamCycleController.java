@@ -1,9 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Course;
-import com.tarento.upsmf.examsAndAdmissions.model.Exam;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
@@ -155,9 +152,9 @@ public class ExamCycleController {
         }
     }
     @PostMapping("/bulkUpload")
-    public ResponseEntity<Map<String, Object>> processBulkExamUploads(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<?> processBulkExamUploads(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
         JSONArray jsonArray = null;
+        ResponseDto response = new ResponseDto(Constants.API_EXAMCYCLE_BULK_UPLOAD);
         Class<ExamUploadData> dtoClass = ExamUploadData.class;
         try {
             switch (fileType.toLowerCase()) {
@@ -176,15 +173,22 @@ public class ExamCycleController {
             Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, repository);
 
             if (success) {
-                response.put("message", "File processed successfully.");
+                Map<String, Object> result = new HashMap<>();
+
+                response.setResult(result);
+                response.setResponseCode(HttpStatus.OK);
+
                 return ResponseEntity.ok(response);
             } else {
                 response.put("error", "File processing failed.");
+                response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         } catch (Exception e) {
             response.put("error", "An error occurred while processing the file: " + e.getMessage());
+            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
 }

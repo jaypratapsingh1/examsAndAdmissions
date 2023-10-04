@@ -70,7 +70,7 @@ public class ProjectUtil {
 		response.setId(api);
 		response.setVer(Constants.API_VERSION_1);
 		response.setParams(new ResponseParams());
-		response.getParams().setStatus(Constants.SUCCESSFUL);
+		response.getParams().setStatus(Constants.SUCCESS);
 		response.setResponseCode(HttpStatus.OK);
 		response.setTs(DateTime.now().toString());
 		return response;
