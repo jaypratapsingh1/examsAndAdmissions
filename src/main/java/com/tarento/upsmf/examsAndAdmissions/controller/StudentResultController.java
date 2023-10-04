@@ -138,7 +138,7 @@ public class StudentResultController {
         }
     }
     @PostMapping("/bulkUpload")
-    public ResponseEntity<Map<String, Object>> processBulkResultUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+    public ResponseEntity<?> processBulkResultUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
         Map<String, Object> response = new HashMap<>();
         JSONArray jsonArray = null;
         Class<StudentResult> dtoClass = StudentResult.class;
@@ -160,14 +160,13 @@ public class StudentResultController {
 
             if (success) {
                 response.put("message", "File processed successfully.");
-                return ResponseEntity.ok(response);
+                return FeeController.handleSuccessResponse(response);
             } else {
                 response.put("error", "File processing failed.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         } catch (Exception e) {
-            response.put("error", "An error occurred while processing the file: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+           return FeeController.handleErrorResponse(e);
         }
     }
 }

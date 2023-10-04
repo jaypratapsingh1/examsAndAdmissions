@@ -73,7 +73,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/bulkUpload")
-    public ResponseEntity<Map<String, Object>> processBulkAttendanceUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+    public ResponseEntity<?> processBulkAttendanceUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
         Map<String, Object> response = new HashMap<>();
         JSONArray jsonArray = null;
         Class<AttendanceRecord> dtoClass = AttendanceRecord.class;
@@ -88,21 +88,19 @@ public class AttendanceController {
                 default:
                     // Handle unsupported file type
                     response.put("error", "Unsupported file type");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                    return FeeController.handleSuccessResponse(response);
             }
             List<AttendanceRecord> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, AttendanceRecord.class);
             Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, repository);
 
             if (success) {
-                response.put("message", "File processed successfully.");
-                return ResponseEntity.ok(response);
+                return FeeController.handleSuccessResponse(success);
             } else {
                 response.put("error", "File processing failed.");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         } catch (Exception e) {
-            response.put("error", "An error occurred while processing the file: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return FeeController.handleErrorResponse(e);
         }
     }
 

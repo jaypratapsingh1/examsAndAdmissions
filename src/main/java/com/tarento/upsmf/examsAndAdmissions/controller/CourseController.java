@@ -1,8 +1,10 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Course;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,17 +21,20 @@ public class CourseController {
     }
 
     @PostMapping("/create")
-    public Course createCourse(@RequestBody Course course) {
-        return courseService.createCourse(course);
+    public ResponseEntity<?> createCourse(@RequestBody Course course) {
+        Course result = courseService.createCourse(course);
+        return FeeController.handleSuccessResponse(result);
     }
 
     @GetMapping("/list")
-    public List<Course> getAllCourses() {
-        return courseService.getAllCourses();
+    public ResponseEntity<?> getAllCourses() {
+        List<Course> result = courseService.getAllCourses();
+        return FeeController.handleSuccessResponse(result);
     }
 
     @GetMapping("/list/{id}")
-    public Course getCourseById(@PathVariable Long id) {
-        return courseService.getCourseById(id);
+    public ResponseEntity<?> getCourseById(@PathVariable Long id) {
+        Course result = courseService.getCourseById(id);
+        return FeeController.handleSuccessResponse(result);
     }
 }

@@ -244,7 +244,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             questionPaperRepository.save(uploadData);
             //Getting question paper id
             uploadedFile.put(Constants.ID, uploadData.getId());
-            response.getParams().setStatus(Constants.SUCCESSFUL);
+            response.getParams().setStatus(Constants.SUCCESS);
             response.setResponseCode(HttpStatus.OK);
             response.getResult().putAll(uploadedFile);
         } catch (IOException e) {
