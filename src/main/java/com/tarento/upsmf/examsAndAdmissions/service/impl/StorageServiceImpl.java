@@ -95,7 +95,7 @@ public class StorageServiceImpl implements StorageService {
 			String objectKey = serverProperties.getCloudContainerName() + "/" + fileName;
 			storageService.deleteObject(serverProperties.getCloudContainerName(), objectKey,
 					Option.apply(Boolean.FALSE));
-			response.getParams().setStatus(Constants.SUCCESSFUL);
+			response.getParams().setStatus(Constants.SUCCESS);
 			response.setResponseCode(HttpStatus.OK);
 			return response;
 		} catch (Exception e) {

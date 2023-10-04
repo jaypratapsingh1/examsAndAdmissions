@@ -1,5 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.util;
 
+import org.springframework.http.HttpStatus;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -8,7 +10,7 @@ public class Constants {
 
     // General
     public static final String MESSAGE = "message";
-    public static final String SUCCESSFUL = "Successful";
+    public static final HttpStatus SUCCESSFUL = HttpStatus.OK;
     public static final String RESPONSE = "response";
     public static final String FAILUREMESSAGE = "failure message";
     public static final String SUCCESSMESSAGE = "Successfully stores the data";
@@ -88,12 +90,14 @@ public class Constants {
     public static final String EXAM_NAME = "examName";
     public static final String ID = "id";
     public static final String EXAM_START_TIME = "examStartTime";
+    public static final HttpStatus NOT_FOUND = HttpStatus.NOT_FOUND;
     public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
   
     public static final String NOT_FOUND = "not found";
 
     public static final String INTERNAL_SERVER_ERROR = "internal server error";
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
+  
     public static final String API_HALLTICKET_GET = "api.hallticket.get";
     public static final String API_HALLTICKET_REQUEST_DATA_CORRECTION = "api.hallticket.requestDataCorrection";
     public static final String API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS = "api.hallticket.getAllDataCorrectionRequests";
@@ -103,13 +107,21 @@ public class Constants {
     public static final String API_HALLTICKET_DOWNLOAD_PROOF = "api.hallticket.downloadProof";
     public static final String API_HALLTICKET_GET_PROOF_URL_BY_REQUEST = "api.hallticket.getProofUrl";
 
+    public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";
+    public static final String API_MARK_NOT_ALLOWED ="api.institute.markNotAllowed";
+    public static final String API_UPDATE_VERIFICATION_STATUS ="api.institute.updateVerificationStatus";
+    public static final String API_CREATE_INSTITUTE = "api.institute.create";
+    public static final String API_GET_INSTITUTE_BY_ID = "api.institute.getById";
+    public static final String API_UPDATE_INSTITUTE = "api.institute.update";
+    public static final String SUCCESS = "success";
+    public static final HttpStatus ERROR = HttpStatus.INTERNAL_SERVER_ERROR;
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";
         String GET_NODE_ERROR = "Unable to get the node";
     }
 
-    public class ResponseCodes {
+    public static class ResponseCodes {
         private ResponseCodes() {
         }
 
@@ -121,7 +133,7 @@ public class Constants {
         public static final String SUCCESS = "success";
     }
 
-    public class ServiceRepositories {
+    public static class ServiceRepositories {
         private ServiceRepositories() {
         }
 
