@@ -88,6 +88,7 @@ public class Constants {
     public static final String ID = "id";
     public static final String EXAM_START_TIME = "examStartTime";
     public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
+    public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallTicket.getPendingData";
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";
