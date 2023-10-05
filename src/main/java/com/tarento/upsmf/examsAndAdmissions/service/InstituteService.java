@@ -21,11 +21,10 @@ public class InstituteService {
     @Autowired
     private InstituteRepository instituteRepository;
 
-    public Institute updateVerificationStatus(ApprovalRejectionDTO dto) {
     @Autowired
     private InstituteUserMappingRepository instituteUserMappingRepository;
 
-    public void updateVerificationStatus(ApprovalRejectionDTO dto) {
+    public Institute updateVerificationStatus(ApprovalRejectionDTO dto) {
         Institute institute = instituteRepository.findById(dto.getInstituteId())
                 .orElseThrow(() -> new EntityNotFoundException("Institute not found"));
         institute.handleAction(dto.getAction(), dto.getIpAddress(), dto.getRemarks());
@@ -72,6 +71,7 @@ public class InstituteService {
 
     public Optional<Institute> getInstituteById(String id) {
         return Optional.ofNullable(instituteRepository.findByInstituteCode(id));
+    }
     public List<Institute> getInstituteByUserId(String userId) {
         InstituteUser instituteUser = instituteUserMappingRepository.findByUserId(userId);
         if(instituteUser == null || instituteUser.getInstitute() == null) {
