@@ -92,10 +92,20 @@ public class Constants {
     public static final String EXAM_START_TIME = "examStartTime";
     public static final HttpStatus NOT_FOUND = HttpStatus.NOT_FOUND;
     public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
-    public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallTicket.getPendingData";
   
+
     public static final String INTERNAL_SERVER_ERROR = "internal server error";
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
+  
+    public static final String API_HALLTICKET_GET = "api.hallticket.get";
+    public static final String API_HALLTICKET_REQUEST_DATA_CORRECTION = "api.hallticket.requestDataCorrection";
+    public static final String API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS = "api.hallticket.getAllDataCorrectionRequests";
+    public static final String API_HALLTICKET_APPROVE_DATA_CORRECTION = "api.hallticket.approveDataCorrection";
+    public static final String API_HALLTICKET_REJECT_DATA_CORRECTION = "api.hallticket.rejectDataCorrection";
+    public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallticket.getPendingData";
+    public static final String API_HALLTICKET_DOWNLOAD_PROOF = "api.hallticket.downloadProof";
+    public static final String API_HALLTICKET_GET_PROOF_URL_BY_REQUEST = "api.hallticket.getProofUrl";
+
     public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";
     public static final String API_MARK_NOT_ALLOWED ="api.institute.markNotAllowed";
     public static final String API_UPDATE_VERIFICATION_STATUS ="api.institute.updateVerificationStatus";

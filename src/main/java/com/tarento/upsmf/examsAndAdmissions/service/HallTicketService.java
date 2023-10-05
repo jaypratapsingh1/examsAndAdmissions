@@ -16,10 +16,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
@@ -63,47 +60,174 @@ public class HallTicketService {
     private AttendanceRepository attendanceRepository;
 
     @Autowired
+    private ExamRepository examRepository;
+
+    @Autowired
     private EntityManager entityManager;
     @Autowired
     private StudentService studentService;
+    public ResponseDto getHallTicket(Long id, String dateOfBirth) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
 
-    public ResponseEntity<byte[]> getHallTicket(Long id, String dateOfBirth) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-
         Date dob;
         LocalDate localDate;
         try {
             dob = formatter.parse(dateOfBirth);
             localDate = dob.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-
         } catch (ParseException e) {
-            throw new RuntimeException("Invalid date format", e);
+            setErrorResponse(response, "INVALID_DATE_FORMAT", "Invalid date format", HttpStatus.BAD_REQUEST);
+            return response;
         }
 
         Optional<StudentExamRegistration> studentOptional = studentExamRegistrationRepository.findByIdAndStudent_DateOfBirth(id, localDate);
 
-        if (studentOptional.isPresent()) {
-            StudentExamRegistration registration = studentOptional.get();  // Extracting the StudentExamRegistration object from the Optional
-            Student student = studentOptional.get().getStudent();
-
-            if (studentOptional.get().isFeesPaid() && studentOptional.get().getExamCenter()!=null) {
-                byte[] hallTicketData = generateHallTicket(registration);  // This is where you generate the hall ticket data dynamically
-                return ResponseEntity.ok(hallTicketData);
-            } else {
-                // User doesn't meet the criteria for hall ticket issuance
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .header("Content-Type", "text/plain; charset=utf-8")
-                        .body("You don't meet the criteria for hall ticket issuance.".getBytes());
-            }
-        } else {
-            // No student record found for the provided details
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .header("Content-Type", "text/plain; charset=utf-8")
-                    .body("No student record found for the provided details.".getBytes());
+        if (!studentOptional.isPresent()) {
+            setErrorResponse(response, "STUDENT_NOT_FOUND", "No student record found for the provided details.", HttpStatus.NOT_FOUND);
+            return response;
         }
+
+        StudentExamRegistration registration = studentOptional.get();
+        byte[] hallTicketData;
+        try {
+            hallTicketData = generateHallTicket(registration);
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            // Assuming you want to encode the PDF as a base64 string for the response
+            response.put(Constants.RESPONSE, Base64.getEncoder().encodeToString(hallTicketData));
+            response.setResponseCode(HttpStatus.OK);
+        } catch (Exception e) {
+            // Handle any exception that might occur during hall ticket generation
+            setErrorResponse(response, "HALL_TICKET_GENERATION_ERROR", "Error generating hall ticket", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
     }
-    private byte[] generateHallTicket(StudentExamRegistration studentOptional) { // Added an Exam parameter to provide exam details
+
+    public ResponseDto requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
+        DataCorrectionRequest request = new DataCorrectionRequest();
+        request.setStudentId(studentId);
+        request.setRequestedCorrection(correctionDetails);
+        request.setStatus("NEW");
+        if (proof != null && !proof.isEmpty()) {
+            String path = studentService.storeFile(proof);
+            request.setProofAttachmentPath(path);
+        }
+        dataCorrectionRequestRepository.save(request);
+        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+        response.put(Constants.RESPONSE, request);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
+    public ResponseDto getAllDataCorrectionRequests() {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS);
+        List<DataCorrectionRequest> requests = dataCorrectionRequestRepository.findAll();
+        if (!requests.isEmpty()) {
+            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+            response.put(Constants.RESPONSE, requests);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "NO_DATA_CORRECTION_REQUESTS", "No data correction requests found.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public ResponseDto approveDataCorrection(Long requestId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_APPROVE_DATA_CORRECTION);
+        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
+        if (request != null) {
+            request.setStatus("APPROVED");
+            dataCorrectionRequestRepository.save(request);
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, request);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "REQUEST_NOT_FOUND", "Request not found.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public ResponseDto rejectDataCorrection(Long requestId, String rejectionReason) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REJECT_DATA_CORRECTION);
+        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
+        if (request != null) {
+            request.setStatus("REJECTED");
+            request.setRejectionReason(rejectionReason);
+            dataCorrectionRequestRepository.save(request);
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, request);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "REQUEST_NOT_FOUND", "Request not found.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public ResponseDto getPendingDataForHallTickets(Long courseId, Long examCycleId, Long instituteId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_PENDING_DATA);
+        List<StudentExamRegistration> registrations = fetchPendingDataForHallTickets(courseId, examCycleId, instituteId);
+        if (!registrations.isEmpty()) {
+            List<PendingDataDto> pendingDataDtos = registrations.stream().map(this::toPendingDataDto).collect(Collectors.toList());
+            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+            response.put(Constants.RESPONSE, pendingDataDtos);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "NO_PENDING_HALLTICKETS", "No pending hall tickets found for the provided filters.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public ResponseDto downloadProofForDataCorrectionRequest(Long requestId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_DOWNLOAD_PROOF);
+        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
+        if (request != null) {
+            String proofPath = request.getProofAttachmentPath();
+            Resource file = loadProofAsStreamResource(proofPath);
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, file);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "PROOF_NOT_FOUND", "Proof not found for the request.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public ResponseDto getProofUrlByRequestId(Long requestId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_PROOF_URL_BY_REQUEST);
+        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
+        if (request != null) {
+            String proofUrl = request.getProofAttachmentPath();
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, proofUrl);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            setErrorResponse(response, "PROOF_URL_NOT_FOUND", "Proof URL not found for the request.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+    public void setErrorResponse(ResponseDto response, String code, String message, HttpStatus status) {
+        ResponseDto.ErrorDetails errorDetails = new ResponseDto.ErrorDetails();
+        errorDetails.setCode(code);
+        errorDetails.setMessage(message);
+        response.setError(errorDetails);
+        response.setResponseCode(status);
+    }
+    private byte[] generateHallTicket(StudentExamRegistration registration) {
         PDDocument document = new PDDocument();
+        // Get the exam cycle for the registration
+        ExamCycle examCycle = registration.getExamCycle();
+        if (examCycle == null) {
+            throw new RuntimeException("Exam cycle not found for the registration.");
+        }
+        // Get all exams within the same exam cycle
+        List<Exam> examsInCycle = examRepository.findByExamCycleId(examCycle.getId());
+
+        if (examsInCycle == null || examsInCycle.isEmpty()) {
+            throw new RuntimeException("No exams found in the exam cycle.");
+        }
+
         PDPage page = new PDPage(PDRectangle.A4);
         document.addPage(page);
 
@@ -119,27 +243,31 @@ public class HallTicketService {
             contentStream.setFont(PDType1Font.HELVETICA, 14);
             contentStream.beginText();
             contentStream.newLineAtOffset(50, 700);
-            contentStream.showText("Name: " + studentOptional.getStudent().getFirstName() + " " + studentOptional.getStudent().getSurname());
+            contentStream.showText("Name: " + registration.getStudent().getFirstName() + " " + registration.getStudent().getSurname());
             contentStream.newLineAtOffset(0, -20);
-            contentStream.showText("Exam Enrollment Number: " + studentOptional.getStudent().getEnrollmentNumber());
+            contentStream.showText("Exam Enrollment Number: " + registration.getStudent().getEnrollmentNumber());
             contentStream.newLineAtOffset(0, -20);
-            contentStream.showText("Date of Birth: " + studentOptional.getStudent().getDateOfBirth());
+            contentStream.showText("Date of Birth: " + registration.getStudent().getDateOfBirth());
+            contentStream.newLineAtOffset(0, -20);
             contentStream.endText();
 
-            // Exam Details (Assuming an Exam object has these methods)
-            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14);
-            contentStream.beginText();
-            contentStream.newLineAtOffset(50, 620);
-            contentStream.showText("Exam: " + studentOptional.getExam().getExamName());
-            contentStream.newLineAtOffset(0, -20);
-            contentStream.showText("Date: " + studentOptional.getExam().getExamDate());
-            contentStream.newLineAtOffset(0, -20);
-            contentStream.showText("Time: " + studentOptional.getExam().getStartTime() + " - " + studentOptional.getExam().getEndTime());
-            contentStream.newLineAtOffset(0, -20);
-            contentStream.showText("Venue: " + studentOptional.getExamCenter().getAddress());
-            contentStream.endText();
+            int yOffset = 620;
 
-            // You can continue adding more details as necessary
+            // Exam Details for each exam
+            for (Exam exam : examsInCycle) {
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, yOffset);
+                contentStream.showText("Exam: " + exam.getExamName());
+                yOffset -= 20;
+                contentStream.newLineAtOffset(0, -20);
+                contentStream.showText("Date: " + exam.getExamDate());
+                yOffset -= 20;
+                contentStream.newLineAtOffset(0, -20);
+                contentStream.showText("Time: " + exam.getStartTime() + " - " + exam.getEndTime());
+                yOffset -= 30; // Additional space between exams
+                contentStream.endText();
+            }
 
         } catch (IOException e) {
             throw new RuntimeException("Error generating hall ticket", e);
@@ -154,71 +282,6 @@ public class HallTicketService {
         }
 
         return baos.toByteArray();
-    }
-
-    private boolean hasCCTVVerification(StudentExamRegistration registration) {
-        return registration.getExamCenter().getVerified();
-    }
-    public void requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
-        DataCorrectionRequest request = new DataCorrectionRequest();
-        request.setStudentId(studentId);
-        request.setRequestedCorrection(correctionDetails);
-        request.setStatus("NEW");
-        if (proof != null && !proof.isEmpty()) {
-            String path = studentService.storeFile(proof);
-            request.setProofAttachmentPath(path);
-        }
-        dataCorrectionRequestRepository.save(request);
-    }
-
-    public List<DataCorrectionRequest> getAllDataCorrectionRequests() {
-        return dataCorrectionRequestRepository.findAll();
-    }
-
-    public void approveDataCorrection(Long requestId) {
-        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-        request.setStatus("APPROVED");
-        dataCorrectionRequestRepository.save(request);
-    }
-
-    public void rejectDataCorrection(Long requestId, String rejectionReason) {
-        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-        request.setStatus("REJECTED");
-        request.setRejectionReason(rejectionReason);  // Assuming there's a field to store rejection reason
-        dataCorrectionRequestRepository.save(request);
-    }
-
-    public ResponseDto getPendingDataForHallTickets(Long courseId, Long examCycleId, Long instituteId) {
-        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_PENDING_DATA);
-
-        List<StudentExamRegistration> registrations = fetchPendingDataForHallTickets(courseId, examCycleId, instituteId);
-        List<PendingDataDto> pendingDataDtos = registrations.stream().map(this::toPendingDataDto).collect(Collectors.toList());
-
-        if (!pendingDataDtos.isEmpty()) {
-            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, pendingDataDtos);
-            response.setResponseCode(HttpStatus.OK);
-        } else {
-            response.put(Constants.MESSAGE, "No pending hall tickets found for the provided filters.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
-        }
-        return response;
-    }
-
-    private PendingDataDto toPendingDataDto(StudentExamRegistration registration) {
-        PendingDataDto dto = new PendingDataDto();
-        dto.setFirstName(registration.getStudent().getFirstName());
-        dto.setLastName(registration.getStudent().getSurname());
-        dto.setCourseName(registration.getExam().getCourse().getCourseName());
-        dto.setStudentEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
-        dto.setRegistrationDate(registration.getRegistrationDate());
-        dto.setStatus(registration.getStatus());
-        dto.setRemarks(registration.getRemarks());
-        dto.setFeesPaid(registration.isFeesPaid());
-        return dto;
     }
 
     private List<StudentExamRegistration> fetchPendingDataForHallTickets(Long courseId, Long examCycleId, Long instituteId) {
@@ -242,20 +305,17 @@ public class HallTicketService {
 
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
-    public ResponseEntity<Resource> downloadProofForDataCorrectionRequest(Long requestId) {
-        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
-
-        if (request == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        String proofPath = request.getProofAttachmentPath();
-        Resource file;
-        file = loadProofAsStreamResource(proofPath);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
+    private PendingDataDto toPendingDataDto(StudentExamRegistration registration) {
+        PendingDataDto dto = new PendingDataDto();
+        dto.setFirstName(registration.getStudent().getFirstName());
+        dto.setLastName(registration.getStudent().getSurname());
+        dto.setCourseName(registration.getExam().getCourse().getCourseName());
+        dto.setStudentEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
+        dto.setRegistrationDate(registration.getRegistrationDate());
+        dto.setStatus(registration.getStatus());
+        dto.setRemarks(registration.getRemarks());
+        dto.setFeesPaid(registration.isFeesPaid());
+        return dto;
     }
     private InputStreamResource loadProofAsStreamResource(String proofUrl) {
         RestTemplate restTemplate = new RestTemplate();
@@ -268,13 +328,5 @@ public class HallTicketService {
         }
 
         return response.getBody();
-    }
-    public String getProofUrlByRequestId(Long requestId) {
-        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
-        if (request != null) {
-            return request.getProofAttachmentPath();
-        }
-        // handle case where request is null, maybe throw an exception or return a default value
-        return null;
     }
 }

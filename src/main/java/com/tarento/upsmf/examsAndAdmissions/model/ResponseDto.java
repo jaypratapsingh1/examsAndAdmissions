@@ -17,6 +17,47 @@ public class ResponseDto {
 	private String ts;
     private ResponseParams params;
     private HttpStatus responseCode;
+    private int responseCodeNumeric;
+    private Map<String, Object> data = new HashMap<>();  // Renamed from response to data
+    private ErrorDetails error; // Error details
+
+    public static class ErrorDetails {
+        private String code;
+        private String message;
+        private String details;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public String getDetails() {
+            return details;
+        }
+
+        public void setDetails(String details) {
+            this.details = details;
+        }
+    }
+
+    public int getResponseCodeNumeric() {
+        return responseCodeNumeric;
+    }
+
+    public void setResponseCodeNumeric(int responseCodeNumeric) {
+        this.responseCodeNumeric = responseCodeNumeric;
+    }
     private transient Map<String, Object> response = new HashMap<>();
 
     public ResponseDto() {
@@ -54,6 +95,7 @@ public class ResponseDto {
 
     public void setResponseCode(HttpStatus responseCode) {
         this.responseCode = responseCode;
+        this.responseCodeNumeric = responseCode.value();
     }
     public Map<String, Object> getResult() {
         return response;
@@ -62,7 +104,7 @@ public class ResponseDto {
     public void setResult(Map<String, Object> result) {
         response = result;
     }
-
+/*
     public Object get(String key) {
         return response.get(key);
     }
@@ -77,6 +119,37 @@ public class ResponseDto {
 
     public boolean containsKey(String key) {
         return response.containsKey(key);
+    }*/
+    public Map<String, Object> getData() { // Renamed from getResult to getData
+        return data;
+    }
+
+    public void setData(Map<String, Object> data) { // Renamed from setResult to setData
+        this.data = data;
+    }
+
+    public Object get(String key) {
+        return data.get(key);
+    }
+
+    public void put(String key, Object vo) {
+        data.put(key, vo);
+    }
+
+    public void putAll(Map<String, Object> map) {
+        data.putAll(map);
+    }
+
+    public boolean containsKey(String key) {
+        return data.containsKey(key);
+    }
+
+    public ErrorDetails getError() {
+        return error;
+    }
+
+    public void setError(ErrorDetails error) {
+        this.error = error;
     }
     public void setMessage(String s) {
     }
