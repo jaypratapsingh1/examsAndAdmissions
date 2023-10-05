@@ -7,7 +7,9 @@ import java.util.Map;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 public class ResponseDto {
+
 
     private String id;
     private String ver;
@@ -67,16 +69,8 @@ public class ResponseDto {
         this.id = id;
     }
 
-    public String getId() {
-        return id;
-    }
-
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getVer() {
-        return ver;
     }
 
     public void setVer(String ver) {
@@ -87,16 +81,8 @@ public class ResponseDto {
         this.ts = ts;
     }
 
-    public ResponseParams getParams() {
-        return params;
-    }
-
     public void setParams(ResponseParams params) {
         this.params = params;
-    }
-
-    public HttpStatus getResponseCode() {
-        return responseCode;
     }
 
     public void setResponseCode(HttpStatus responseCode) {
@@ -111,7 +97,6 @@ public class ResponseDto {
     public void setResponseCodeNumeric(int responseCodeNumeric) {
         this.responseCodeNumeric = responseCodeNumeric;
     }
-
     public Map<String, Object> getResult() {
         return result;
     }
@@ -119,7 +104,7 @@ public class ResponseDto {
     public void setResult(Map<String, Object> result) {
         this.result = result;
     }
-
+/*
     public Object get(String key) {
         return result.get(key);
     }

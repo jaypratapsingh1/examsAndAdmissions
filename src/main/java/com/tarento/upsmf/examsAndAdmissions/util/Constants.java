@@ -1,5 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.util;
 
+import org.springframework.http.HttpStatus;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -8,7 +10,7 @@ public class Constants {
 
     // General
     public static final String MESSAGE = "message";
-    public static final String SUCCESSFUL = "Successful";
+    public static final HttpStatus SUCCESSFUL = HttpStatus.OK;
     public static final String RESPONSE = "response";
     public static final String FAILUREMESSAGE = "failure message";
     public static final String SUCCESSMESSAGE = "Successfully stores the data";
@@ -17,6 +19,7 @@ public class Constants {
     public static final String API_USER_BULK_UPLOAD = "api.user.bulk.upload";
     public static final String API_FILE_UPLOAD = "api.file.upload";
     public static final String API_FILE_DOWNLOAD = "api.file.download";
+    public static final String API_GET_DISPATCH_LIST = "api.institute.dispatchTracker";
     public static final String NAME = "name";
     public static final String URL = "url";
     public static final String CONTENT_TYPE = "Content-Type";
@@ -36,11 +39,42 @@ public class Constants {
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
 
+    // ExamCycle
+    public static final String API_EXAM_CYCLE_ADD = "api.examCycle.add";
+    public static final String API_EXAM_CYCLE_GET_ALL = "api.examCycle.getAll";
+    public static final String API_EXAM_CYCLE_GET_BY_ID = "api.examCycle.getById";
+    public static final String API_EXAM_CYCLE_DELETE = "api.examCycle.delete";
+    public static final String API_EXAM_CYCLE_UPDATE = "api.examCycle.update";
+    public static final String API_EXAM_CYCLE_RESTORE = "api.examCycle.restore";
+    public static final String API_EXAM_CYCLE_ADD_EXAMS = "api.examCycle.addExams";
+    public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
+    public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
+
+
+
     //Question Paper
     public static final String API_QUESTION_PAPER_GET_ALL = "api.questionPaper.get";
     public static final String API_QUESTION_PAPER_GET_BY_ID = "api.questionPaper.getById";
     public static final String API_QUESTION_PAPER_DELETE = "api.questionPaper.delete";
     public static final String API_QUESTION_PAPER_PREVIEW = "api.questionPaper.preview";
+
+    //Subject
+    public static final String API_SUBJECT_GET_ALL = "api.subject.get";
+    public static final String API_SUBJECT_GET_BY_ID = "api.subject.getById";
+    public static final String API_SUBJECT_DELETE = "api.subject.delete";
+    public static final String API_SUBJECT_CREATE = "api.subject.create";
+
+    //InstituteCourseMapping
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_ALL = "api.instituteCourseMapping.get";
+    public static final String API_INSTITUTE_COURSE_MAPPING_GET_BY_ID = "api.instituteCourseMapping.getById";
+    public static final String API_INSTITUTE_COURSE_MAPPING_DELETE = "api.instituteCourseMapping.delete";
+    public static final String API_INSTITUTE_COURSE_MAPPING_CREATE = "api.instituteCourseMapping.create";
+
+    //CourseSubjectMapping
+    public static final String API_COURSE_SUBJECT_MAPPING_GET_ALL = "api.courseSubjectMapping.get";
+    public static final String API_COURSE_SUBJECT_MAPPING_GET_BY_ID = "api.courseSubjectMapping.getById";
+    public static final String API_COURSE_SUBJECT_MAPPING_DELETE = "api.courseSubjectMapping.delete";
+    public static final String API_COURSE_SUBJECT_MAPPING_CREATE = "api.courseSubjectMapping.create";
 
 
     // Payment
@@ -55,13 +89,38 @@ public class Constants {
     public static final String COURSE_NAME = "courseName";
     public static final String EXAM_NAME = "examName";
     public static final String ID = "id";
+    public static final String EXAM_START_TIME = "examStartTime";
+    public static final HttpStatus NOT_FOUND = HttpStatus.NOT_FOUND;
+    public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
+  
+
+    public static final String INTERNAL_SERVER_ERROR = "internal server error";
+    public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
+  
+    public static final String API_HALLTICKET_GET = "api.hallticket.get";
+    public static final String API_HALLTICKET_REQUEST_DATA_CORRECTION = "api.hallticket.requestDataCorrection";
+    public static final String API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS = "api.hallticket.getAllDataCorrectionRequests";
+    public static final String API_HALLTICKET_APPROVE_DATA_CORRECTION = "api.hallticket.approveDataCorrection";
+    public static final String API_HALLTICKET_REJECT_DATA_CORRECTION = "api.hallticket.rejectDataCorrection";
+    public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallticket.getPendingData";
+    public static final String API_HALLTICKET_DOWNLOAD_PROOF = "api.hallticket.downloadProof";
+    public static final String API_HALLTICKET_GET_PROOF_URL_BY_REQUEST = "api.hallticket.getProofUrl";
+
+    public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";
+    public static final String API_MARK_NOT_ALLOWED ="api.institute.markNotAllowed";
+    public static final String API_UPDATE_VERIFICATION_STATUS ="api.institute.updateVerificationStatus";
+    public static final String API_CREATE_INSTITUTE = "api.institute.create";
+    public static final String API_GET_INSTITUTE_BY_ID = "api.institute.getById";
+    public static final String API_UPDATE_INSTITUTE = "api.institute.update";
+    public static final String SUCCESS = "success";
+    public static final HttpStatus ERROR = HttpStatus.INTERNAL_SERVER_ERROR;
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";
         String GET_NODE_ERROR = "Unable to get the node";
     }
 
-    public class ResponseCodes {
+    public static class ResponseCodes {
         private ResponseCodes() {
         }
 
@@ -73,7 +132,7 @@ public class Constants {
         public static final String SUCCESS = "success";
     }
 
-    public class ServiceRepositories {
+    public static class ServiceRepositories {
         private ServiceRepositories() {
         }
 
@@ -149,4 +208,7 @@ public class Constants {
 
     public static final List<String> USER_DEFAULT_FIELDS = Collections
             .unmodifiableList(Arrays.asList(UUID, FIRST_NAME, EMAIL));
+
+    public static final String CSV = "csv";
+    public static final String EXCEL = "excel";
 }

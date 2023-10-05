@@ -2,10 +2,8 @@ package com.tarento.upsmf.examsAndAdmissions.model.dto;
 
 import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -20,4 +18,7 @@ public class DataCorrectionRequest {
     private String requestedCorrection;
     private String status;
     private String rejectionReason;
+    @Column(name = "proof_attachment_path")
+    private String proofAttachmentPath;
+
 }

@@ -1,5 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
@@ -35,4 +37,18 @@ public class Institute implements Serializable {
     @OneToMany(mappedBy = "institute")
     @JsonBackReference // To prevent infinite recursion
     private List<StudentExamRegistration> registrations;
+
+    private Boolean cctvVerified;
+    private String ipAddress;
+    private String remarks;
+    public void handleAction(String action, String ipAddress, String remarks) {
+        if ("approve".equalsIgnoreCase(action)) {
+            this.setCctvVerified(true);
+        } else if ("reject".equalsIgnoreCase(action)) {
+            this.setCctvVerified(false);
+        }
+
+        this.setIpAddress(ipAddress);
+        this.setRemarks(remarks);
+    }
 }
