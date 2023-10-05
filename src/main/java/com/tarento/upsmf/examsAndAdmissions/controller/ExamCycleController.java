@@ -1,5 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleWithExamsDTO;
 
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;

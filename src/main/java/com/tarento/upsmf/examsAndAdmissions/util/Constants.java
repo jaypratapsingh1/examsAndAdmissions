@@ -94,7 +94,6 @@ public class Constants {
     public static final String API_EXAM_FIND_BY_CYCLE = "Find Exams by ExamCycle ID";
     public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallTicket.getPendingData";
   
-    public static final String NOT_FOUND = "not found";
     public static final String INTERNAL_SERVER_ERROR = "internal server error";
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
     public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";
