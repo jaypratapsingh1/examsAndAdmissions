@@ -7,18 +7,17 @@ import java.util.Map;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-
 public class ResponseDto {
 
     private String id;
     private String ver;
     @Getter
-	private String ts;
+    private String ts;
     private ResponseParams params;
     private HttpStatus responseCode;
     private int responseCodeNumeric;
-    private Map<String, Object> data = new HashMap<>();  // Renamed from response to data
     private ErrorDetails error; // Error details
+    private transient Map<String, Object> result = new HashMap<>();
 
     public static class ErrorDetails {
         private String code;
@@ -50,21 +49,12 @@ public class ResponseDto {
         }
     }
 
-    public int getResponseCodeNumeric() {
-        return responseCodeNumeric;
-    }
-
-    public void setResponseCodeNumeric(int responseCodeNumeric) {
-        this.responseCodeNumeric = responseCodeNumeric;
-    }
-
-    private transient Map<String, Object> response = new HashMap<>();
-
     public ResponseDto() {
         this.ver = "v1";
         this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
         this.params = new ResponseParams();
     }
+
     public ResponseDto(HttpStatus status, ResponseParams params) {
         this.ver = "v1";
         this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
@@ -93,7 +83,7 @@ public class ResponseDto {
         this.ver = ver;
     }
 
-	public void setTs(String ts) {
+    public void setTs(String ts) {
         this.ts = ts;
     }
 
@@ -114,51 +104,36 @@ public class ResponseDto {
         this.responseCodeNumeric = responseCode.value();
     }
 
+    public int getResponseCodeNumeric() {
+        return responseCodeNumeric;
+    }
+
+    public void setResponseCodeNumeric(int responseCodeNumeric) {
+        this.responseCodeNumeric = responseCodeNumeric;
+    }
+
     public Map<String, Object> getResult() {
-        return response;
+        return result;
     }
 
     public void setResult(Map<String, Object> result) {
-        response = result;
-    }
-/*
-    public Object get(String key) {
-        return response.get(key);
-    }
-
-    public void put(String key, Object vo) {
-        response.put(key, vo);
-    }
-
-    public void putAll(Map<String, Object> map) {
-        response.putAll(map);
-    }
-
-    public boolean containsKey(String key) {
-        return response.containsKey(key);
-    }*/
-    public Map<String, Object> getData() { // Renamed from getResult to getData
-        return data;
-    }
-
-    public void setData(Map<String, Object> data) { // Renamed from setResult to setData
-        this.data = data;
+        this.result = result;
     }
 
     public Object get(String key) {
-        return data.get(key);
+        return result.get(key);
     }
 
     public void put(String key, Object vo) {
-        data.put(key, vo);
+        result.put(key, vo);
     }
 
     public void putAll(Map<String, Object> map) {
-        data.putAll(map);
+        result.putAll(map);
     }
 
     public boolean containsKey(String key) {
-        return data.containsKey(key);
+        return result.containsKey(key);
     }
 
     public ErrorDetails getError() {
