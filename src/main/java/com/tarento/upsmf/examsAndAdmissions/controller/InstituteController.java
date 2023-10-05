@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/institutes")
+@RequestMapping("/api/v1/admin/institutes")
 public class InstituteController {
 
     @Autowired
