@@ -7,19 +7,17 @@ import java.util.Map;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-@Getter
-
 public class ResponseDto {
-
 
     private String id;
     private String ver;
-	private String ts;
+    @Getter
+    private String ts;
     private ResponseParams params;
     private HttpStatus responseCode;
     private int responseCodeNumeric;
-    private Map<String, Object> data = new HashMap<>();  // Renamed from response to data
     private ErrorDetails error; // Error details
+    private transient Map<String, Object> result = new HashMap<>();
 
     public static class ErrorDetails {
         private String code;
@@ -51,20 +49,12 @@ public class ResponseDto {
         }
     }
 
-    public int getResponseCodeNumeric() {
-        return responseCodeNumeric;
-    }
-
-    public void setResponseCodeNumeric(int responseCodeNumeric) {
-        this.responseCodeNumeric = responseCodeNumeric;
-    }
-    private transient Map<String, Object> response = new HashMap<>();
-
     public ResponseDto() {
         this.ver = "v1";
         this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
         this.params = new ResponseParams();
     }
+
     public ResponseDto(HttpStatus status, ResponseParams params) {
         this.ver = "v1";
         this.ts = String.valueOf(new Timestamp(System.currentTimeMillis()));
@@ -77,71 +67,73 @@ public class ResponseDto {
         this.id = id;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getVer() {
+        return ver;
     }
 
     public void setVer(String ver) {
         this.ver = ver;
     }
 
-	public void setTs(String ts) {
+    public void setTs(String ts) {
         this.ts = ts;
+    }
+
+    public ResponseParams getParams() {
+        return params;
     }
 
     public void setParams(ResponseParams params) {
         this.params = params;
     }
 
+    public HttpStatus getResponseCode() {
+        return responseCode;
+    }
+
     public void setResponseCode(HttpStatus responseCode) {
         this.responseCode = responseCode;
         this.responseCodeNumeric = responseCode.value();
     }
+
+    public int getResponseCodeNumeric() {
+        return responseCodeNumeric;
+    }
+
+    public void setResponseCodeNumeric(int responseCodeNumeric) {
+        this.responseCodeNumeric = responseCodeNumeric;
+    }
+
     public Map<String, Object> getResult() {
-        return response;
+        return result;
     }
 
     public void setResult(Map<String, Object> result) {
-        response = result;
-    }
-/*
-    public Object get(String key) {
-        return response.get(key);
-    }
-
-    public void put(String key, Object vo) {
-        response.put(key, vo);
-    }
-
-    public void putAll(Map<String, Object> map) {
-        response.putAll(map);
-    }
-
-    public boolean containsKey(String key) {
-        return response.containsKey(key);
-    }*/
-    public Map<String, Object> getData() { // Renamed from getResult to getData
-        return data;
-    }
-
-    public void setData(Map<String, Object> data) { // Renamed from setResult to setData
-        this.data = data;
+        this.result = result;
     }
 
     public Object get(String key) {
-        return data.get(key);
+        return result.get(key);
     }
 
     public void put(String key, Object vo) {
-        data.put(key, vo);
+        result.put(key, vo);
     }
 
     public void putAll(Map<String, Object> map) {
-        data.putAll(map);
+        result.putAll(map);
     }
 
     public boolean containsKey(String key) {
-        return data.containsKey(key);
+        return result.containsKey(key);
     }
 
     public ErrorDetails getError() {
@@ -150,7 +142,5 @@ public class ResponseDto {
 
     public void setError(ErrorDetails error) {
         this.error = error;
-    }
-    public void setMessage(String s) {
     }
 }
