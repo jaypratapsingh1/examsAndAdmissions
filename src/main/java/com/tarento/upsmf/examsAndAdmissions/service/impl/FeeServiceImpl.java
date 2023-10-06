@@ -23,6 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -153,6 +154,7 @@ public class FeeServiceImpl implements FeeService {
         }
     }
 
+    @Transactional
     @Override
     public ExamFee getExamFeeByRefNo(String refNo) {
         log.info("ref no - {}", refNo);
@@ -176,6 +178,7 @@ public class FeeServiceImpl implements FeeService {
         return examFee;
     }
 
+    @Transactional
     @Override
     public void updateExamFeeStatusByRefNo(String refNo) {
         log.info("updating record for ref no - {}", refNo);

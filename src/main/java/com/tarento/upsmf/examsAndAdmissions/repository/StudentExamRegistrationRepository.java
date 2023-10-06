@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.repository;
 
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -30,6 +31,7 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
 
     List<StudentExamRegistration> findByInstitute(Institute unverifiedInstitute);
 
+    @Modifying
     @Query(value = "update student_exam_registration set is_fees_paid =:status where student_id =:studentId", nativeQuery = true)
     void updateExamFeeByStudentId(@Param("status") Boolean status, @Param("studentId") Long studentId);
 }
