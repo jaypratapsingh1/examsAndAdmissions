@@ -13,8 +13,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleDTO;
 
@@ -309,4 +313,48 @@ public class ExamCycleService {
 
         return dto;
     }
+    public ResponseDto updateExamsForCycle(Long cycleId, List<Exam> examsFromUser) {
+        Optional<ExamCycle> existingCycle = repository.findById(cycleId);
+        ResponseDto response = new ResponseDto();
+
+        if (existingCycle.isPresent()) {
+            // Fetch all existing exams for the given exam cycle
+            List<Exam> existingExams = examRepository.findByExamCycleId(cycleId);
+
+            // Create a map of existing exams by their ID
+            Map<Long, Exam> existingExamsMap = existingExams.stream()
+                    .collect(Collectors.toMap(Exam::getId, Function.identity()));
+
+            // Process the list from the user
+            for (Exam exam : examsFromUser) {
+                if (exam.getId() != null && existingExamsMap.containsKey(exam.getId())) {
+                    // This is an existing exam. Update its details.
+                    Exam existingExam = existingExamsMap.get(exam.getId());
+                    existingExam.setExamDate(exam.getExamDate());
+                    existingExam.setStartTime(exam.getStartTime());
+                    existingExam.setEndTime(exam.getEndTime());
+                    // ... update other fields as necessary
+                    existingExamsMap.remove(exam.getId()); // Remove this ID from the map
+                } else {
+                    // This is a new exam. Create it.
+                    exam.setExamCycleId(cycleId);
+                    examRepository.save(exam);
+                }
+            }
+
+            // Any remaining exams in the map are not in the user's list and should be deleted
+            for (Exam remainingExam : existingExamsMap.values()) {
+                examRepository.delete(remainingExam);
+            }
+
+            // Construct a success response
+            response.setResponseCode(HttpStatus.OK);
+            response.setResult(Collections.singletonMap("message", "Exams updated successfully"));
+        } else {
+            // Construct an error response since the exam cycle was not found
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "The specified exam cycle was not found.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
 }
