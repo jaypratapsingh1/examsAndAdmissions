@@ -7,11 +7,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface AttachmentService {
 
-    ResponseEntity<?> downloadQuestionPaper(Long questionPaperId);
+    ResponseDto downloadQuestionPaper(Long questionPaperId);
 
     ResponseDto getPreviewUrl(Long questionPaperId);
 
     ResponseDto deleteQuestionPaper(Long id);
 
-    ResponseDto upload(QuestionPaper questionPaper, String createdBy, MultipartFile file);
+    ResponseDto upload(Long examCycleId, String createdBy, MultipartFile file);
 }
