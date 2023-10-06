@@ -50,6 +50,8 @@ public class Constants {
     public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
     public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
 
+    public static final String API_DISPATCH_PROOF_PREVIEW = "api.dispatch.preview";
+
 
 
     //Question Paper
