@@ -23,10 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -283,19 +280,24 @@ public class HallTicketService {
 
         return baos.toByteArray();
     }
-
     private List<StudentExamRegistration> fetchPendingDataForHallTickets(Long courseId, Long examCycleId, Long instituteId) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<StudentExamRegistration> criteriaQuery = criteriaBuilder.createQuery(StudentExamRegistration.class);
         Root<StudentExamRegistration> registrationRoot = criteriaQuery.from(StudentExamRegistration.class);
 
+        registrationRoot.fetch("examCycle", JoinType.INNER);
+        registrationRoot.fetch("exam", JoinType.INNER);
+
+        Join<StudentExamRegistration, ExamCycle> examCycleJoin = registrationRoot.join("examCycle");
+        Join<StudentExamRegistration, Exam> examJoin = registrationRoot.join("exam");
+
         List<Predicate> predicates = new ArrayList<>();
 
         if (courseId != null) {
-            predicates.add(criteriaBuilder.equal(registrationRoot.get("exam").get("course").get("id"), courseId));
+            predicates.add(criteriaBuilder.equal(examJoin.get("course").get("id"), courseId));
         }
         if (examCycleId != null) {
-            predicates.add(criteriaBuilder.equal(registrationRoot.get("examCycle").get("id"), examCycleId));
+            predicates.add(criteriaBuilder.equal(examCycleJoin.get("id"), examCycleId));
         }
         if (instituteId != null) {
             predicates.add(criteriaBuilder.equal(registrationRoot.get("institute").get("id"), instituteId));
@@ -305,18 +307,75 @@ public class HallTicketService {
 
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
+
     private PendingDataDto toPendingDataDto(StudentExamRegistration registration) {
         PendingDataDto dto = new PendingDataDto();
+
+        // ... (existing fields mapping)
+        dto.setId(registration.getId()); // setting the ID
         dto.setFirstName(registration.getStudent().getFirstName());
         dto.setLastName(registration.getStudent().getSurname());
+        dto.setDob(registration.getStudent().getDateOfBirth()); // Assuming there's a dob field in Student
         dto.setCourseName(registration.getExam().getCourse().getCourseName());
+        dto.setCourseYear(registration.getExam().getCourse().getCourseYear()); // Assuming there's a courseYear field in Course
         dto.setStudentEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
         dto.setRegistrationDate(registration.getRegistrationDate());
         dto.setStatus(registration.getStatus());
         dto.setRemarks(registration.getRemarks());
-        dto.setFeesPaid(registration.isFeesPaid());
+        if (registration.getExamCenter() != null) {
+            dto.setExamCenterName(registration.getExamCenter().getName());
+        }
+        dto.setFeesPaid(registration.isFeesPaid()); // Assuming there's a method to determine if fees are paid
+        dto.setAttendancePercentage(computeAttendancePercentage(registration)); // Assuming there's a method to get attendance
+
+        // Mapping ExamCycle details
+        PendingDataDto.ExamCycleDetails examCycleDetails = new PendingDataDto.ExamCycleDetails();
+        examCycleDetails.setId(registration.getExamCycle().getId());
+        examCycleDetails.setName(registration.getExamCycle().getExamCycleName());
+        examCycleDetails.setStartDate(registration.getExamCycle().getStartDate());
+        examCycleDetails.setEndDate(registration.getExamCycle().getEndDate());
+
+        // Fetch the exams associated with the exam cycle ID from the repository
+        Long examCycleId = registration.getExamCycle().getId();
+        List<Exam> examsForCycle = examRepository.findByExamCycleId(examCycleId);
+
+        // Now, map these exams to your DTO
+        List<PendingDataDto.ExamDetails> examDetailsList = examsForCycle.stream().map(exam -> {
+            PendingDataDto.ExamDetails examDetails = new PendingDataDto.ExamDetails();
+            examDetails.setExamName(exam.getExamName());
+            examDetails.setExamDate(exam.getExamDate());
+            examDetails.setStartTime(String.valueOf(exam.getStartTime()));
+            examDetails.setEndTime(String.valueOf(exam.getEndTime()));
+            //... map other relevant details
+            return examDetails;
+        }).collect(Collectors.toList());
+
+        examCycleDetails.setExams(examDetailsList);
+        dto.setExamCycle(examCycleDetails);
+
         return dto;
     }
+    private double computeAttendancePercentage(StudentExamRegistration registration) {
+        // Fetch the student enrollment number from the associated student
+        String studentEnrollmentNumber = registration.getStudent().getEnrollmentNumber();
+
+        // Check if an attendance record exists for this student enrollment number
+        if (!attendanceRepository.existsByStudentEnrollmentNumber(studentEnrollmentNumber)) {
+            return 0.0;
+        }
+
+        // Fetch the attendance record for the student
+        AttendanceRecord attendanceRecord = attendanceRepository.findByStudentEnrollmentNumber(studentEnrollmentNumber);
+
+        // Compute the attendance percentage based on the details in the attendance record
+        double daysAttended = attendanceRecord.getPresentDays(); // Assuming this method exists
+        double totalDays = attendanceRecord.getTotalDays(); // Assuming this method exists
+
+        double attendancePercentage = (daysAttended / totalDays) * 100;
+
+        return attendancePercentage;
+    }
+
     private InputStreamResource loadProofAsStreamResource(String proofUrl) {
         RestTemplate restTemplate = new RestTemplate();
 
