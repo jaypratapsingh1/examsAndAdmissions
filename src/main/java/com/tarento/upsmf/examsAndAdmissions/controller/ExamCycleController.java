@@ -137,5 +137,10 @@ public class ExamCycleController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
+    @PutMapping("/{id}/updateExams")
+    public ResponseEntity<ResponseDto> updateExamsForCycle(@PathVariable Long id,
+                                                           @RequestBody List<Exam> updatedExams) {
+        ResponseDto response = service.updateExamsForCycle(id, updatedExams);
+        return new ResponseEntity<>(response, response.getResponseCode());
+    }
 }

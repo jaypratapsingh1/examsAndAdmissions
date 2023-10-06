@@ -20,5 +20,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     
     Optional<Exam> findByExamCycleIdAndObsolete(Long examCycleId, Integer value);
     List<Exam> findByExamCycleId(Long examCycleId);
+    List<Exam> findAllByExamCycleIdAndObsolete(Long examCycleId, Integer value);
 
 }
