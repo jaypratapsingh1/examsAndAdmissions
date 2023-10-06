@@ -3,6 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteUserDto;
 import com.tarento.upsmf.examsAndAdmissions.service.DispatchTrackerService;
 import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
@@ -116,7 +117,7 @@ public class InstituteController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<ResponseDto> getInstituteByUser(@PathVariable("userId") String userId) {
         try {
-            List<Institute> instituteList = instituteService.getInstituteByUserId(userId);
+            List<InstituteDto> instituteList = instituteService.getInstituteByUserId(userId);
             return FeeController.handleSuccessResponse(instituteList);
         } catch (Exception e) {
             return FeeController.handleErrorResponse(e);
