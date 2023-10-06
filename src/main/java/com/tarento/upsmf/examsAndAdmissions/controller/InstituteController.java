@@ -61,10 +61,10 @@ public class InstituteController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getInstituteById(@PathVariable String id) {
+    public ResponseEntity<?> getInstituteById(@PathVariable Long id) {
         try {
-            Optional<Institute> institute = instituteService.getInstituteById(id);
-            if (institute.isPresent()) {
+          Institute institute = instituteService.getInstituteById(id);
+            if (institute != null) {
                 return FeeController.handleSuccessResponse(institute);
             } else {
                 response.setResponseCode(Constants.NOT_FOUND);
