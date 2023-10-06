@@ -6,5 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ExamFeeRepository extends PagingAndSortingRepository<ExamFee, Long> {
+
     ExamFee findByReferenceNo(String refNo);
+
+    Boolean existsByReferenceNo(String refNo);
 }

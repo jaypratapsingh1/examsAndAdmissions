@@ -2,14 +2,12 @@ package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeException;
+import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamFeeRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentExamFeeRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
 import com.tarento.upsmf.examsAndAdmissions.service.InstituteService;
@@ -83,6 +81,9 @@ public class FeeServiceImpl implements FeeService {
     @Autowired
     private StudentExamFeeRepository studentExamFeeRepository;
 
+    @Autowired
+    private StudentExamRegistrationRepository studentExamRegistrationRepository;
+
     /**
      * API to save and return payment redirect URL
      *
@@ -155,17 +156,50 @@ public class FeeServiceImpl implements FeeService {
     @Override
     public ExamFee getExamFeeByRefNo(String refNo) {
         log.info("ref no - {}", refNo);
+        if(refNo == null || refNo.isBlank()) {
+            throw new InvalidRequestException("Invalid Reference No.");
+        }
         // get transaction details from local db
         ExamFee examFee = examFeeRepository.findByReferenceNo(refNo);
+        if(examFee == null) {
+            throw new InvalidRequestException("No Record found for Provided Reference No.");
+        }
         log.info("exam fee - {}", examFee);
         // get latest status from user management
         ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
         log.info("response - {}", paymentUpdateResponse);
         if(paymentUpdateResponse.getStatusCode() == HttpStatus.OK) {
             // update record in DB
+            updateStudentFeeStatusByRefNo(refNo);
             log.info("response body - {}", paymentUpdateResponse.getBody());
         }
         return examFee;
+    }
+
+    @Override
+    public void updateExamFeeStatusByRefNo(String refNo) {
+        log.info("updating record for ref no - {}", refNo);
+        if(refNo == null || refNo.isBlank()) {
+            throw new InvalidRequestException("Invalid Reference No.");
+        }
+        // get transaction details from local db
+        Boolean examFeeExists = examFeeRepository.existsByReferenceNo(refNo);
+        if(examFeeExists == null || !examFeeExists) {
+            throw new InvalidRequestException("No Record found for Provided Reference No.");
+        }
+        // update record in DB
+        updateStudentFeeStatusByRefNo(refNo);
+        log.info("completed record for ref no - {}", refNo);
+    }
+
+    private void updateStudentFeeStatusByRefNo(String refNo) {
+        studentExamFeeRepository.updateStatusByRefNo(StudentExam.Status.PAID.name(), refNo);
+        List<Long> studentIds = studentExamFeeRepository.getStudentIdsByRefNo(refNo);
+        if(studentIds!=null && !studentIds.isEmpty()) {
+            studentIds.stream().forEach(id -> {
+                studentExamRegistrationRepository.updateExamFeeByStudentId(true, id);
+            });
+        }
     }
 
     private ResponseEntity<Transaction> getPaymentUpdate(String refNo) {

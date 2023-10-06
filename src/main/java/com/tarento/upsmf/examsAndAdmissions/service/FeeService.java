@@ -13,4 +13,6 @@ public interface FeeService {
     ExamSearchResponseDto getAllExamFee(ExamFeeSearchDto examFeeSearchDto);
 
     ExamFee getExamFeeByRefNo(String refNo);
+
+    void updateExamFeeStatusByRefNo(String refNo);
 }

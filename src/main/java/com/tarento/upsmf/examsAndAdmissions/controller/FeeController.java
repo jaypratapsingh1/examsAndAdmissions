@@ -52,6 +52,16 @@ public class FeeController {
         }
     }
 
+    @PostMapping("/update/{refNo}")
+    public ResponseEntity<ResponseDto> updateExamFeeByRefNo(@PathVariable("refNo") String refNo) {
+        try {
+            feeService.updateExamFeeStatusByRefNo(refNo);
+            return handleSuccessResponse(HttpStatus.OK.getReasonPhrase());
+        } catch (Exception e) {
+            return handleErrorResponse(e);
+        }
+    }
+
     private static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
         ResponseParams params = new ResponseParams();
         params.setStatus(HttpStatus.OK.getReasonPhrase());
