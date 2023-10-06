@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
+import com.tarento.upsmf.examsAndAdmissions.model.DispatchTracker;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
@@ -82,16 +83,11 @@ public class InstituteController {
             @RequestParam Long examId,
             @RequestParam MultipartFile dispatchProofFile,
             @RequestParam LocalDate dispatchDate) {
-        ResponseDto response = new ResponseDto();
         try {
-            ResponseDto responseData = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
-            responseData.put("responseCode", Constants.SUCCESSFUL);
-            responseData.put("message", "Dispatch proof uploaded successfully.");
-            return new ResponseEntity<>(responseData, response.getResponseCode());
+            DispatchTracker responseData = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
+           return FeeController.handleSuccessResponse(responseData);
         } catch (IOException e) {
-            response.put("responseCode", Constants.INTERNAL_SERVER_ERROR);
-            response.put("message", "Error uploading dispatch proof.");
-            return new ResponseEntity<>(response, response.getResponseCode());
+           return FeeController.handleErrorResponse(e);
         }
     }
 
@@ -99,18 +95,18 @@ public class InstituteController {
     public ResponseEntity<?> getDispatchList(
             @RequestParam Long examCycleId,
             @RequestParam Long examId) {
-
-        ResponseDto responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
-
+        List<DispatchTracker> responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
         if (responseData != null) {
-            response.put("responseCode", Constants.SUCCESSFUL);
-            response.put("dispatchList", response.getResult());
-            return new ResponseEntity<>(responseData, response.getResponseCode());
+           return FeeController.handleSuccessResponse(responseData);
         } else {
-            response.put("responseCode", Constants.NOT_FOUND);
-            response.put("message", "No dispatch records found.");
-            return new ResponseEntity<>(response, response.getResponseCode());
+            return FeeController.handleErrorResponse(new Exception());
         }
+    }
+
+    @GetMapping("/preview/{dispatchTrackerId}")
+    public ResponseEntity<ResponseDto> getPreviewUrl(@PathVariable Long dispatchTrackerId) {
+        ResponseDto response = dispatchTrackerService.getPreviewUrl(dispatchTrackerId);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 
     @GetMapping("/user/{userId}")
