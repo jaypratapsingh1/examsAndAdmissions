@@ -12,8 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import static com.tarento.upsmf.examsAndAdmissions.model.ResponseDto.setErrorResponse;
 
 @Service
 public class ExamServiceImpl implements ExamService {
@@ -164,21 +165,25 @@ public class ExamServiceImpl implements ExamService {
         exam.setIsResultsPublished(true);
         examRepository.save(exam);
     }
-    @Override
     public ResponseDto findByExamCycleId(Long examCycleId) {
-        ResponseDto response = new ResponseDto(Constants.API_EXAM_FIND_BY_CYCLE);
+        ResponseDto responseDto = new ResponseDto(Constants.API_EXAM_FIND_BY_CYCLE);
         try {
             logger.info("Finding Exams by ExamCycle ID: {}", examCycleId);
-            List<Exam> exams = examRepository.findByExamCycleId(examCycleId);
-            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, exams);
-            response.setResponseCode(HttpStatus.OK); // Set the response code to HTTP OK (200)
+            List<Exam> exams = examRepository.findAllByExamCycleIdAndObsolete(examCycleId, 0);
+
+            if (exams != null && !exams.isEmpty()) {
+                Map<String, Object> resultData = new HashMap<>();
+                resultData.put("response", exams);
+                resultData.put("message", "Successfully retrieved exams");
+                responseDto.setResult(resultData);
+                responseDto.setResponseCode(HttpStatus.OK);
+            } else {
+                setErrorResponse(responseDto, "NO_EXAMS_FOUND", "No active exams found for the given ExamCycle ID", HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             logger.error("Error while finding Exams by ExamCycle ID: {}", examCycleId, e);
-            response.put(Constants.MESSAGE, "Error finding Exams");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR); // Set the response code to HTTP Internal Server Error (500)
+            setErrorResponse(responseDto, "INTERNAL_SERVER_ERROR", "Error retrieving exams", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return response;
+        return responseDto;
     }
 }
