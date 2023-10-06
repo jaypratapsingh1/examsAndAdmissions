@@ -97,12 +97,12 @@ public class FileServiceImpl implements FileService {
 
             ResponseDto insertResponse = repository.save(UploadedFileData);
 
-            if (!Constants.SUCCESSFUL.equalsIgnoreCase((String) insertResponse.get(Constants.RESPONSE))) {
+            if (!Constants.SUCCESS.equalsIgnoreCase((String) insertResponse.get(Constants.RESPONSE))) {
                 setErrorData(response, "Failed to update database with user bulk upload file details.");
                 return response;
             }
 
-            response.getParams().setStatus(Constants.SUCCESSFUL);
+            response.getParams().setStatus(Constants.SUCCESS);
             response.setResponseCode(HttpStatus.OK);
             response.getResult().putAll(uploadedFile);
 //            uploadedFile.put(Constants.ORG_NAME, channel);

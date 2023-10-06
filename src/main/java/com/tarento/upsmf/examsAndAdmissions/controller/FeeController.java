@@ -62,7 +62,7 @@ public class FeeController {
         }
     }
 
-    private static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
+    public static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
         ResponseParams params = new ResponseParams();
         params.setStatus(HttpStatus.OK.getReasonPhrase());
         ResponseDto responseDto = new ResponseDto();
@@ -72,7 +72,7 @@ public class FeeController {
         return ResponseEntity.ok().body(responseDto);
     }
 
-    private static ResponseEntity<ResponseDto> handleErrorResponse(Exception e) {
+    public static ResponseEntity<ResponseDto> handleErrorResponse(Exception e) {
         ResponseParams params = new ResponseParams();
         if(e instanceof ExamFeeValidationException) {
             params.setErrmsg(e.getLocalizedMessage());

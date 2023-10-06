@@ -30,6 +30,8 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     List<StudentExamRegistration> findByExamCenterInstituteId(Long instituteId);
 
     List<StudentExamRegistration> findByInstitute(Institute unverifiedInstitute);
+    List<StudentExamRegistration> findByIsFeesPaidAndStatus(boolean isFeesPaid, String status);
+
 
     @Modifying
     @Query(value = "update student_exam_registration set is_fees_paid =:status where student_id =:studentId", nativeQuery = true)
