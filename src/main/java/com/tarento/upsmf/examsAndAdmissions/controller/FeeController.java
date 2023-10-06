@@ -52,8 +52,8 @@ public class FeeController {
         }
     }
 
-    @PostMapping("/update/{refNo}")
-    public ResponseEntity<ResponseDto> updateExamFeeByRefNo(@PathVariable("refNo") String refNo) {
+    @PostMapping("/status/update")
+    public ResponseEntity<ResponseDto> updateExamFeeByRefNo(@RequestBody String refNo) {
         try {
             feeService.updateExamFeeStatusByRefNo(refNo);
             return handleSuccessResponse(HttpStatus.OK.getReasonPhrase());
