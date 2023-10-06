@@ -70,9 +70,6 @@ public class InstituteService {
         return instituteRepository.save(existingInstitute);
     }
 
-    public Optional<Institute> getInstituteById(String id) {
-        return Optional.ofNullable(instituteRepository.findByInstituteCode(id));
-    }
     public List<InstituteDto> getInstituteByUserId(String userId) {
         InstituteUser instituteUser = instituteUserMappingRepository.findByUserId(userId);
         if(instituteUser == null || instituteUser.getInstitute() == null) {
