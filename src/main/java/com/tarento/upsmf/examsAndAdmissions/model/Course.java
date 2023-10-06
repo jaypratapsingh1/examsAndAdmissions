@@ -24,6 +24,7 @@ public class Course implements Serializable {
     private String courseCode;
     private String courseName;
     private String description;
+    private String courseYear;
 
     @ManyToOne
     @JoinColumn(name = "institute_id")

@@ -102,7 +102,7 @@ public class HallTicketController {
         return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
 
-    @GetMapping("/pendingData")
+    @GetMapping("/hallTicketRegistrationDetails")
     public ResponseEntity<ResponseDto> getPendingData(
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Long examCycleId,
