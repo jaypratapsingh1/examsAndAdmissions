@@ -14,7 +14,6 @@ import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,7 +83,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     private CourseRepository courseRepository;
 
     @Override
-    public ResponseEntity<?> downloadQuestionPaper(Long questionPaperId) {
+    public ResponseDto downloadQuestionPaper(Long questionPaperId) {
+        ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_DOWNLOAD);
         //Query to get gcpFileName
         QuestionPaper questionPaperDetails = questionPaperRepository.findById(questionPaperId).orElse(null);
         LocalDate examDate = questionPaperDetails.getExamDate();
@@ -110,21 +110,28 @@ public class AttachmentServiceImpl implements AttachmentService {
                     Blob blob = getBlob(fileName);
                     if (blob != null) {
                         log.info("File url for downloading : " + blob.getMediaLink());
-                        return ResponseEntity.ok().body("File url for downloading : " + blob.getMediaLink());
+                        response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+                        response.put(Constants.RESPONSE, blob.getMediaLink());
+                        response.setResponseCode(HttpStatus.OK);
                     } else {
                         log.info("File not found in the bucket: " + fileName);
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found in the bucket");
+                        response.put(Constants.MESSAGE, "Unable to retrieve the PDF file from GCS");
+                        response.setResponseCode(HttpStatus.NOT_FOUND);
                     }
                 } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Institutes will not be allow to view the question paper on their portal 30 minutes before an exam");
+                    response.put(Constants.MESSAGE, "Institutes will not be allow to view the question paper on their portal 30 minutes before an exam");
+                    response.setResponseCode(HttpStatus.UNAUTHORIZED);
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Today is not the exam date.");
+                response.put(Constants.MESSAGE, "Today is not the exam date.");
+                response.setResponseCode(HttpStatus.UNAUTHORIZED);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Failed to read the downloaded file: " + fileName + ", Exception: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put(Constants.MESSAGE, e.getMessage());
+            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return response;
     }
 
     private Blob getBlob(String fileName) throws IOException {
@@ -161,21 +168,19 @@ public class AttachmentServiceImpl implements AttachmentService {
             } else {
                 log.info("Unable to retrieve the PDF file from GCS ");
                 response.put(Constants.MESSAGE, "Unable to retrieve the PDF file from GCS");
-                response.put(Constants.RESPONSE, Constants.MESSAGE);
                 response.setResponseCode(HttpStatus.NOT_FOUND);
             }
         } catch (IOException e) {
             log.error("Failed to preview the file: " + fileName + ", Exception: ", e);
             response.put(Constants.MESSAGE, "Failed to preview the file");
-            response.put(Constants.RESPONSE, Constants.MESSAGE);
             response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
     }
 
     @Override
-    public ResponseDto upload(QuestionPaper questionPaper, String createdBy, MultipartFile file) {
-        ResponseDto response = new ResponseDto(Constants.API_USER_BULK_UPLOAD);
+    public ResponseDto upload(Long examCycleId, String createdBy, MultipartFile file) {
+        ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_UPLOAD);
         Path filePath = null;
         try {
             // validate file
@@ -195,18 +200,32 @@ public class AttachmentServiceImpl implements AttachmentService {
             storage.create(blobInfo, new FileInputStream(filePath.toFile()));
 
             //Get Details from other table
-            Long examCycleId = questionPaper.getExamCycleId();
             Exam examDetails = examRepository.findByExamCycleIdAndObsolete(examCycleId, 0).orElse(null);
-            LocalDate examDate = examDetails.getExamDate();
-            String examName = examDetails.getExamName();
-            LocalTime examStartTime = examDetails.getStartTime();
+            LocalDate examDate = null;
+            String examName = null;
+            LocalTime examStartTime = null;
+            if (examDetails != null) {
+                examDate = examDetails.getExamDate();
+                examName = examDetails.getExamName();
+                examStartTime = examDetails.getStartTime();
+            }
 
             ExamCycle examCycleDetails = examCycleRepository.findByIdAndObsolete(examCycleId, 0).orElse(null);
-            String examCycleName = examCycleDetails.getExamCycleName();
-            String courseId = examCycleDetails.getCourse().getId().toString();
+            String examCycleName = null;
+            Long courseId = null;
+            if (examCycleDetails != null) {
+                examCycleName = examCycleDetails.getExamCycleName();
+                courseId = examCycleDetails.getCourse().getId();
+            }
 
-            Course courseDetails = courseRepository.findByCourseCode(courseId);
-            String courseName = courseDetails.getCourseName();
+            Course courseDetails = null;
+            if (courseId != null) {
+                courseDetails = courseRepository.findById(courseId).orElse(null);
+            }
+            String courseName = null;
+            if (courseDetails != null) {
+                courseName = courseDetails.getCourseName();
+            }
 
             Map<String, Object> uploadedFile = new HashMap<>();
             uploadedFile.put(Constants.FILE_NAME, fileName);
@@ -246,7 +265,8 @@ public class AttachmentServiceImpl implements AttachmentService {
             uploadedFile.put(Constants.ID, uploadData.getId());
             response.getParams().setStatus(Constants.SUCCESS);
             response.setResponseCode(HttpStatus.OK);
-            response.getResult().putAll(uploadedFile);
+            response.put(Constants.MESSAGE, "Question paper uploaded successfully");
+            response.put(Constants.RESPONSE, uploadedFile);
         } catch (IOException e) {
             log.error("Error while uploading attachment", e);
             setErrorData(response,
@@ -292,12 +312,10 @@ public class AttachmentServiceImpl implements AttachmentService {
             } else {
                 log.warn("questionPaper with ID: {} not found for deletion!", id);
                 response.put(Constants.MESSAGE, "questionPaper with id not found for deletion!");
-                response.put(Constants.RESPONSE, Constants.MESSAGE);
                 response.setResponseCode(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
             response.put(Constants.MESSAGE, "Exception occurred during deleting the questionPaper id");
-            response.put(Constants.RESPONSE, Constants.MESSAGE);
             response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;

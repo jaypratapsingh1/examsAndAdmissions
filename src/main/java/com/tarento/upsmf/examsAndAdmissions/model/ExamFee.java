@@ -1,9 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -19,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class ExamFee {
 
     @Id
@@ -39,6 +38,7 @@ public class ExamFee {
     @JoinColumn(name = "institute_id")
     private Institute institute;
 
+    @JsonIgnore
     @OneToMany(targetEntity = StudentExam.class, mappedBy = "referenceNo", fetch = FetchType.EAGER)
     @Fetch(value = FetchMode.SUBSELECT)
     private List<StudentExam> studentExams;

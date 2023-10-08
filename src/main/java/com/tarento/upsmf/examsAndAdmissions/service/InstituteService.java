@@ -5,6 +5,7 @@ import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.InstituteUser;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteUserDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteUserMappingRepository;
@@ -69,15 +70,23 @@ public class InstituteService {
         return instituteRepository.save(existingInstitute);
     }
 
-    public Optional<Institute> getInstituteById(String id) {
-        return Optional.ofNullable(instituteRepository.findByInstituteCode(id));
-    }
-    public List<Institute> getInstituteByUserId(String userId) {
+    public List<InstituteDto> getInstituteByUserId(String userId) {
         InstituteUser instituteUser = instituteUserMappingRepository.findByUserId(userId);
         if(instituteUser == null || instituteUser.getInstitute() == null) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(instituteUser.getInstitute());
+        InstituteDto instituteDto = InstituteDto.builder()
+                .instituteCode(instituteUser.getInstitute().getInstituteCode())
+                .instituteName(instituteUser.getInstitute().getInstituteName())
+                .email(instituteUser.getInstitute().getEmail())
+                .address(instituteUser.getInstitute().getAddress())
+                .allowedForExamCentre(instituteUser.getInstitute().isAllowedForExamCentre())
+                .cctvVerified(instituteUser.getInstitute().getCctvVerified())
+                .district(instituteUser.getInstitute().getDistrict())
+                .remarks(instituteUser.getInstitute().getRemarks())
+                .id(instituteUser.getInstitute().getId())
+                .ipAddress(instituteUser.getInstitute().getIpAddress()).build();
+        return Collections.singletonList(instituteDto);
     }
 
     public Boolean addInstituteUserMapping(InstituteUserDto instituteUserDto) {

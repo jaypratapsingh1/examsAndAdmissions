@@ -7,6 +7,7 @@ import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -21,6 +22,9 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 
 	@Autowired
 	private AccessTokenValidator accessTokenValidator;
+
+	@Value("${user.management.exam.fee.auth.token}")
+	private String userManagementAuthToken;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -45,6 +49,12 @@ public class RequestInterceptor extends BaseController implements HandlerInterce
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().write(handleResponse(false, ResponseCode.TOKEN_MISSING));
 			response.setContentType(MediaType.APPLICATION_JSON);
+			return Boolean.FALSE;
+		}
+		if(request.getRequestURI().endsWith("/status/update")) {
+			if(authToken.equals(userManagementAuthToken)) {
+				return Boolean.TRUE;
+			}
 			return Boolean.FALSE;
 		}
 		// authentication

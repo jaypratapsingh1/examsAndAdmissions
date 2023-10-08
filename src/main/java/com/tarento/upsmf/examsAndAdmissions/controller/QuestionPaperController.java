@@ -4,6 +4,8 @@ import com.tarento.upsmf.examsAndAdmissions.model.QuestionPaper;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.AttachmentService;
 import com.tarento.upsmf.examsAndAdmissions.service.QuestionPaperService;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
+import com.tarento.upsmf.examsAndAdmissions.util.HandleResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,38 +22,62 @@ public class QuestionPaperController {
     private AttachmentService attachmentService;
 
     @GetMapping("/download/{questionPaperId}")
-    public ResponseEntity<?> downloadFile(@PathVariable Long questionPaperId) {
-        ResponseEntity response = attachmentService.downloadQuestionPaper(questionPaperId);
-        return new ResponseEntity<>(response, response.getStatusCode());
+    public ResponseEntity<ResponseDto> downloadFile(@PathVariable Long questionPaperId) {
+        try {
+            ResponseDto response = attachmentService.downloadQuestionPaper(questionPaperId);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<ResponseDto> upload(QuestionPaper questionPaper, String createdBy, MultipartFile file) {
-        ResponseDto response = attachmentService.upload(questionPaper, createdBy, file);
-        return new ResponseEntity<>(response, response.getResponseCode());
+    public ResponseEntity<ResponseDto> upload(Long examCycleId, @RequestAttribute(Constants.Parameters.USER_ID) String createdBy, MultipartFile file) {
+        try {
+            ResponseDto response = attachmentService.upload(examCycleId, createdBy, file);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 
     @GetMapping("/list")
     public ResponseEntity<ResponseDto> getAllQuestionPapers(@RequestParam(required = true) Long examCycleId, Long examId) {
-        ResponseDto response = questionPaperService.getAllQuestionPapers(examCycleId, examId);
-        return new ResponseEntity<>(response, response.getResponseCode());
+        try {
+            ResponseDto response = questionPaperService.getAllQuestionPapers(examCycleId, examId);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto> getQuestionPaperById(@PathVariable Long id) {
-        ResponseDto response = questionPaperService.getQuestionPaperById(id);
-        return new ResponseEntity<>(response, response.getResponseCode());
+        try {
+            ResponseDto response = questionPaperService.getQuestionPaperById(id);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDto> deleteQuestionPaper(@PathVariable Long id) {
-        ResponseDto response = attachmentService.deleteQuestionPaper(id);
-        return new ResponseEntity<>(response, response.getResponseCode());
+        try {
+            ResponseDto response = attachmentService.deleteQuestionPaper(id);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 
     @GetMapping("/preview/{questionPaperId}")
     public ResponseEntity<ResponseDto> getPreviewUrl(@PathVariable Long questionPaperId) {
-        ResponseDto response = attachmentService.getPreviewUrl(questionPaperId);
-        return new ResponseEntity<>(response, response.getResponseCode());
+        try {
+            ResponseDto response = attachmentService.getPreviewUrl(questionPaperId);
+            return new ResponseEntity<>(response, response.getResponseCode());
+        } catch (Exception e) {
+            return HandleResponse.handleErrorResponse(e);
+        }
     }
 }
