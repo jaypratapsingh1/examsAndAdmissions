@@ -3,6 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -10,17 +11,17 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -265,5 +266,35 @@ public class StudentResultService {
         retotallingRequest.setStatus(RetotallingStatus.COMPLETED);
         retotallingRequestRepository.save(retotallingRequest);
     }
+    public Map<Institute, List<StudentResult>> getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
+        List<StudentResult> results;
+        if (examCycle != null && exam != null) {
+            results = studentResultRepository.findByExamCycleAndExam(examCycle, exam);
+        } else if (examCycle != null) {
+            results = studentResultRepository.findByExamCycle(examCycle);
+        } else if (exam != null) {
+            results = studentResultRepository.findByExam(exam);
+        } else {
+            results = studentResultRepository.findAll();
+        }
+
+        // Group the results by Institute
+        return results.stream()
+                .collect(Collectors.groupingBy(result -> result.getStudent().getInstitute()));
+    }
+
+    private ExamResultDTO convertToDTO(StudentResult result) {
+        ExamResultDTO dto = new ExamResultDTO();
+
+        dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
+        dto.setInstituteId(result.getStudent().getInstitute().getId());
+        dto.setStudentName(result.getFirstName() + " " + result.getLastName());
+        dto.setCourseName(result.getCourse().getCourseName());
+        dto.setExamName(result.getExam().getExamName());
+        dto.setInternalMarks(result.getInternalMarksObtained());
+
+        return dto;
+    }
+
 
 }

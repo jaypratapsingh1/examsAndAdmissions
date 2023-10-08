@@ -43,6 +43,5 @@ public class StudentExamRegistration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institute_id")
     private Institute institute;
-
-
+    private String hallTicketPath;
 }

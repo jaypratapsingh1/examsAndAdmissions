@@ -1,7 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
-import com.tarento.upsmf.examsAndAdmissions.model.RetotallingRequest;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentResultRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/studentResults")
@@ -169,4 +170,15 @@ public class StudentResultController {
            return FeeController.handleErrorResponse(e);
         }
     }
+    @GetMapping("/manageResults")
+    public ResponseEntity<Map<Institute, List<StudentResult>>> getResultsByExamCycleAndExamGroupedByInstitute(
+            @RequestParam(required = false) ExamCycle examCycle,
+            @RequestParam(required = false) Exam exam) {
+        Map<Institute, List<StudentResult>> results = studentResultService.getResultsByExamCycleAndExamGroupedByInstitute(examCycle, exam);
+        if (results.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(results);
+    }
+
 }

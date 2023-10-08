@@ -107,4 +107,7 @@ public class InstituteService {
             throw new InvalidRequestException("Invalid Institute ID");
         }
     }
+    public List<Institute> getAllInstitutes() {
+        return instituteRepository.findAll();
+    }
 }
