@@ -132,83 +132,117 @@ public class StudentService {
     }
 
     @Transactional
-    public Student enrollStudent(StudentDto studentDto) throws IOException {
-        Student student = modelMapper.map(studentDto, Student.class);
+    public ResponseDto enrollStudent(StudentDto studentDto) {
+        ResponseDto response = new ResponseDto();
+        try {
+            Student student = modelMapper.map(studentDto, Student.class);
 
-        // Fetching the institute and setting it to the student
-        Institute institute = instituteRepository.findByInstituteCode(studentDto.getInstituteCode()); // Assuming findByCode method exists, adjust accordingly
-        if (institute == null) {
-            throw new RuntimeException("Institute with code " + studentDto.getInstituteCode() + " not found in the database");
-        }
-        student.setInstitute(institute);
-
-        Course dbCourse = courseRepository.findByCourseCode(studentDto.getCourseCode());
-        if (dbCourse == null) {
-            throw new RuntimeException("Course with code " + studentDto.getCourseCode() + " not found in the database");
-        }
-
-        student.setCourse(dbCourse);
-/*
-            if (dbCourse.getAvailableSeats() == null) {
-                throw new RuntimeException("Seat information not set for course: " + dbCourse.getCourseName());
+            // Fetching the institute and setting it to the student
+            Institute institute = instituteRepository.findByInstituteCode(studentDto.getInstituteCode());
+            if (institute == null) {
+                ResponseDto.setErrorResponse(response, "INSTITUTE_NOT_FOUND", "Institute with code " + studentDto.getInstituteCode() + " not found in the database", HttpStatus.NOT_FOUND);
+                return response;
             }
+            student.setInstitute(institute);
 
-            if (dbCourse.getAvailableSeats() <= 0) {
-                throw new RuntimeException("No seats available for course: " + dbCourse.getCourseName());
+            Course dbCourse = courseRepository.findByCourseCode(studentDto.getCourseCode());
+            if (dbCourse == null) {
+                ResponseDto.setErrorResponse(response, "COURSE_NOT_FOUND", "Course with code " + studentDto.getCourseCode() + " not found in the database", HttpStatus.NOT_FOUND);
+                return response;
             }
+            student.setCourse(dbCourse);
 
-            dbCourse.setAvailableSeats(dbCourse.getAvailableSeats() - 1);
-            courseRepository.save(dbCourse);*/
+            // Generate provisional enrollment number
+            String provisionalNumber = generateProvisionalNumber(student);
+            student.setProvisionalEnrollmentNumber(provisionalNumber);
 
-        // Generate provisional enrollment number
-        String provisionalNumber = generateProvisionalNumber(student);
-        student.setProvisionalEnrollmentNumber(provisionalNumber);
+            // Set initial verification status to PENDING
+            student.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
+            student.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
+            student.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
+            student.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
+            student.setVerificationStatus(VerificationStatus.PENDING);
+            student.setVerificationDate(LocalDate.now());
 
-        // Set initial verification status to PENDING
+            student = studentRepository.save(student);
 
-        student.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
-        student.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
-        student.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
-        student.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
-        student.setVerificationStatus(VerificationStatus.PENDING);
-        student.setVerificationDate(LocalDate.now());
-
-        return studentRepository.save(student);
+            response.put(Constants.MESSAGE, "Student enrolled successfully");
+            response.put(Constants.RESPONSE, student);  // Optionally return the student data
+            response.setResponseCode(HttpStatus.OK);
+        } catch (IOException e) {
+            ResponseDto.setErrorResponse(response, "FILE_STORAGE_ERROR", "Error occurred while storing files: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
     }
 
     private String generateProvisionalNumber(Student student) {
         return student.getCourse().getCourseCode() + "-" + UUID.randomUUID().toString();
     }
 
-    public List<Student> getFilteredStudents(Long instituteId, Long courseId, String academicYear, VerificationStatus verificationStatus) {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
-        Root<Student> studentRoot = criteriaQuery.from(Student.class);
+    public ResponseDto getFilteredStudents(Long instituteId, Long courseId, String academicYear, VerificationStatus verificationStatus) {
+        ResponseDto response = new ResponseDto();
 
-        List<Predicate> predicates = new ArrayList<>();
+        try {
+            CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+            CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
+            Root<Student> studentRoot = criteriaQuery.from(Student.class);
 
-        if (instituteId != null) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("institute").get("id"), instituteId));
-        }
-        if (courseId != null) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
-        }
-        if (academicYear != null && !academicYear.trim().isEmpty()) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
-        } else if (academicYear != null) {
-            predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
-        }
-        if (verificationStatus != null) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), verificationStatus));
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (instituteId != null) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("institute").get("id"), instituteId));
+            }
+            if (courseId != null) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
+            }
+            if (academicYear != null && !academicYear.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
+            } else if (academicYear != null) {
+                predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+            }
+            if (verificationStatus != null) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), verificationStatus));
+            }
+
+            criteriaQuery.where(predicates.toArray(new Predicate[0]));
+
+            List<Student> students = entityManager.createQuery(criteriaQuery).getResultList();
+
+            if (students.isEmpty()) {
+                response.put("message", "No students found with the given criteria.");
+            } else {
+                response.put("message", "Students fetched successfully.");
+                response.put("students", students);
+            }
+            response.setResponseCode(HttpStatus.OK);
+
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        criteriaQuery.where(predicates.toArray(new Predicate[0]));
-
-        return entityManager.createQuery(criteriaQuery).getResultList();
+        return response;
     }
+    public ResponseDto getStudentById(Long id) {
+        ResponseDto response = new ResponseDto("API_FETCH_STUDENT_BY_ID");
 
-    public Optional<Student> getStudentById(Long id) {
-        return studentRepository.findById(id);
+        try {
+            Optional<Student> studentOptional = studentRepository.findById(id);
+
+            if (studentOptional.isPresent()) {
+                response.put("message", "Student fetched successfully.");
+                response.put("student", studentOptional.get());
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found with the given ID.", HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
     }
 
     public Student updateStudent(Long id, StudentDto studentDto) throws IOException {

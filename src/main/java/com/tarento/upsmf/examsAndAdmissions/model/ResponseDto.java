@@ -143,11 +143,12 @@ public class ResponseDto {
     public void setError(ErrorDetails error) {
         this.error = error;
     }
-    public static void setErrorResponse(ResponseDto response, String code, String message, HttpStatus status) {
+    public static ResponseDto setErrorResponse(ResponseDto response, String code, String message, HttpStatus status) {
         ErrorDetails errorDetails = new ErrorDetails();
         errorDetails.setCode(code);
         errorDetails.setMessage(message);
         response.setError(errorDetails);
         response.setResponseCode(status);
+        return response;
     }
 }

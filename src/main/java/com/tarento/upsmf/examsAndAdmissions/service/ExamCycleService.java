@@ -41,6 +41,7 @@ public class ExamCycleService {
 
     public ResponseDto createExamCycle(ExamCycle examCycle, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_ADD);
+
         try {
             ExamCycle existingExamCycle = repository.findByExamCycleNameAndCourseAndStartDateAndEndDate(
                     examCycle.getExamCycleName(),
@@ -50,9 +51,7 @@ public class ExamCycleService {
             );
 
             if (existingExamCycle != null) {
-                response.put(Constants.MESSAGE, "ExamCycle with the same details already exists.");
-                response.put(Constants.RESPONSE, existingExamCycle);
-                response.setResponseCode(HttpStatus.CONFLICT);
+                ResponseDto.setErrorResponse(response, "EXAM_CYCLE_ALREADY_EXISTS", "ExamCycle with the same details already exists.", HttpStatus.CONFLICT);
                 return response;
             }
 
@@ -86,61 +85,57 @@ public class ExamCycleService {
             response.setResponseCode(HttpStatus.CREATED);
         } catch (Exception e) {
             log.error("Error while creating ExamCycle", e);
-            response.put(Constants.MESSAGE, "An error occurred while creating the ExamCycle.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_CREATION_FAILED", "An error occurred while creating the ExamCycle.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
         return response;
     }
 
     public ResponseDto getAllExamCycles() {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_GET_ALL);
         List<ExamCycle> examCycles = repository.findByObsolete(0);
+
         if (!examCycles.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, examCycles);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            response.put(Constants.MESSAGE, "No active ExamCycles found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "NO_ACTIVE_EXAM_CYCLES", "No active ExamCycles found.", HttpStatus.NOT_FOUND);
         }
+
         return response;
     }
 
     public ResponseDto getExamCycleById(Long id) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_GET_BY_ID);
         Optional<ExamCycle> examCycleOptional = repository.findByIdAndObsolete(id, 0);
+
         if (examCycleOptional.isPresent()) {
             ExamCycle examCycle = examCycleOptional.get();
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, examCycle);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            response.put(Constants.MESSAGE, "ExamCycle not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found.", HttpStatus.NOT_FOUND);
         }
+
         return response;
     }
+
     public ResponseDto updateExamCycle(Long id, ExamCycle updatedExamCycle, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_UPDATE);
 
         // 1. Check if the exam cycle exists.
         ExamCycle existingExamCycle = repository.findByIdAndObsolete(id, 0).orElse(null);
         if (existingExamCycle == null) {
-            response.put(Constants.MESSAGE, "ExamCycle not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found.", HttpStatus.NOT_FOUND);
             return response;
         }
 
         // 2. Check if the course exists.
         Course course = courseRepository.findById(updatedExamCycle.getCourse().getId()).orElse(null);
         if (course == null) {
-            response.put(Constants.MESSAGE, "Course with code " + updatedExamCycle.getCourse().getId() + " not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.BAD_REQUEST);
+            ResponseDto.setErrorResponse(response, "COURSE_NOT_FOUND", "Course with code " + updatedExamCycle.getCourse().getId() + " not found.", HttpStatus.BAD_REQUEST);
             return response;
         }
 
@@ -160,9 +155,7 @@ public class ExamCycleService {
 
         } catch (DataIntegrityViolationException e) {
             if (e.getCause() instanceof ConstraintViolationException) {
-                response.put(Constants.MESSAGE, "Invalid reference in data. Please check foreign key references.");
-                response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
+                ResponseDto.setErrorResponse(response, "INVALID_REFERENCE", "Invalid reference in data. Please check foreign key references.", HttpStatus.BAD_REQUEST);
                 return response;
             }
             throw e;  // re-throw the exception if it's not the one we're handling
@@ -179,9 +172,7 @@ public class ExamCycleService {
             response.put(Constants.RESPONSE, Constants.SUCCESSMESSAGE);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            response.put(Constants.MESSAGE, "ExamCycle not found for deletion.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found for deletion.", HttpStatus.NOT_FOUND);
         }
         return response;
     }
@@ -196,19 +187,16 @@ public class ExamCycleService {
             response.put(Constants.RESPONSE, Constants.SUCCESSMESSAGE);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            response.put(Constants.MESSAGE, "ExamCycle not found or not marked for restoration.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND_OR_NOT_MARKED", "ExamCycle not found or not marked for restoration.", HttpStatus.NOT_FOUND);
         }
         return response;
     }
+
     public ResponseDto addExamsToCycle(Long id, List<Exam> exams, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_ADD_EXAMS);
         ExamCycle examCycle = repository.findById(id).orElse(null);
         if (examCycle == null) {
-            response.put(Constants.MESSAGE, "ExamCycle not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found.", HttpStatus.NOT_FOUND);
             return response;
         }
 
@@ -216,17 +204,13 @@ public class ExamCycleService {
             Optional<Exam> existingExam = examRepository.findByExamNameAndExamDateAndStartTimeAndEndTime(
                     exam.getExamName(), exam.getExamDate(), exam.getStartTime(), exam.getEndTime());
             if (existingExam.isPresent()) {
-                response.put(Constants.MESSAGE, "Exam already exists with same details: " + exam.getExamName());
-                response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-                response.setResponseCode(HttpStatus.CONFLICT);
+                ResponseDto.setErrorResponse(response, "EXAM_ALREADY_EXISTS", "Exam already exists with same details: " + exam.getExamName(), HttpStatus.CONFLICT);
                 return response;
             }
 
             Course course = courseRepository.findById(exam.getCourse().getId()).orElse(null);
             if (course == null) {
-                response.put(Constants.MESSAGE, "Course not found with ID: " + exam.getCourse().getId());
-                response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-                response.setResponseCode(HttpStatus.NOT_FOUND);
+                ResponseDto.setErrorResponse(response, "COURSE_NOT_FOUND", "Course not found with ID: " + exam.getCourse().getId(), HttpStatus.NOT_FOUND);
                 return response;
             }
 
@@ -245,21 +229,18 @@ public class ExamCycleService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+
     public ResponseDto removeExamFromCycle(Long id, Exam exam) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_REMOVE_EXAM);
         ExamCycle examCycle = repository.findById(id).orElse(null);
 
         if (examCycle == null) {
-            response.put(Constants.MESSAGE, "ExamCycle not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found.", HttpStatus.NOT_FOUND);
             return response;
         }
 
         if (exam.getExamCycleId() == null || !exam.getExamCycleId().equals(examCycle.getId())) {
-            response.put(Constants.MESSAGE, "The provided exam is not associated with the given ExamCycle.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.BAD_REQUEST);
+            ResponseDto.setErrorResponse(response, "EXAM_NOT_ASSOCIATED", "The provided exam is not associated with the given ExamCycle.", HttpStatus.BAD_REQUEST);
             return response;
         }
 
@@ -276,9 +257,7 @@ public class ExamCycleService {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_PUBLISH);
         Optional<ExamCycle> optionalExamCycle = repository.findById(id);
         if (!optionalExamCycle.isPresent()) {
-            response.put(Constants.MESSAGE, "ExamCycle not found.");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "ExamCycle not found.", HttpStatus.NOT_FOUND);
             return response;
         }
         ExamCycle examCycle = optionalExamCycle.get();

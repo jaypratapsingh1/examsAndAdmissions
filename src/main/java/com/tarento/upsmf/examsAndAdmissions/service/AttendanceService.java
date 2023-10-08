@@ -1,9 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -12,7 +15,9 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +36,12 @@ public class AttendanceService {
 
     @Autowired
     private ExamCycleRepository examCycleRepository;
-    public void uploadAttendanceRecords(MultipartFile file) throws IOException {
+    @Autowired
+    private DataImporterService dataImporterService;
+
+    public ResponseDto uploadAttendanceRecords(MultipartFile file) throws IOException {
+        ResponseDto response = new ResponseDto("API_UPLOAD_ATTENDANCE");
+        try {
         XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
         XSSFSheet sheet = workbook.getSheetAt(0);
         List<AttendanceRecord> records = new ArrayList<>();
@@ -76,6 +86,13 @@ public class AttendanceService {
 
         attendanceRepository.saveAll(records);
         workbook.close();
+        response.put(Constants.MESSAGE, "File uploaded and processed successfully.");
+        response.setResponseCode(HttpStatus.OK);
+
+    } catch (IOException e) {
+        ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "Failed to process the file: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return response;
     }
     public static boolean isRowEmpty(XSSFRow row) {
         if (row == null) {
@@ -135,14 +152,105 @@ public class AttendanceService {
         }
         return 0.0;
     }
-    public List<AttendanceRecord> getAllAttendanceRecords() {
-        return attendanceRepository.findAll();
-    }
-    public AttendanceRecord getRecordById(Long id) {
-        return attendanceRepository.findById(id).orElse(null);
+    public ResponseDto getAllAttendanceRecords() {
+        ResponseDto response = new ResponseDto("API_GET_ALL_ATTENDANCE");
+        List<AttendanceRecord> records = attendanceRepository.findAll();
+
+        if (records.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "NO_RECORDS_FOUND", "No attendance records found", HttpStatus.NOT_FOUND);
+        } else {
+            response.put(Constants.RESPONSE, records);
+            response.setResponseCode(HttpStatus.OK);
+        }
+        return response;
     }
 
-    public AttendanceRecord saveRecord(AttendanceRecord record) {
-        return attendanceRepository.save(record);
+    public ResponseDto getRecordById(Long id) {
+        ResponseDto response = new ResponseDto("API_GET_RECORD_BY_ID");
+        AttendanceRecord record = attendanceRepository.findById(id).orElse(null);
+
+        if (record == null) {
+            ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "Attendance record not found", HttpStatus.NOT_FOUND);
+        } else {
+            response.put(Constants.RESPONSE, record);
+            response.setResponseCode(HttpStatus.OK);
+        }
+        return response;
     }
+
+    public ResponseDto saveRecord(AttendanceRecord record) {
+        ResponseDto response = new ResponseDto("API_SAVE_RECORD");
+        try {
+            AttendanceRecord savedRecord = attendanceRepository.save(record);
+            response.put(Constants.RESPONSE, savedRecord);
+            response.setResponseCode(HttpStatus.OK);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "SAVE_FAILED", "Failed to save the attendance record: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+    public ResponseDto approveStudent(Long id) {
+        ResponseDto response = new ResponseDto("API_APPROVE_STUDENT");
+        AttendanceRecord record = attendanceRepository.findById(id).orElse(null);
+
+        if (record == null) {
+            ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "Attendance record not found", HttpStatus.NOT_FOUND);
+        } else {
+            record.setApprovalStatus(ApprovalStatus.APPROVED);
+            attendanceRepository.save(record);
+            response.put(Constants.MESSAGE, "Student approved successfully.");
+            response.setResponseCode(HttpStatus.OK);
+        }
+
+        return response;
+    }
+
+    public ResponseDto rejectStudent(Long id, String reason) {
+        ResponseDto response = new ResponseDto("API_REJECT_STUDENT");
+        AttendanceRecord record = attendanceRepository.findById(id).orElse(null);
+
+        if (record == null) {
+            ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "Attendance record not found", HttpStatus.NOT_FOUND);
+        } else {
+            record.setApprovalStatus(ApprovalStatus.REJECTED);
+            record.setRejectionReason(reason);
+            attendanceRepository.save(record);
+            response.put(Constants.MESSAGE, "Student rejected successfully with reason: " + reason);
+            response.setResponseCode(HttpStatus.OK);
+        }
+
+        return response;
+    }
+    public ResponseDto processBulkAttendanceUpload(MultipartFile file, String fileType) {
+        ResponseDto response = new ResponseDto("API_BULK_UPLOAD_ATTENDANCE");
+
+        try {
+            JSONArray jsonArray;
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    return ResponseDto.setErrorResponse(response, "UNSUPPORTED_FILE_TYPE", "Unsupported file type", HttpStatus.BAD_REQUEST);
+            }
+
+            List<AttendanceRecord> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, AttendanceRecord.class);
+            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, attendanceRepository);
+
+            if (success) {
+                response.put(Constants.MESSAGE, "Bulk attendance uploaded successfully.");
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (Exception e) {
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    }
+
 }

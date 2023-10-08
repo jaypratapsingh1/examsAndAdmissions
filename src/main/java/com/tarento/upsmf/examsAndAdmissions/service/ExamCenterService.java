@@ -3,22 +3,25 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCenter;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.CCTVStatusUpdateDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCenterDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCenterRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentExamRegistrationRepository;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ExamCenterService {
+
     @Autowired
     private InstituteRepository instituteRepository;
     @Autowired
@@ -27,84 +30,117 @@ public class ExamCenterService {
     private ExamCenterRepository examCenterRepository;
     @Autowired
     private ExamCycleRepository examCycleRepository;
+    @Autowired
+    private ExamCenterMapper examCenterMapper;
 
-    public List<ExamCenter> getVerifiedExamCentersInDistrict(String district) {
-        return examCenterRepository.findByDistrictAndVerified(district, true);
-    }@Transactional
-    public void assignAlternateExamCenter(Long unverifiedInstituteId, Long alternateExamCenterId) {
-        // Fetch the unverified institute
-        Institute unverifiedInstitute = instituteRepository.findById(unverifiedInstituteId)
-                .orElseThrow(() -> new EntityNotFoundException("Unverified Institute not found"));
+    public ResponseDto getVerifiedExamCentersInDistrict(String district) {
+        ResponseDto response = new ResponseDto("API_GET_VERIFIED_EXAM_CENTERS");
+        List<ExamCenter> examCenters = examCenterRepository.findByDistrictAndVerified(district, true);
+        if (!examCenters.isEmpty()) {
+            List<ExamCenterDTO> examCenterDTOs = examCenterMapper.toDTOs(examCenters);
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, examCenterDTOs);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_CENTERS_FOUND", "No verified exam centers found for the given district.", HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
 
-        // Fetch the alternate exam center
-        ExamCenter alternateExamCenter = examCenterRepository.findById(alternateExamCenterId)
-                .orElseThrow(() -> new EntityNotFoundException("Alternate Exam Center not found"));
+    public ResponseDto assignAlternateExamCenter(Long originalExamCenterId, Long alternateInstituteId) {
+        ResponseDto response = new ResponseDto("API_ASSIGN_ALTERNATE_EXAM_CENTER");
+        ExamCenter originalCenter = examCenterRepository.findById(originalExamCenterId).orElse(null);
+        Institute alternateInstitute = instituteRepository.findById(alternateInstituteId).orElse(null);
 
-        // Ensure both the institute and exam center belong to the same district
-        if (!unverifiedInstitute.getDistrict().equals(alternateExamCenter.getDistrict())) {
-            throw new IllegalArgumentException("Institute and Alternate Exam Center do not belong to the same district.");
+        if (originalCenter == null || alternateInstitute == null) {
+            ResponseDto.setErrorResponse(response, "INVALID_INPUT", "Either the original exam center or the alternate institute was not found.", HttpStatus.NOT_FOUND);
+            return response;
         }
 
-        // Fetch all student registrations linked to the unverified institute
-        List<StudentExamRegistration> affectedRegistrations = studentExamRegistrationRepository.findByInstitute(unverifiedInstitute);
+        ExamCenter alternateCenter = convertInstituteToExamCenter(alternateInstitute, originalCenter.getExamCycle());
+        examCenterRepository.save(alternateCenter);
+        response.put(Constants.MESSAGE, "Alternate exam center assigned successfully.");
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
 
-        // Update the exam center for these registrations
-        for (StudentExamRegistration registration : affectedRegistrations) {
-            registration.setExamCenter(alternateExamCenter);
+    public ResponseDto updateCCTVStatus(Long examCenterId, CCTVStatusUpdateDTO updateDTO) {
+        ResponseDto response = new ResponseDto("API_UPDATE_CCTV_STATUS");
+        ExamCenter center = examCenterRepository.findById(examCenterId).orElse(null);
+        if (center == null) {
+            ResponseDto.setErrorResponse(response, "CENTER_NOT_FOUND", "Exam center not found.", HttpStatus.NOT_FOUND);
+            return response;
         }
 
-        // Save the updated registrations
-        studentExamRegistrationRepository.saveAll(affectedRegistrations);
+        center.setIpAddress(updateDTO.getIpAddress());
+        center.setRemarks(updateDTO.getRemarks());
+        center.setVerified(updateDTO.getStatus());
+        examCenterRepository.save(center);
+        response.put(Constants.MESSAGE, "CCTV status updated successfully.");
+        response.setResponseCode(HttpStatus.OK);
+        return response;
     }
 
-    public List<ExamCenter> getExamCentersByStatus(ExamCycle examCycle, Boolean isVerifiedStatus) {
-        return examCenterRepository.findByExamCycleAndVerified(examCycle, isVerifiedStatus);
+    private ExamCenter convertInstituteToExamCenter(Institute institute, ExamCycle examCycle) {
+        ExamCenter center = new ExamCenter();
+        center.setExamCycle(examCycle);
+        center.setInstitute(institute);
+        center.setName(institute.getInstituteName());
+        center.setAddress(institute.getAddress());
+        center.setDistrict(institute.getDistrict());
+        center.setVerified(true);
+        return center;
     }
 
-    public void updateCCTVStatus(Long examCenterId, Boolean status, String ipAddress, String remarks) {
-        ExamCenter examCenter = examCenterRepository.findById(examCenterId)
-                .orElseThrow(() -> new EntityNotFoundException("Exam Center not found"));
-        examCenter.setVerified(status);
-        examCenter.setIpAddress(ipAddress);
-        examCenter.setRemarks(remarks);
-
-        // Save the updated exam center
-        examCenterRepository.save(examCenter);
-
-        // Update the StudentExamRegistration based on the verification status
-        if (status) { // If the exam center is verified
-            setExamCenterForStudentsOfInstitute(examCenter.getInstitute().getId(), examCenter);
-        } else { // If the exam center is not verified
-            unsetExamCenterForStudentsOfInstitute(examCenter.getInstitute().getId());
+    public ResponseDto getExamCentersByStatus(Long examCycleId, Boolean isVerifiedStatus) {
+        ResponseDto response = new ResponseDto("API_GET_EXAM_CENTERS_BY_STATUS");
+        ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElse(null);
+        if (examCycle != null) {
+            List<ExamCenter> examCenters = examCenterRepository.findByExamCycleAndVerified(examCycle, isVerifiedStatus);
+            if (!examCenters.isEmpty()) {
+                response.put(Constants.MESSAGE, "Successful.");
+                response.put(Constants.RESPONSE, examCenters);
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                ResponseDto.setErrorResponse(response, "NO_CENTERS_FOUND", "No exam centers found for the given criteria.", HttpStatus.NOT_FOUND);
+            }
+        } else {
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "Exam cycle not found.", HttpStatus.NOT_FOUND);
         }
+        return response;
     }
+    public ResponseDto getAllExamCenters() {
+        ResponseDto response = new ResponseDto("API_GET_ALL_EXAM_CENTERS");
+        List<ExamCenter> examCenters = examCenterRepository.findAll();
 
-    private void setExamCenterForStudentsOfInstitute(Long instituteId, ExamCenter verifiedExamCenter) {
-        List<StudentExamRegistration> studentsWithoutExamCenters = studentExamRegistrationRepository.findByInstituteIdAndExamCenterIsNull(instituteId);
-
-        for (StudentExamRegistration registration : studentsWithoutExamCenters) {
-            registration.setExamCenter(verifiedExamCenter);
+        if (!examCenters.isEmpty()) {
+            List<ExamCenterDTO> examCenterDTOs = examCenterMapper.toDTOs(examCenters);
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, examCenterDTOs);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_CENTERS_FOUND", "No exam centers found.", HttpStatus.NOT_FOUND);
         }
 
-        studentExamRegistrationRepository.saveAll(studentsWithoutExamCenters);
+        return response;
     }
-
-    private void unsetExamCenterForStudentsOfInstitute(Long instituteId) {
-        // Logic to unset exam center (set to null) or assign to an alternate exam center
-        List<StudentExamRegistration> affectedStudents = studentExamRegistrationRepository.findByExamCenterInstituteId(instituteId);
-
-        for (StudentExamRegistration registration : affectedStudents) {
-            registration.setExamCenter(null); // Or assign to an alternate exam center
+    public ResponseDto getExamCentersByExamCycle(Long examCycleId) {
+        ResponseDto response = new ResponseDto("API_GET_EXAM_CENTERS_BY_EXAM_CYCLE");
+        ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElse(null);
+        if (examCycle != null) {
+            List<ExamCenter> examCenters = examCenterRepository.findByExamCycle(examCycle);
+            if (!examCenters.isEmpty()) {
+                List<ExamCenterDTO> dtos = examCenterMapper.toDTOs(examCenters);
+                response.put(Constants.MESSAGE, "Successful.");
+                response.put(Constants.RESPONSE, dtos); // Put DTOs in the response
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                ResponseDto.setErrorResponse(response, "NO_CENTERS_FOUND", "No exam centers found for the given exam cycle.", HttpStatus.NOT_FOUND);
+            }
+        } else {
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "Exam cycle not found.", HttpStatus.NOT_FOUND);
         }
-
-        studentExamRegistrationRepository.saveAll(affectedStudents);
+        return response;
     }
 
-    public List<ExamCenter> getAllExamCenters() {
-        return examCenterRepository.findAll();
-    }
-
-    public List<ExamCenter> getExamCentersByExamCycle(ExamCycle examCycle) {
-        return examCenterRepository.findByExamCycle(examCycle);
-    }
 }

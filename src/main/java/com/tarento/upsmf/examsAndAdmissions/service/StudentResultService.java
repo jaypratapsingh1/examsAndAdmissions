@@ -5,12 +5,15 @@ import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,42 +42,71 @@ public class StudentResultService {
     private ExamRepository examRepository;
     @Autowired
     private RetotallingRequestRepository retotallingRequestRepository;
+    @Autowired
+    private DataImporterService dataImporterService;
 
-    public void importInternalMarksFromExcel(MultipartFile file) throws IOException {
-        // Parse the Excel file
-        List<StudentResult> results = parseExcel(file);
+    public ResponseDto importInternalMarksFromExcel(MultipartFile file) {
+        ResponseDto response = new ResponseDto("API_IMPORT_INTERNAL_MARKS");
 
-        // For each result, update or create the record with internal marks
-        for (StudentResult result : results) {
-            Optional<StudentResult> existingResult = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumber(result.getStudent().getEnrollmentNumber()));
+        try {
+            // Parse the Excel file
+            List<StudentResult> results = parseExcel(file);
 
-            if (existingResult.isPresent()) {
-                StudentResult dbResult = existingResult.get();
-                dbResult.setInternalMarksObtained(result.getInternalMarksObtained());
-                dbResult.setPracticalMarksObtained(result.getPracticalMarksObtained());
-                studentResultRepository.save(dbResult);
-            } else {
-                studentResultRepository.save(result);
+            // For each result, update or create the record with internal marks
+            for (StudentResult result : results) {
+                Optional<StudentResult> existingResult = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumber(result.getStudent().getEnrollmentNumber()));
+
+                if (existingResult.isPresent()) {
+                    StudentResult dbResult = existingResult.get();
+                    dbResult.setInternalMarksObtained(result.getInternalMarksObtained());
+                    dbResult.setPracticalMarksObtained(result.getPracticalMarksObtained());
+                    studentResultRepository.save(dbResult);
+                } else {
+                    studentResultRepository.save(result);
+                }
             }
+
+            response.put(Constants.MESSAGE, "Internal marks imported successfully.");
+            response.put(Constants.RESPONSE, "Internal marks for " + results.size() + " students have been imported or updated.");
+            response.setResponseCode(HttpStatus.OK);
+        } catch (IOException e) {
+            log.error("Failed to import internal marks from Excel", e);
+            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", "Failed to import internal marks from Excel.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return response;
     }
 
-    public void importExternalMarksFromExcel(MultipartFile file) throws IOException {
-        // Parse the Excel file
-        List<StudentResult> results = parseExcel(file);
 
-        // For each result, update or create the record with external marks
-        for (StudentResult result : results) {
-            Optional<StudentResult> existingResult = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumber(result.getStudent().getEnrollmentNumber()));
+    public ResponseDto importExternalMarksFromExcel(MultipartFile file) {
+        ResponseDto response = new ResponseDto("API_IMPORT_EXTERNAL_MARKS");
 
-            if (existingResult.isPresent()) {
-                StudentResult dbResult = existingResult.get();
-                dbResult.setExternalMarksObtained(result.getExternalMarksObtained());
-                studentResultRepository.save(dbResult);
-            } else {
-                studentResultRepository.save(result);
+        try {
+            // Parse the Excel file
+            List<StudentResult> results = parseExcel(file);
+
+            // For each result, update or create the record with external marks
+            for (StudentResult result : results) {
+                Optional<StudentResult> existingResult = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumber(result.getStudent().getEnrollmentNumber()));
+
+                if (existingResult.isPresent()) {
+                    StudentResult dbResult = existingResult.get();
+                    dbResult.setExternalMarksObtained(result.getExternalMarksObtained());
+                    studentResultRepository.save(dbResult);
+                } else {
+                    studentResultRepository.save(result);
+                }
             }
+
+            response.put(Constants.MESSAGE, "External marks imported successfully.");
+            response.put(Constants.RESPONSE, "External marks for " + results.size() + " students have been imported or updated.");
+            response.setResponseCode(HttpStatus.OK);
+        } catch (IOException e) {
+            log.error("Failed to import external marks from Excel", e);
+            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", "Failed to import external marks from Excel.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return response;
     }
 
     private List<StudentResult> parseExcel(MultipartFile file) throws IOException {
@@ -95,9 +127,23 @@ public class StudentResultService {
                 StudentResult result = new StudentResult();
 
                 try {
-                    Student studentEntity = fetchStudentByEnrollmentNumber(getStringValue(row.getCell(2)));
-                    Course courseEntity = fetchCourseByName(getStringValue(row.getCell(5)));
-                    Exam examEntity = fetchExamByName(getStringValue(row.getCell(7)));
+                    ResponseDto studentResponse = fetchStudentByEnrollmentNumber(getStringValue(row.getCell(2)));
+                    if (studentResponse.getResponseCode() != HttpStatus.OK) {
+                        throw new RuntimeException("Failed to fetch student details");
+                    }
+                    Student studentEntity = (Student) studentResponse.get(Constants.RESPONSE);
+
+                    ResponseDto courseResponse = fetchCourseByName(getStringValue(row.getCell(5)));
+                    if (courseResponse.getResponseCode() != HttpStatus.OK) {
+                        throw new RuntimeException("Failed to fetch course details");
+                    }
+                    Course courseEntity = (Course) courseResponse.get(Constants.RESPONSE);
+
+                    ResponseDto examResponse = fetchExamByName(getStringValue(row.getCell(7)));
+                    if (examResponse.getResponseCode() != HttpStatus.OK) {
+                        throw new RuntimeException("Failed to fetch exam details");
+                    }
+                    Exam examEntity = (Exam) examResponse.get(Constants.RESPONSE);
 
                     result.setStudent(studentEntity);
                     result.setCourse(courseEntity);
@@ -159,28 +205,83 @@ public class StudentResultService {
         return true;
     }
 
-    public StudentResult getStudentResult(Long id) {
-        return studentResultRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Result not found with ID: " + id));
+    public ResponseDto getStudentResult(Long id) {
+        ResponseDto response = new ResponseDto("API_GET_STUDENT_RESULT");
+
+        Optional<StudentResult> resultOpt = studentResultRepository.findById(id);
+
+        if (resultOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, resultOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "RESULT_NOT_FOUND", "Result not found with ID: " + id, HttpStatus.NOT_FOUND);
+        }
+
+        return response;
     }
 
-    public List<StudentResult> getAllStudentResults() {
-        return studentResultRepository.findAll();
-    }
-    public Student fetchStudentByEnrollmentNumber(String enrollmentNumber) {
-        return studentRepository.findByEnrollmentNumber(enrollmentNumber)
-                .orElseThrow(() -> new RuntimeException("Student not found with enrollment number: " + enrollmentNumber));
+    public ResponseDto getAllStudentResults() {
+        ResponseDto response = new ResponseDto("API_GET_ALL_STUDENT_RESULTS");
+        List<StudentResult> results = studentResultRepository.findAll();
+
+        if (!results.isEmpty()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, results);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_RESULTS_FOUND", "No student results found.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
     }
 
-    private Course fetchCourseByName(String courseName) {
-        return courseRepository.findByCourseName(courseName)
-                .orElseThrow(() -> new RuntimeException("Course not found with name: " + courseName));
+    public ResponseDto fetchStudentByEnrollmentNumber(String enrollmentNumber) {
+        ResponseDto response = new ResponseDto("API_FETCH_STUDENT_BY_ENROLLMENT_NUMBER");
+        Optional<Student> studentOpt = studentRepository.findByEnrollmentNumber(enrollmentNumber);
+
+        if (studentOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, studentOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found with enrollment number: " + enrollmentNumber, HttpStatus.NOT_FOUND);
+        }
+
+        return response;
     }
 
-    private Exam fetchExamByName(String examName) {
-        return examRepository.findByExamName(examName)
-                .orElseThrow(() -> new RuntimeException("Exam not found with name: " + examName));
+
+    public ResponseDto fetchCourseByName(String courseName) {
+        ResponseDto response = new ResponseDto("API_FETCH_COURSE_BY_NAME");
+        Optional<Course> courseOpt = courseRepository.findByCourseName(courseName);
+
+        if (courseOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, courseOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "COURSE_NOT_FOUND", "Course not found with name: " + courseName, HttpStatus.NOT_FOUND);
+        }
+
+        return response;
     }
+
+    public ResponseDto fetchExamByName(String examName) {
+        ResponseDto response = new ResponseDto("API_FETCH_EXAM_BY_NAME");
+        Optional<Exam> examOpt = examRepository.findByExamName(examName);
+
+        if (examOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, examOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "EXAM_NOT_FOUND", "Exam not found with name: " + examName, HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
+
     private String getStringValue(Cell cell) {
         if (cell == null) return null;
         switch (cell.getCellType()) {
@@ -230,25 +331,53 @@ public class StudentResultService {
         }
         return mark.compareTo(BigDecimal.ZERO) >= 0 && mark.compareTo(new BigDecimal("100")) <= 0;
     }
-    public void publishResultsForCourseWithinCycle(Long courseId, Long examCycleId) {
+    public ResponseDto publishResultsForCourseWithinCycle(Long courseId, Long examCycleId) {
+        ResponseDto response = new ResponseDto("API_PUBLISH_RESULTS_FOR_COURSE_WITHIN_CYCLE");
         List<StudentResult> resultsForCourse = studentResultRepository.findByCourse_IdAndExam_ExamCycleIdAndPublished(courseId, examCycleId, false);
-        for (StudentResult result : resultsForCourse) {
-            result.setPublished(true);
+
+        if (!resultsForCourse.isEmpty()) {
+            for (StudentResult result : resultsForCourse) {
+                result.setPublished(true);
+            }
+            studentResultRepository.saveAll(resultsForCourse);
+            response.put(Constants.MESSAGE, "Successfully published results.");
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_RESULTS_FOUND", "No results found for the given course and exam cycle.", HttpStatus.NOT_FOUND);
         }
-        studentResultRepository.saveAll(resultsForCourse);
+
+        return response;
     }
-    public StudentResult findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth) {
-        return studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(enrollmentNumber, dateOfBirth, true);
+
+    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth) {
+        ResponseDto response = new ResponseDto("API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB");
+        Optional<StudentResult> studentResultOpt = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(enrollmentNumber, dateOfBirth, true));
+
+        if (studentResultOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, studentResultOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "RESULT_NOT_FOUND", "No result found for the given enrollment number and date of birth.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
     }
-    public void updateResultAfterRetotalling(StudentResult updatedResult) {
+    public ResponseDto updateResultAfterRetotalling(StudentResult updatedResult) {
+        ResponseDto response = new ResponseDto("API_UPDATE_RESULT_AFTER_RETOTALLING");
+
         if (updatedResult.getId() == null) {
-            throw new IllegalArgumentException("Updated result must have a valid ID");
+            ResponseDto.setErrorResponse(response, "INVALID_RESULT_ID", "Updated result must have a valid ID", HttpStatus.BAD_REQUEST);
+            return response;
         }
 
-        // Fetch existing result from the database
-        StudentResult existingResult = studentResultRepository.findById(updatedResult.getId())
-                .orElseThrow(() -> new EntityNotFoundException("No StudentResult found with ID " + updatedResult.getId()));
+        Optional<StudentResult> existingResultOpt = studentResultRepository.findById(updatedResult.getId());
+        if (existingResultOpt.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "RESULT_NOT_FOUND", "No StudentResult found with ID " + updatedResult.getId(), HttpStatus.NOT_FOUND);
+            return response;
+        }
 
+        StudentResult existingResult = existingResultOpt.get();
         existingResult.setInternalMarksObtained(updatedResult.getInternalMarksObtained());
         existingResult.setExternalMarksObtained(updatedResult.getExternalMarksObtained());
         existingResult.setPracticalMarksObtained(updatedResult.getPracticalMarksObtained());
@@ -259,14 +388,24 @@ public class StudentResultService {
         existingResult.setStatus(ResultStatus.REVALUATED);
 
         studentResultRepository.save(existingResult);
-        // Update the RetotallingRequest status
-        RetotallingRequest retotallingRequest = retotallingRequestRepository.findByStudentAndExams(existingResult.getStudent(), updatedResult.getExam())
-                .orElseThrow(() -> new EntityNotFoundException("No RetotallingRequest found for student and exam"));
 
+        Optional<RetotallingRequest> retotallingRequestOpt = retotallingRequestRepository.findByStudentAndExams(existingResult.getStudent(), updatedResult.getExam());
+        if (!retotallingRequestOpt.isPresent()) {
+            ResponseDto.setErrorResponse(response, "RETOTALLING_REQUEST_NOT_FOUND", "No RetotallingRequest found for student and exam", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        RetotallingRequest retotallingRequest = retotallingRequestOpt.get();
         retotallingRequest.setStatus(RetotallingStatus.COMPLETED);
         retotallingRequestRepository.save(retotallingRequest);
+
+        response.put(Constants.MESSAGE, "Successfully updated result after retotalling.");
+        response.setResponseCode(HttpStatus.OK);
+        return response;
     }
-    public Map<Institute, List<StudentResult>> getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
+
+    public ResponseDto getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
+        ResponseDto response = new ResponseDto("API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE");
         List<StudentResult> results;
         if (examCycle != null && exam != null) {
             results = studentResultRepository.findByExamCycleAndExam(examCycle, exam);
@@ -278,10 +417,20 @@ public class StudentResultService {
             results = studentResultRepository.findAll();
         }
 
-        // Group the results by Institute
-        return results.stream()
+        if (results.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "NO_RESULTS_FOUND", "No results found for the given criteria.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        Map<Institute, List<StudentResult>> groupedResults = results.stream()
                 .collect(Collectors.groupingBy(result -> result.getStudent().getInstitute()));
+
+        response.put(Constants.MESSAGE, "Successful.");
+        response.put(Constants.RESPONSE, groupedResults);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
     }
+
 
     private ExamResultDTO convertToDTO(StudentResult result) {
         ExamResultDTO dto = new ExamResultDTO();
@@ -295,6 +444,39 @@ public class StudentResultService {
 
         return dto;
     }
+    public ResponseDto processBulkResultUpload(MultipartFile file, String fileType) {
+        ResponseDto response = new ResponseDto("API_BULK_UPLOAD_RESULTS");
 
+        try {
+            JSONArray jsonArray;
 
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    // Handle unsupported file type
+                    return ResponseDto.setErrorResponse(response, "UNSUPPORTED_FILE_TYPE", "Unsupported file type", HttpStatus.BAD_REQUEST);
+            }
+
+            List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
+            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, studentResultRepository);
+
+            if (success) {
+                response.put(Constants.MESSAGE, "File processed successfully.");
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing bulk result upload", e);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    }
 }

@@ -38,6 +38,7 @@ public class Constants {
     public static final String API_EXAM_DELETE = "api.exam.delete";
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
+    public static final String API_EXAM_PUBLISH_RESULTS = "API_EXAM_PUBLISH_RESULTS";
 
     // ExamCycle
     public static final String API_EXAM_CYCLE_ADD = "api.examCycle.add";
