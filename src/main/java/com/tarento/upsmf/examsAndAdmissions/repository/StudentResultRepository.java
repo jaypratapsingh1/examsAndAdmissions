@@ -1,5 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.repository;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
+import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +17,7 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
     StudentResult findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(String enrollmentNumber, LocalDate dateOfBirth, boolean b);
 
     boolean existsByEnrollmentNumber(String enrollmentNumber);
+    List<StudentResult> findByExamCycleAndExam(ExamCycle examCycle, Exam exam);
+    List<StudentResult> findByExamCycle(ExamCycle examCycle);
+    List<StudentResult> findByExam(Exam exam);
 }

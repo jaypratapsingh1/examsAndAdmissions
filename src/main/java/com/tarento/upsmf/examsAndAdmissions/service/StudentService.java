@@ -300,7 +300,7 @@ public class StudentService {
         student.setVerificationDate(LocalDate.now());
 
         if (status == VerificationStatus.VERIFIED) {
-            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute() + student.getId();
+            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute().getId() + student.getId();
             student.setEnrollmentNumber(enrollmentNumber);
         } else if (status == VerificationStatus.REJECTED) {
             student.setRequiresRevision(true);

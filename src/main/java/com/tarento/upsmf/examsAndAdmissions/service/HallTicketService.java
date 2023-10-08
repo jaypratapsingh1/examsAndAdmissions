@@ -1,11 +1,15 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
+import com.tarento.upsmf.examsAndAdmissions.enums.DocumentType;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.PendingDataDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -28,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
@@ -38,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class HallTicketService {
 
     @Autowired
@@ -63,8 +69,63 @@ public class HallTicketService {
     private EntityManager entityManager;
     @Autowired
     private StudentService studentService;
-    public ResponseDto getHallTicket(Long id, String dateOfBirth) {
-        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    public ResponseDto generateAndSaveHallTicketsForMultipleStudents(List<Long> studentRegistrationIds) {
+        ResponseDto responseDto = new ResponseDto();
+        int successCount = 0;
+
+        for (Long id : studentRegistrationIds) {
+            try {
+                Optional<StudentExamRegistration> registrationOptional = studentExamRegistrationRepository.findById(id);
+                if (registrationOptional.isEmpty()) {
+                    log.warn("No registration found for student ID: {}", id);
+                    continue;
+                }
+
+                StudentExamRegistration registration = registrationOptional.get();
+                byte[] hallTicketData = generateHallTicket(registration);
+                if (hallTicketData.length == 0) {
+                    log.warn("Hall ticket data is empty for student ID: {}", id);
+                    continue;
+                }
+
+                MultipartFile hallTicket = new ByteArrayMultipartFile(hallTicketData, "hallticket_" + id + ".pdf");
+                if (hallTicket.isEmpty()) {
+                    log.warn("Converted MultipartFile is empty for student ID: {}", id);
+                    continue;
+                }
+
+                String path = fileStorageService.storeFile(hallTicket, DocumentType.HALL_TICKET);
+                if (path == null) {
+                    setErrorResponse(responseDto, "STORAGE_ERROR", "Failed to store hall ticket for student ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+                    return responseDto;
+                } else {
+                    successCount++;
+                    registration.setHallTicketPath(path);
+                    studentExamRegistrationRepository.save(registration);
+                }
+
+            } catch (Exception e) {
+                log.error("Error processing hall ticket for student ID: " + id, e);
+                setErrorResponse(responseDto, "HALLTICKET_GENERATION_ERROR", "Failed to generate hall ticket for student ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+                return responseDto;
+            }
+        }
+        if (successCount == studentRegistrationIds.size()) {
+            responseDto.put(Constants.MESSAGE, "Hall tickets generated and saved successfully for all students.");
+            responseDto.setResponseCode(HttpStatus.OK);
+        } else if (successCount > 0) {
+            setErrorResponse(responseDto, "PARTIAL_SUCCESS", "Hall tickets generated for " + successCount + " out of " + studentRegistrationIds.size() + " students.", HttpStatus.PARTIAL_CONTENT);
+        } else {
+            setErrorResponse(responseDto, "HALLTICKET_GENERATION_ERROR", "Failed to generate and save hall tickets for all students.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return responseDto;
+    }
+    public ResponseDto getHallTicketForStudent(Long id, String dateOfBirth) {
+        ResponseDto response = new ResponseDto();
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date dob;
@@ -77,29 +138,32 @@ public class HallTicketService {
             return response;
         }
 
-        Optional<StudentExamRegistration> studentOptional = studentExamRegistrationRepository.findByIdAndStudent_DateOfBirth(id, localDate);
-
-        if (!studentOptional.isPresent()) {
+        Optional<StudentExamRegistration> registrationOptional = studentExamRegistrationRepository.findByIdAndStudent_DateOfBirth(id, localDate);
+        if (registrationOptional.isEmpty()) {
             setErrorResponse(response, "STUDENT_NOT_FOUND", "No student record found for the provided details.", HttpStatus.NOT_FOUND);
             return response;
         }
 
-        StudentExamRegistration registration = studentOptional.get();
-        byte[] hallTicketData;
-        try {
-            hallTicketData = generateHallTicket(registration);
-            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-            // Assuming you want to encode the PDF as a base64 string for the response
-            response.put(Constants.RESPONSE, Base64.getEncoder().encodeToString(hallTicketData));
-            response.setResponseCode(HttpStatus.OK);
-        } catch (Exception e) {
-            // Handle any exception that might occur during hall ticket generation
-            setErrorResponse(response, "HALL_TICKET_GENERATION_ERROR", "Error generating hall ticket", HttpStatus.INTERNAL_SERVER_ERROR);
+        StudentExamRegistration registration = registrationOptional.get();
+        String hallTicketPath = registration.getHallTicketPath();
+        if (hallTicketPath == null || hallTicketPath.isEmpty()) {
+            setErrorResponse(response, "HALL_TICKET_NOT_GENERATED", "Hall ticket not generated for this student.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+/*
+        // Check if the hall ticket exists in Google Cloud Storage
+        Blob blob = storage.get(BlobId.of("YOUR_BUCKET_NAME", hallTicketPath));
+        if (blob == null || !blob.exists()) {
+            setErrorResponse(response, "HALL_TICKET_NOT_FOUND_IN_STORAGE", "Hall ticket not found in storage.", HttpStatus.NOT_FOUND);
+            return response;
         }
 
+        String hallTicketUrl = blob.getMediaLink();  // Get the public URL of the stored hall ticket*/
+        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+        response.put(Constants.RESPONSE, hallTicketPath);  // Sending the hall ticket as a resource
+        response.setResponseCode(HttpStatus.OK);
         return response;
     }
-
     public ResponseDto requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
         DataCorrectionRequest request = new DataCorrectionRequest();

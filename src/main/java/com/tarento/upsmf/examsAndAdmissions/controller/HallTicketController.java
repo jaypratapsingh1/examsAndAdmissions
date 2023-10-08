@@ -42,26 +42,27 @@ public class HallTicketController {
     @Autowired
     HallTicketService hallTicketService;
 
-    @GetMapping("/download")
-    public ResponseEntity<?> getHallTicket(@RequestParam Long id, @RequestParam String dateOfBirth) {
-        ResponseDto responseDto = hallTicketService.getHallTicket(id, dateOfBirth);
+    @PostMapping("/generateHallTickets")
+    public ResponseEntity<ResponseDto> generateHallTicketsForMultipleStudents(@RequestBody List<Long> studentRegistrationIds) throws IOException {
+        ResponseDto responseDto = hallTicketService.generateAndSaveHallTicketsForMultipleStudents(studentRegistrationIds);
+        return ResponseEntity.status(responseDto.getResponseCode()).body(responseDto);
+    }
+
+    @GetMapping("/downloadHallTicket")
+    public ResponseEntity<?> downloadStudentHallTicket(@RequestParam Long studentId, @RequestParam String dateOfBirth) {
+        ResponseDto responseDto = hallTicketService.getHallTicketForStudent(studentId, dateOfBirth);
         HttpStatus status = HttpStatus.valueOf(responseDto.getResponseCode().value());
 
         if (status.is2xxSuccessful()) {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "hallticket.pdf");
-            Resource resource = extractResourceFromResponseDto(responseDto);
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(resource);
-        } else {
-
-            hallTicketService.setErrorResponse(responseDto, "REQUEST_NOT_FOUND", "Request not found.", status);
-            return ResponseEntity.status(status).body(responseDto);
+            headers.setContentDispositionFormData("attachment", "hallticket_" + studentId + ".pdf");
+            Resource resource = (Resource) responseDto.getResult().get("hallTicketResource");
+            return ResponseEntity.ok().headers(headers).body(resource);
         }
-    }
 
+        return ResponseEntity.status(responseDto.getResponseCode()).body(responseDto);
+    }
     private Resource extractResourceFromResponseDto(ResponseDto responseDto) {
         String base64EncodedData = (String) responseDto.get(Constants.RESPONSE);
 

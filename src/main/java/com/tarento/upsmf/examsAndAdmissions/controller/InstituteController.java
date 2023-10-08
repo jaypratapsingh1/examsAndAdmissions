@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin/institutes")
@@ -125,6 +126,23 @@ public class InstituteController {
         try {
             Boolean isAdded = instituteService.addInstituteUserMapping(instituteUserDto);
             return FeeController.handleSuccessResponse(isAdded);
+        } catch (Exception e) {
+            return FeeController.handleErrorResponse(e);
+        }
+    }@GetMapping("/all")
+    public ResponseEntity<ResponseDto> getAllInstitutes() {
+        try {
+            List<Institute> allInstitutes = instituteService.getAllInstitutes();
+            if (allInstitutes != null && !allInstitutes.isEmpty()) {
+                List<InstituteDTO> dtos = allInstitutes.stream()
+                        .map(InstituteDTO::convertToDTO)
+                        .collect(Collectors.toList());
+                return FeeController.handleSuccessResponse(dtos);
+            } else {
+                response.setResponseCode(Constants.NOT_FOUND);
+                response.getResult().put("message", "No institutes found.");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return FeeController.handleErrorResponse(e);
         }
