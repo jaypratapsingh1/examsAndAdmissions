@@ -50,6 +50,8 @@ public class Constants {
     public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
     public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
 
+    public static final String API_DISPATCH_PROOF_PREVIEW = "api.dispatch.preview";
+
 
 
     //Question Paper
@@ -57,6 +59,8 @@ public class Constants {
     public static final String API_QUESTION_PAPER_GET_BY_ID = "api.questionPaper.getById";
     public static final String API_QUESTION_PAPER_DELETE = "api.questionPaper.delete";
     public static final String API_QUESTION_PAPER_PREVIEW = "api.questionPaper.preview";
+    public static final String API_QUESTION_PAPER_DOWNLOAD = "api.questionPaper.download";
+    public static final String API_QUESTION_PAPER_UPLOAD = "api.questionPaper.upload";
 
     //Subject
     public static final String API_SUBJECT_GET_ALL = "api.subject.get";

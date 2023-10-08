@@ -28,23 +28,21 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
         List<QuestionPaper> questionPapers = questionPaperRepository.findAll();
         if (questionPapers.isEmpty()) {
             response.put(Constants.MESSAGE, "Getting Error in fetching Question papers details");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
             response.setResponseCode(HttpStatus.NOT_FOUND);
         } else {
             Boolean filterFlag = false;
             List<QuestionPaper> questionPaperList = new ArrayList<>();
-            for(int i=0; i<questionPapers.size(); i++){
+            for (int i = 0; i < questionPapers.size(); i++) {
                 QuestionPaper questionPaper = questionPapers.get(i);
-                if(questionPaper.getExamCycleId().equals(examCycleId) && questionPaper.getExam().getId().equals(examId)){
+                if (questionPaper.getExamCycleId().equals(examCycleId) && questionPaper.getExam().getId().equals(examId)) {
                     filterFlag = true;
                     questionPaperList.add(questionPaper);
-                }else {
+                } else {
                     response.put(Constants.MESSAGE, "Data is not there related to filters applied");
-                    response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
                     response.setResponseCode(HttpStatus.NOT_FOUND);
                 }
             }
-            if(filterFlag){
+            if (filterFlag) {
                 response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
                 response.put(Constants.RESPONSE, questionPaperList);
                 response.setResponseCode(HttpStatus.OK);
@@ -65,12 +63,10 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
                 response.setResponseCode(HttpStatus.OK);
             } else {
                 response.put(Constants.MESSAGE, "Question paper id is deleted(Obsolete is not equal to zero)");
-                response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
                 response.setResponseCode(HttpStatus.NOT_FOUND);
             }
         } else {
             response.put(Constants.MESSAGE, "Getting Error in fetching Question paper details by id");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
             response.setResponseCode(HttpStatus.NOT_FOUND);
         }
         return response;
