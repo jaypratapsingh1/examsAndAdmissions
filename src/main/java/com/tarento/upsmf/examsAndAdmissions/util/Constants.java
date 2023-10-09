@@ -120,6 +120,12 @@ public class Constants {
     public static final String API_GET_EXAM_CENTERS_BY_EXAM_CYCLE = "api.examCenter.getByExamCycle";
 
 
+    // API Identifiers for RetotallingService
+    public static final String API_REQUEST_RETOTALLING = "api.retotalling.requestRetotalling";
+    public static final String API_GET_ALL_PENDING_REQUESTS = "api.retotalling.getAllPendingRequests";
+
+
+
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
     public static final String EXAM_CYCLE_ID = "examCycleId";
@@ -148,6 +154,9 @@ public class Constants {
     public static final String API_HALLTICKET_GET_PENDING_DATA = "api.hallticket.getPendingData";
     public static final String API_HALLTICKET_DOWNLOAD_PROOF = "api.hallticket.downloadProof";
     public static final String API_HALLTICKET_GET_PROOF_URL_BY_REQUEST = "api.hallticket.getProofUrl";
+    public static final String API_GENERATE_AND_SAVE_HALL_TICKETS_FOR_MULTIPLE_STUDENTS = "api.hallticket.generateAndSaveForMultipleStudents";
+
+
 
     public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";
     public static final String API_MARK_NOT_ALLOWED ="api.institute.markNotAllowed";
