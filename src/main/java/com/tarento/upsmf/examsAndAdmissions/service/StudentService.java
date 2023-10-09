@@ -211,12 +211,12 @@ public class StudentService {
             List<Student> students = entityManager.createQuery(criteriaQuery).getResultList();
 
             if (students.isEmpty()) {
-                response.put("message", "No students found with the given criteria.");
+                ResponseDto.setErrorResponse(response, "NO_STUDENTS_FOUND", "No students found with the given criteria.", HttpStatus.NOT_FOUND);
             } else {
-                response.put("message", "Students fetched successfully.");
-                response.put("students", students);
+                response.put(Constants.MESSAGE, "Students fetched successfully.");
+                response.put(Constants.RESPONSE, students);
+                response.setResponseCode(HttpStatus.OK);
             }
-            response.setResponseCode(HttpStatus.OK);
 
         } catch (Exception e) {
             ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -224,6 +224,7 @@ public class StudentService {
 
         return response;
     }
+
     public ResponseDto getStudentById(Long id) {
         ResponseDto response = new ResponseDto(Constants.API_GET_STUDENT_BY_ID);
 
@@ -231,8 +232,8 @@ public class StudentService {
             Optional<Student> studentOptional = studentRepository.findById(id);
 
             if (studentOptional.isPresent()) {
-                response.put("message", "Student fetched successfully.");
-                response.put("student", studentOptional.get());
+                response.put(Constants.MESSAGE, "Student fetched successfully.");
+                response.put(Constants.RESPONSE, studentOptional.get());
                 response.setResponseCode(HttpStatus.OK);
             } else {
                 ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found with the given ID.", HttpStatus.NOT_FOUND);

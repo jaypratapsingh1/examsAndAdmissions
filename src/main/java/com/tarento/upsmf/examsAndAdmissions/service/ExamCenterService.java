@@ -34,7 +34,7 @@ public class ExamCenterService {
     private ExamCenterMapper examCenterMapper;
 
     public ResponseDto getVerifiedExamCentersInDistrict(String district) {
-        ResponseDto response = new ResponseDto("API_GET_VERIFIED_EXAM_CENTERS");
+        ResponseDto response = new ResponseDto(Constants.API_GET_VERIFIED_EXAM_CENTERS);
         List<ExamCenter> examCenters = examCenterRepository.findByDistrictAndVerified(district, true);
         if (!examCenters.isEmpty()) {
             List<ExamCenterDTO> examCenterDTOs = examCenterMapper.toDTOs(examCenters);
@@ -48,7 +48,7 @@ public class ExamCenterService {
     }
 
     public ResponseDto assignAlternateExamCenter(Long originalExamCenterId, Long alternateInstituteId) {
-        ResponseDto response = new ResponseDto("API_ASSIGN_ALTERNATE_EXAM_CENTER");
+        ResponseDto response = new ResponseDto(Constants.API_ASSIGN_ALTERNATE_EXAM_CENTER);
         ExamCenter originalCenter = examCenterRepository.findById(originalExamCenterId).orElse(null);
         Institute alternateInstitute = instituteRepository.findById(alternateInstituteId).orElse(null);
 
@@ -65,7 +65,7 @@ public class ExamCenterService {
     }
 
     public ResponseDto updateCCTVStatus(Long examCenterId, CCTVStatusUpdateDTO updateDTO) {
-        ResponseDto response = new ResponseDto("API_UPDATE_CCTV_STATUS");
+        ResponseDto response = new ResponseDto(Constants.API_UPDATE_CCTV_STATUS);
         ExamCenter center = examCenterRepository.findById(examCenterId).orElse(null);
         if (center == null) {
             ResponseDto.setErrorResponse(response, "CENTER_NOT_FOUND", "Exam center not found.", HttpStatus.NOT_FOUND);
@@ -93,7 +93,7 @@ public class ExamCenterService {
     }
 
     public ResponseDto getExamCentersByStatus(Long examCycleId, Boolean isVerifiedStatus) {
-        ResponseDto response = new ResponseDto("API_GET_EXAM_CENTERS_BY_STATUS");
+        ResponseDto response = new ResponseDto(Constants.API_GET_EXAM_CENTERS_BY_STATUS);
         ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElse(null);
         if (examCycle != null) {
             List<ExamCenter> examCenters = examCenterRepository.findByExamCycleAndVerified(examCycle, isVerifiedStatus);
@@ -110,7 +110,7 @@ public class ExamCenterService {
         return response;
     }
     public ResponseDto getAllExamCenters() {
-        ResponseDto response = new ResponseDto("API_GET_ALL_EXAM_CENTERS");
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_EXAM_CENTERS);
         List<ExamCenter> examCenters = examCenterRepository.findAll();
 
         if (!examCenters.isEmpty()) {
@@ -125,7 +125,7 @@ public class ExamCenterService {
         return response;
     }
     public ResponseDto getExamCentersByExamCycle(Long examCycleId) {
-        ResponseDto response = new ResponseDto("API_GET_EXAM_CENTERS_BY_EXAM_CYCLE");
+        ResponseDto response = new ResponseDto(Constants.API_GET_EXAM_CENTERS_BY_EXAM_CYCLE);
         ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElse(null);
         if (examCycle != null) {
             List<ExamCenter> examCenters = examCenterRepository.findByExamCycle(examCycle);

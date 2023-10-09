@@ -12,6 +12,7 @@ import java.util.Set;
 @Builder
 public class StudentExamRegistrationDTO {
 
+    private Long id;
     private Long studentId;
     private Long examCycleId;
     private Set<Long> examIds;
