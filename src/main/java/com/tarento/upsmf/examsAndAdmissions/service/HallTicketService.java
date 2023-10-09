@@ -73,7 +73,7 @@ public class HallTicketService {
     private FileStorageService fileStorageService;
 
     public ResponseDto generateAndSaveHallTicketsForMultipleStudents(List<Long> studentRegistrationIds) {
-        ResponseDto responseDto = new ResponseDto();
+        ResponseDto responseDto = new ResponseDto(Constants.API_GENERATE_AND_SAVE_HALL_TICKETS_FOR_MULTIPLE_STUDENTS);
         int successCount = 0;
 
         for (Long id : studentRegistrationIds) {
@@ -125,7 +125,7 @@ public class HallTicketService {
         return responseDto;
     }
     public ResponseDto getHallTicketForStudent(Long id, String dateOfBirth) {
-        ResponseDto response = new ResponseDto();
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date dob;

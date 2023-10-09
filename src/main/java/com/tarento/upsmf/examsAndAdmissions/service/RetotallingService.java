@@ -38,7 +38,7 @@ public class RetotallingService {
         retotallingRequestRepository.save(request);
     }
     public ResponseDto requestRetotalling(RetotallingRequest retotallingRequest) {
-        ResponseDto response = new ResponseDto("API_REQUEST_RETOTALLING");
+        ResponseDto response = new ResponseDto(Constants.API_REQUEST_RETOTALLING);
 
         // Fetch the student from the database using the enrollmentNumber
         ResponseDto fetchResponse = studentResultService.fetchStudentByEnrollmentNumber(retotallingRequest.getStudent().getEnrollmentNumber());
@@ -80,7 +80,7 @@ public class RetotallingService {
     }
 
     public ResponseDto getAllPendingRequests() {
-        ResponseDto response = new ResponseDto("API_GET_ALL_PENDING_REQUESTS");
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_PENDING_REQUESTS);
 
         List<RetotallingRequest> requests = retotallingRequestRepository.findAll();
 

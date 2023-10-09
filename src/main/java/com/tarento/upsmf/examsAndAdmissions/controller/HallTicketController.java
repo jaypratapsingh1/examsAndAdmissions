@@ -4,6 +4,7 @@ import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import com.tarento.upsmf.examsAndAdmissions.model.RejectionReasonRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
 import com.tarento.upsmf.examsAndAdmissions.service.HallTicketService;
@@ -98,8 +99,9 @@ public class HallTicketController {
     @PostMapping("/dataCorrection/{requestId}/reject")
     public ResponseEntity<ResponseDto> rejectDataCorrection(
             @PathVariable Long requestId,
-            @RequestParam String rejectionReason) {
-        ResponseDto responseDto = hallTicketService.rejectDataCorrection(requestId, rejectionReason);
+            @RequestBody RejectionReasonRequest rejectionReasonRequest) {
+
+        ResponseDto responseDto = hallTicketService.rejectDataCorrection(requestId, rejectionReasonRequest.getRejectionReason());
         return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
 
