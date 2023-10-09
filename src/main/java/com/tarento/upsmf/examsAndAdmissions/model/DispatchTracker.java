@@ -28,5 +28,7 @@ public class DispatchTracker {
 
     private String dispatchProofFileLocation;
 
+    private Boolean dispatchStatus;
+
     // Constructors, getters, setters, etc.
 }

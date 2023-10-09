@@ -3,6 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.DispatchTrackerRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
@@ -26,7 +27,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -40,6 +41,9 @@ public class DispatchTrackerService {
 
     @Autowired
     private ExamCycleRepository examCycleRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     @Value("${gcp.bucket.folder.name}")
     private String gcpFolderName;
@@ -101,8 +105,52 @@ public class DispatchTrackerService {
         return response;
     }
 
-    public List<DispatchTracker> getDispatchList(Long examCycleId, Long examId) {
-        return dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
+    public Map<String, Object> getDispatchList(Long examCycleId, Long examId) {
+        Map<String, Object> resultMap = new HashMap<>();
+
+        List<DispatchTracker> result = dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
+        ExamCycle examCycleDetails = result.get(0).getExamCycle();
+        if (examCycleDetails != null) {
+
+            Long courseId = examCycleDetails.getCourse().getId();
+            Optional<Course> course = courseRepository.findById(courseId);
+            if (course.isPresent()) {
+                Institute institute = course.get().getInstitute();
+                resultMap.put("data",result);
+                resultMap.put("lastDateToUpload",Constants.LAST_DATE_TO_UPLOAD);
+                resultMap.put("instituteName", institute.getInstituteName());
+                resultMap.put("instituteId", institute.getId());
+                if (!result.isEmpty()) {
+                    resultMap.put("examName", result.get(0).getExam().getExamName());
+                    resultMap.put("dispatchStatus", result.get(0).getDispatchStatus());
+                } else {
+                    resultMap.put("examName", null);
+                    resultMap.put("dispatchStatus", null);
+                }
+            }
+        }
+        return resultMap;
+    }
+    public Map<String, Object> getDispatchList(Long examCycleId) {
+        Map<String, Object> resultMap = new HashMap<>();
+        Optional<DispatchTracker> result = dispatchTrackerRepository.findById(examCycleId);
+        ExamCycle examCycleDetails = result.get().getExamCycle();
+        List<Exam> exam = examRepository.findByExamCycleId(examCycleId);
+        if (examCycleDetails != null) {
+            Long courseId = examCycleDetails.getCourse().getId();
+            Optional<Course> course = courseRepository.findById(courseId);
+            if (course.isPresent()) {
+                Institute institute = course.get().getInstitute();
+                resultMap.put("examCycle",result);
+                resultMap.put("exam",exam);
+                resultMap.put("lastDateToUpload",Constants.LAST_DATE_TO_UPLOAD);
+                resultMap.put("instituteName", institute.getInstituteName());
+                resultMap.put("instituteId", institute.getId());
+                resultMap.put("examName", result.get().getExam().getExamName());
+                resultMap.put("dispatchStatus", result.get().getDispatchStatus());
+            }
+        }
+        return resultMap;
     }
 
     private Blob getBlob(String fileName) throws IOException {
