@@ -1,9 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCenter;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.Institute;
-import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.CCTVStatusUpdateDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCenterDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCenterRepository;
@@ -15,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 
 @Service
@@ -46,21 +45,46 @@ public class ExamCenterService {
         }
         return response;
     }
+    @Transactional
+    public ResponseDto assignAlternateExamCenter(Long unverifiedExamCenterId, Long alternateExamCenterId) {
+        ResponseDto response = new ResponseDto("API_ASSIGN_ALTERNATE_EXAM_CENTER");
 
-    public ResponseDto assignAlternateExamCenter(Long originalExamCenterId, Long alternateInstituteId) {
-        ResponseDto response = new ResponseDto(Constants.API_ASSIGN_ALTERNATE_EXAM_CENTER);
-        ExamCenter originalCenter = examCenterRepository.findById(originalExamCenterId).orElse(null);
-        Institute alternateInstitute = instituteRepository.findById(alternateInstituteId).orElse(null);
+        try {
+            // Fetch the unverified exam center
+            ExamCenter unverifiedExamCenter = examCenterRepository.findById(unverifiedExamCenterId)
+                    .orElseThrow(() -> new EntityNotFoundException("Unverified Exam Center not found"));
 
-        if (originalCenter == null || alternateInstitute == null) {
-            ResponseDto.setErrorResponse(response, "INVALID_INPUT", "Either the original exam center or the alternate institute was not found.", HttpStatus.NOT_FOUND);
-            return response;
+            // Fetch the alternate exam center
+            ExamCenter alternateExamCenter = examCenterRepository.findById(alternateExamCenterId)
+                    .orElseThrow(() -> new EntityNotFoundException("Alternate Exam Center not found"));
+
+            // Ensure both the exam centers belong to the same district
+            if (!unverifiedExamCenter.getDistrict().equals(alternateExamCenter.getDistrict())) {
+                throw new IllegalArgumentException("Unverified and Alternate Exam Centers do not belong to the same district.");
+            }
+
+            // Fetch all student registrations where the exam center is null
+            List<StudentExamRegistration> affectedRegistrations = studentExamRegistrationRepository.findByExamCenterIsNullAndInstitute(unverifiedExamCenter.getInstitute());
+
+            // Update the exam center for these registrations
+            for (StudentExamRegistration registration : affectedRegistrations) {
+                registration.setExamCenter(alternateExamCenter);
+            }
+
+            // Save the updated registrations
+            studentExamRegistrationRepository.saveAll(affectedRegistrations);
+
+            response.put("message", "Alternate Exam Center assigned successfully.");
+            response.setResponseCode(HttpStatus.OK);
+
+        } catch (EntityNotFoundException e) {
+            ResponseDto.setErrorResponse(response, "NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            ResponseDto.setErrorResponse(response, "INVALID_ARGUMENT", e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        ExamCenter alternateCenter = convertInstituteToExamCenter(alternateInstitute, originalCenter.getExamCycle());
-        examCenterRepository.save(alternateCenter);
-        response.put(Constants.MESSAGE, "Alternate exam center assigned successfully.");
-        response.setResponseCode(HttpStatus.OK);
         return response;
     }
 
