@@ -19,9 +19,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -51,34 +55,50 @@ public class DispatchTrackerService {
     private String gcpPrivateKeyId;
     @Value("${gcp.project.id}")
     private String gcpProjectId;
-    public DispatchTracker uploadDispatchProof(Long examCycleId, Long examId, MultipartFile dispatchProofFile, LocalDate dispatchDate) throws IOException {
+    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId, MultipartFile dispatchProofFile, String dispatchDate) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_UPLOAD_DISPATCH_DETAILS);
-        ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElseThrow(() -> new EntityNotFoundException("Exam cycle not found"));
-        Exam exam = examRepository.findById(examId).orElseThrow(() -> new EntityNotFoundException("Exam not found"));
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Date dob;
+        LocalDate localDate;
+        try {
+            dob = formatter.parse(dispatchDate);
+            localDate = dob.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        } catch (ParseException e) {
+            ResponseDto.setErrorResponse(response, "INVALID_DATE_FORMAT", "Invalid date format", HttpStatus.BAD_REQUEST);
+            return response;
+        }
 
-        Path filePath = null;
-        String fileName = dispatchProofFile.getOriginalFilename();
-        filePath = Files.createTempFile(fileName.split("\\.")[0], fileName.split("\\.")[1]);
-        dispatchProofFile.transferTo(filePath);
+        try {
+            ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElseThrow(() -> new EntityNotFoundException("Exam cycle not found"));
+            Exam exam = examRepository.findById(examId).orElseThrow(() -> new EntityNotFoundException("Exam not found"));
 
-        ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
-                gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
-        log.info("credentials created");
-        Storage storage = StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
-        log.info("storage object created");
-        String gcpFileName = gcpFolderName + "/" + Calendar.getInstance().getTimeInMillis() + "_" + fileName;
-        BlobId blobId = BlobId.of(gcpBucketName, gcpFileName);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-        storage.create(blobInfo, new FileInputStream(filePath.toFile()));
+            Path filePath = Files.createTempFile(dispatchProofFile.getOriginalFilename().split("\\.")[0], "." + dispatchProofFile.getOriginalFilename().split("\\.")[1]);
+            dispatchProofFile.transferTo(filePath);
 
-        DispatchTracker dispatchTracker = new DispatchTracker();
-        dispatchTracker.setExamCycle(examCycle);
-        dispatchTracker.setExam(exam);
-        dispatchTracker.setDispatchDate(dispatchDate);
-        dispatchTracker.setDispatchProofFileLocation(gcpFileName);
+            ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
+                    gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
+            Storage storage = StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
+            String gcpFileName = gcpFolderName + "/" + Calendar.getInstance().getTimeInMillis() + "_" + dispatchProofFile.getOriginalFilename();
+            BlobId blobId = BlobId.of(gcpBucketName, gcpFileName);
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+            storage.create(blobInfo, new FileInputStream(filePath.toFile()));
 
-        dispatchTrackerRepository.save(dispatchTracker);
-        return dispatchTracker;
+            DispatchTracker dispatchTracker = new DispatchTracker();
+            dispatchTracker.setExamCycle(examCycle);
+            dispatchTracker.setExam(exam);
+            dispatchTracker.setDispatchDate(localDate);
+            dispatchTracker.setDispatchProofFileLocation(gcpFileName);
+
+            dispatchTrackerRepository.save(dispatchTracker);
+
+            response.put(Constants.MESSAGE, "Dispatch proof uploaded successfully.");
+            response.put(Constants.RESPONSE, dispatchTracker);
+            response.setResponseCode(HttpStatus.OK);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "UPLOAD_FAILED", "Failed to upload dispatch proof due to: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
     }
 
     public List<DispatchTracker> getDispatchList(Long examCycleId, Long examId) {

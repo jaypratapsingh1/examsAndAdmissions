@@ -81,17 +81,13 @@ public class InstituteController {
     }
 
     @PostMapping("/dispatchUpload")
-    public ResponseEntity<?> uploadDispatchProof(
+    public ResponseEntity<ResponseDto> uploadDispatchProof(
             @RequestParam Long examCycleId,
             @RequestParam Long examId,
             @RequestParam MultipartFile dispatchProofFile,
-            @RequestParam LocalDate dispatchDate) {
-        try {
-            DispatchTracker responseData = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
-           return FeeController.handleSuccessResponse(responseData);
-        } catch (IOException e) {
-           return FeeController.handleErrorResponse(e);
-        }
+            @RequestParam String dispatchDate) throws IOException {
+        ResponseDto response = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 
     @GetMapping("/dispatchList")
@@ -130,7 +126,8 @@ public class InstituteController {
         } catch (Exception e) {
             return FeeController.handleErrorResponse(e);
         }
-    }@GetMapping("/all")
+    }
+    @GetMapping("/all")
     public ResponseEntity<ResponseDto> getAllInstitutes() {
         try {
             List<Institute> allInstitutes = instituteService.getAllInstitutes();
