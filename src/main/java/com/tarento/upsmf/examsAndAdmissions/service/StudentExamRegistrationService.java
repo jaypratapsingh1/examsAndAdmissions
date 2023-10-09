@@ -154,6 +154,7 @@ public class StudentExamRegistrationService {
     private StudentExamRegistrationDTO convertToDto(StudentExamRegistration entity) {
         StudentExamRegistrationDTO dto = new StudentExamRegistrationDTO();
 
+        dto.setId(entity.getId());
         dto.setStudentId(entity.getStudent().getId());
         dto.setExamIds(new HashSet<>(Collections.singletonList(entity.getExam().getId())));
         dto.setExamCycleId(entity.getExamCycle().getId());
