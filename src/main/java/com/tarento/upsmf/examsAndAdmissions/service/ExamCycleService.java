@@ -73,7 +73,7 @@ public class ExamCycleService {
                 ExamCenter examCenter = new ExamCenter();
                 examCenter.setInstitute(institute);
                 examCenter.setExamCycle(examCycle);
-                examCenter.setVerified(null); // marking as pending
+                examCenter.setVerified(false); // marking as pending
                 examCenter.setDistrict(institute.getDistrict());
                 examCenter.setAddress(institute.getAddress());
                 examCenter.setName(institute.getInstituteName());
