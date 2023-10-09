@@ -96,9 +96,19 @@ public class InstituteController {
     public ResponseEntity<?> getDispatchList(
             @RequestParam Long examCycleId,
             @RequestParam Long examId) {
-        List<DispatchTracker> responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
+        Map<String,Object> responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
         if (responseData != null) {
            return FeeController.handleSuccessResponse(responseData);
+        } else {
+            return FeeController.handleErrorResponse(new Exception());
+        }
+    }
+    @GetMapping("/dispatchListWithoutExam")
+    public ResponseEntity<?> getDispatchList(
+            @RequestParam Long examCycleId) {
+        Map<String,Object> responseData = dispatchTrackerService.getDispatchList(examCycleId);
+        if (responseData != null) {
+            return FeeController.handleSuccessResponse(responseData);
         } else {
             return FeeController.handleErrorResponse(new Exception());
         }
