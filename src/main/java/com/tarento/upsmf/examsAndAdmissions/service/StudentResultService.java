@@ -46,7 +46,7 @@ public class StudentResultService {
     private DataImporterService dataImporterService;
 
     public ResponseDto importInternalMarksFromExcel(MultipartFile file) {
-        ResponseDto response = new ResponseDto("API_IMPORT_INTERNAL_MARKS");
+        ResponseDto response = new ResponseDto(Constants.API_IMPORT_INTERNAL_MARKS_FROM_EXCEL);
 
         try {
             // Parse the Excel file
@@ -79,7 +79,7 @@ public class StudentResultService {
 
 
     public ResponseDto importExternalMarksFromExcel(MultipartFile file) {
-        ResponseDto response = new ResponseDto("API_IMPORT_EXTERNAL_MARKS");
+        ResponseDto response = new ResponseDto(Constants.API_IMPORT_EXTERNAL_MARKS_FROM_EXCEL);
 
         try {
             // Parse the Excel file
@@ -206,7 +206,7 @@ public class StudentResultService {
     }
 
     public ResponseDto getStudentResult(Long id) {
-        ResponseDto response = new ResponseDto("API_GET_STUDENT_RESULT");
+        ResponseDto response = new ResponseDto(Constants.API_GET_STUDENT_RESULT_BY_ID);
 
         Optional<StudentResult> resultOpt = studentResultRepository.findById(id);
 
@@ -222,7 +222,7 @@ public class StudentResultService {
     }
 
     public ResponseDto getAllStudentResults() {
-        ResponseDto response = new ResponseDto("API_GET_ALL_STUDENT_RESULTS");
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_STUDENT_RESULTS);
         List<StudentResult> results = studentResultRepository.findAll();
 
         if (!results.isEmpty()) {
@@ -237,7 +237,7 @@ public class StudentResultService {
     }
 
     public ResponseDto fetchStudentByEnrollmentNumber(String enrollmentNumber) {
-        ResponseDto response = new ResponseDto("API_FETCH_STUDENT_BY_ENROLLMENT_NUMBER");
+        ResponseDto response = new ResponseDto(Constants.API_FETCH_STUDENT_BY_ENROLLMENT_NUMBER);
         Optional<Student> studentOpt = studentRepository.findByEnrollmentNumber(enrollmentNumber);
 
         if (studentOpt.isPresent()) {
@@ -253,7 +253,7 @@ public class StudentResultService {
 
 
     public ResponseDto fetchCourseByName(String courseName) {
-        ResponseDto response = new ResponseDto("API_FETCH_COURSE_BY_NAME");
+        ResponseDto response = new ResponseDto(Constants.API_FETCH_COURSE_BY_NAME);
         Optional<Course> courseOpt = courseRepository.findByCourseName(courseName);
 
         if (courseOpt.isPresent()) {
@@ -268,7 +268,7 @@ public class StudentResultService {
     }
 
     public ResponseDto fetchExamByName(String examName) {
-        ResponseDto response = new ResponseDto("API_FETCH_EXAM_BY_NAME");
+        ResponseDto response = new ResponseDto(Constants.API_FETCH_EXAM_BY_NAME);
         Optional<Exam> examOpt = examRepository.findByExamName(examName);
 
         if (examOpt.isPresent()) {
@@ -332,7 +332,7 @@ public class StudentResultService {
         return mark.compareTo(BigDecimal.ZERO) >= 0 && mark.compareTo(new BigDecimal("100")) <= 0;
     }
     public ResponseDto publishResultsForCourseWithinCycle(Long courseId, Long examCycleId) {
-        ResponseDto response = new ResponseDto("API_PUBLISH_RESULTS_FOR_COURSE_WITHIN_CYCLE");
+        ResponseDto response = new ResponseDto(Constants.API_PUBLISH_RESULTS_FOR_COURSE_WITHIN_CYCLE);
         List<StudentResult> resultsForCourse = studentResultRepository.findByCourse_IdAndExam_ExamCycleIdAndPublished(courseId, examCycleId, false);
 
         if (!resultsForCourse.isEmpty()) {
@@ -350,7 +350,7 @@ public class StudentResultService {
     }
 
     public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth) {
-        ResponseDto response = new ResponseDto("API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB");
+        ResponseDto response = new ResponseDto(Constants.API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB);
         Optional<StudentResult> studentResultOpt = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(enrollmentNumber, dateOfBirth, true));
 
         if (studentResultOpt.isPresent()) {
@@ -364,7 +364,7 @@ public class StudentResultService {
         return response;
     }
     public ResponseDto updateResultAfterRetotalling(StudentResult updatedResult) {
-        ResponseDto response = new ResponseDto("API_UPDATE_RESULT_AFTER_RETOTALLING");
+        ResponseDto response = new ResponseDto(Constants.API_UPDATE_RESULT_AFTER_RETOTALLING);
 
         if (updatedResult.getId() == null) {
             ResponseDto.setErrorResponse(response, "INVALID_RESULT_ID", "Updated result must have a valid ID", HttpStatus.BAD_REQUEST);
@@ -405,7 +405,7 @@ public class StudentResultService {
     }
 
     public ResponseDto getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
-        ResponseDto response = new ResponseDto("API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE");
+        ResponseDto response = new ResponseDto(Constants.API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE);
         List<StudentResult> results;
         if (examCycle != null && exam != null) {
             results = studentResultRepository.findByExamCycleAndExam(examCycle, exam);
@@ -445,7 +445,7 @@ public class StudentResultService {
         return dto;
     }
     public ResponseDto processBulkResultUpload(MultipartFile file, String fileType) {
-        ResponseDto response = new ResponseDto("API_BULK_UPLOAD_RESULTS");
+        ResponseDto response = new ResponseDto(Constants.API_BULK_UPLOAD_RESULTS);
 
         try {
             JSONArray jsonArray;

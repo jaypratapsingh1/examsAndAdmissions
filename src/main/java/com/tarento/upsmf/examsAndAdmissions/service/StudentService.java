@@ -133,7 +133,7 @@ public class StudentService {
 
     @Transactional
     public ResponseDto enrollStudent(StudentDto studentDto) {
-        ResponseDto response = new ResponseDto();
+        ResponseDto response = new ResponseDto(Constants.API_ENROLL_STUDENT); // Using a constant identifier
         try {
             Student student = modelMapper.map(studentDto, Student.class);
 
@@ -182,7 +182,7 @@ public class StudentService {
     }
 
     public ResponseDto getFilteredStudents(Long instituteId, Long courseId, String academicYear, VerificationStatus verificationStatus) {
-        ResponseDto response = new ResponseDto();
+        ResponseDto response = new ResponseDto(Constants.API_GET_FILTERED_STUDENTS);
 
         try {
             CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -225,7 +225,7 @@ public class StudentService {
         return response;
     }
     public ResponseDto getStudentById(Long id) {
-        ResponseDto response = new ResponseDto("API_FETCH_STUDENT_BY_ID");
+        ResponseDto response = new ResponseDto(Constants.API_GET_STUDENT_BY_ID);
 
         try {
             Optional<Student> studentOptional = studentRepository.findById(id);
@@ -245,76 +245,121 @@ public class StudentService {
         return response;
     }
 
-    public Student updateStudent(Long id, StudentDto studentDto) throws IOException {
-        Student existingStudent = studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Student not found for ID: " + id));
+    @Transactional
+    public ResponseDto updateStudent(Long id, StudentDto studentDto) {
+        ResponseDto response = new ResponseDto(Constants.API_UPDATE_STUDENT);
 
-        if (studentDto.getHighSchoolMarksheet() != null) {
-            deleteStudentDocument(existingStudent.getHighSchoolMarksheetPath());
-            existingStudent.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
+        try {
+            Student existingStudent = studentRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Student not found for ID: " + id));
+
+            if (studentDto.getHighSchoolMarksheet() != null) {
+                deleteStudentDocument(existingStudent.getHighSchoolMarksheetPath());
+                existingStudent.setHighSchoolMarksheetPath(storeFile(studentDto.getHighSchoolMarksheet()));
+            }
+
+            if (studentDto.getHighSchoolCertificate() != null) {
+                deleteStudentDocument(existingStudent.getHighSchoolCertificatePath());
+                existingStudent.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
+            }
+
+            if (studentDto.getIntermediateMarksheet() != null) {
+                deleteStudentDocument(existingStudent.getIntermediateMarksheetPath());
+                existingStudent.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
+            }
+
+            if (studentDto.getIntermediateCertificate() != null) {
+                deleteStudentDocument(existingStudent.getIntermediateCertificatePath());
+                existingStudent.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
+            }
+
+            modelMapper.map(studentDto, existingStudent);
+            existingStudent.setVerificationDate(LocalDate.now());
+            existingStudent.setVerificationStatus(VerificationStatus.PENDING);
+            Student savedStudent = studentRepository.save(existingStudent);
+
+            response.put(Constants.MESSAGE, "Student updated successfully");
+            response.put(Constants.RESPONSE, savedStudent);  // Optionally return the updated student data
+            response.setResponseCode(HttpStatus.OK);
+
+        } catch (IOException e) {
+            ResponseDto.setErrorResponse(response, "FILE_STORAGE_ERROR", "Error occurred while storing files: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        if (studentDto.getHighSchoolCertificate() != null) {
-            deleteStudentDocument(existingStudent.getHighSchoolCertificatePath());
-            existingStudent.setHighSchoolCertificatePath(storeFile(studentDto.getHighSchoolCertificate()));
-        }
-
-        if (studentDto.getIntermediateMarksheet() != null) {
-            deleteStudentDocument(existingStudent.getIntermediateMarksheetPath());
-            existingStudent.setIntermediateMarksheetPath(storeFile(studentDto.getIntermediateMarksheet()));
-        }
-
-        if (studentDto.getIntermediateCertificate() != null) {
-            deleteStudentDocument(existingStudent.getIntermediateCertificatePath());
-            existingStudent.setIntermediateCertificatePath(storeFile(studentDto.getIntermediateCertificate()));
-        }
-
-        modelMapper.map(studentDto, existingStudent);
-        existingStudent.setVerificationDate(LocalDate.now());
-        existingStudent.setVerificationStatus(VerificationStatus.PENDING);
-        return studentRepository.save(existingStudent);
+        return response;
     }
 
-    public List<Student> updateStudentStatusToClosed() {
-        LocalDate cutoffDate = LocalDate.now().minusDays(14);
-        List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
+    @Transactional
+    public ResponseDto updateStudentStatusToClosed() {
+        ResponseDto response = new ResponseDto(Constants.API_UPDATE_STUDENT_STATUS_TO_CLOSED);
 
-        log.info("Rejected students found to potentially close: " + rejectedStudents.size());
+        try {
+            LocalDate cutoffDate = LocalDate.now().minusDays(14);
+            List<Student> rejectedStudents = studentRepository.findByVerificationDateBeforeAndVerificationStatus(cutoffDate, VerificationStatus.REJECTED);
 
-        List<Student> studentsToUpdate = new ArrayList<>();
+            log.info("Rejected students found to potentially close: " + rejectedStudents.size());
 
-        for (Student student : rejectedStudents) {
-            student.setVerificationStatus(VerificationStatus.CLOSED);
-            studentsToUpdate.add(student);
+            List<Student> studentsToUpdate = new ArrayList<>();
+
+            for (Student student : rejectedStudents) {
+                student.setVerificationStatus(VerificationStatus.CLOSED);
+                studentsToUpdate.add(student);
+            }
+
+            List<Student> updatedStudents = studentRepository.saveAll(studentsToUpdate);
+
+            response.put(Constants.MESSAGE, "Students' status updated to CLOSED successfully");
+            response.put(Constants.RESPONSE, updatedStudents);  // Optionally return the updated student data
+            response.setResponseCode(HttpStatus.OK);
+
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return studentRepository.saveAll(studentsToUpdate);
+        return response;
     }
 
-    public List<Student> getStudentsPendingForMoreThan21Days(Long courseId, String academicYear) {
-        LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
-        Root<Student> studentRoot = criteriaQuery.from(Student.class);
+    public ResponseDto getStudentsPendingForMoreThan21Days(Long courseId, String academicYear) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_STUDENTS_PENDING_FOR_21_DAYS);
 
-        List<Predicate> predicates = new ArrayList<>();
+        try {
+            LocalDate twentyOneDaysAgo = LocalDate.now().minusDays(21);
+            CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+            CriteriaQuery<Student> criteriaQuery = criteriaBuilder.createQuery(Student.class);
+            Root<Student> studentRoot = criteriaQuery.from(Student.class);
 
-        // Adding the condition for students pending for more than 21 days
-        predicates.add(criteriaBuilder.lessThanOrEqualTo(studentRoot.get("enrollmentDate"), twentyOneDaysAgo));
-        predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), VerificationStatus.PENDING));
+            List<Predicate> predicates = new ArrayList<>();
 
-        if (courseId != null) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
+            // Adding the condition for students pending for more than 21 days
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(studentRoot.get("enrollmentDate"), twentyOneDaysAgo));
+            predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), VerificationStatus.PENDING));
+
+            if (courseId != null) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
+            }
+            if (academicYear != null && !academicYear.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
+            } else if (academicYear != null) {
+                predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+            }
+
+            criteriaQuery.where(predicates.toArray(new Predicate[0]));
+
+            List<Student> students = entityManager.createQuery(criteriaQuery).getResultList();
+
+            if (students.isEmpty()) {
+                response.put(Constants.MESSAGE, "No students found with the given criteria.");
+            } else {
+                response.put(Constants.MESSAGE, "Students fetched successfully.");
+                response.put(Constants.RESPONSE, students);
+            }
+            response.setResponseCode(HttpStatus.OK);
+
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        if (academicYear != null && !academicYear.trim().isEmpty()) {
-            predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
-        } else if (academicYear != null) {
-            predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
-        }
 
-        criteriaQuery.where(predicates.toArray(new Predicate[0]));
-
-        return entityManager.createQuery(criteriaQuery).getResultList();
+        return response;
     }
 
     public Student findById(Long id) {
@@ -327,23 +372,59 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
-    public Student verifyStudent(Long studentId, VerificationStatus status, String remarks) {
-        Student student = this.findById(studentId);
-        student.setVerificationStatus(status);
-        student.setAdminRemarks(remarks);
-        student.setVerificationDate(LocalDate.now());
+    public ResponseDto verifyStudent(Long studentId, VerificationStatus status, String remarks) {
+        ResponseDto response = new ResponseDto(Constants.API_VERIFY_STUDENT);
 
-        if (status == VerificationStatus.VERIFIED) {
-            String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute().getId() + student.getId();
-            student.setEnrollmentNumber(enrollmentNumber);
-        } else if (status == VerificationStatus.REJECTED) {
-            student.setRequiresRevision(true);
+        try {
+            Student student = this.findById(studentId);
+
+            if (student == null) {
+                ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found for ID: " + studentId, HttpStatus.NOT_FOUND);
+                return response;
+            }
+
+            student.setVerificationStatus(status);
+            student.setAdminRemarks(remarks);
+            student.setVerificationDate(LocalDate.now());
+
+            if (status == VerificationStatus.VERIFIED) {
+                String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute().getId() + student.getId();
+                student.setEnrollmentNumber(enrollmentNumber);
+            } else if (status == VerificationStatus.REJECTED) {
+                student.setRequiresRevision(true);
+            }
+
+            student = this.save(student);
+
+            response.put(Constants.MESSAGE, "Student verification updated successfully");
+            response.put(Constants.RESPONSE, student);
+            response.setResponseCode(HttpStatus.OK);
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "Exception occurred during verifying the student: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return this.save(student);
+
+        return response;
     }
 
-    public List<Student> findByVerificationStatus(VerificationStatus status) {
-        return studentRepository.findByVerificationStatus(status);
+    public ResponseDto findByVerificationStatus(VerificationStatus status) {
+        ResponseDto response = new ResponseDto(Constants.API_FIND_BY_VERIFICATION_STATUS);
+
+        try {
+            List<Student> students = studentRepository.findByVerificationStatus(status);
+
+            if (students.isEmpty()) {
+                response.put(Constants.MESSAGE, "No students found with the verification status: " + status);
+                response.setResponseCode(HttpStatus.NOT_FOUND);
+            } else {
+                response.put(Constants.MESSAGE, "Students fetched successfully.");
+                response.put(Constants.RESPONSE, students);
+                response.setResponseCode(HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "Exception occurred while fetching students by verification status: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
     }
 
     public Student save(Student student) {
@@ -364,11 +445,18 @@ public class StudentService {
         throw new RuntimeException("Invalid file type. Supported files are PDF and Images.");
     }
     public ResponseDto deleteStudent(Long id) {
-        ResponseDto response = new ResponseDto();
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Student not found for ID: " + id));
+        ResponseDto response = new ResponseDto(Constants.API_DELETE_STUDENT);
 
         try {
+            Optional<Student> studentOptional = studentRepository.findById(id);
+
+            if (!studentOptional.isPresent()) {
+                ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found for ID: " + id, HttpStatus.NOT_FOUND);
+                return response;
+            }
+
+            Student student = studentOptional.get();
+
             // Initialize GCS Credentials and client
             ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
                     gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
@@ -387,16 +475,15 @@ public class StudentService {
             // Delete student record or mark it as obsolete based on your requirements
             studentRepository.deleteById(id);
 
-            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, "Student and associated documents deleted successfully");
+            response.put(Constants.MESSAGE, "Student and associated documents deleted successfully");
             response.setResponseCode(HttpStatus.OK);
         } catch (Exception e) {
-            response.put(Constants.MESSAGE, "Exception occurred during deleting the student");
-            response.put(Constants.RESPONSE, e.getMessage());
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "Exception occurred during deleting the student: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
         return response;
     }
+
     private void deleteStudentDocument(String path) {
         if (path == null || path.isEmpty()) {
             return;
