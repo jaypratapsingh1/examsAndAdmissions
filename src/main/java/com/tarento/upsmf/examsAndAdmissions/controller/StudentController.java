@@ -33,7 +33,6 @@ public class StudentController {
             return ResponseEntity.status(response.getResponseCode()).body(response);
         }
     }
-
     @GetMapping("/find")
     public ResponseEntity<ResponseDto> getFilteredStudents(
             @RequestParam(required = false) Long instituteId,
@@ -44,64 +43,40 @@ public class StudentController {
         ResponseDto response = studentService.getFilteredStudents(instituteId, courseId, academicYear, verificationStatus);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto> getStudentById(@PathVariable Long id) {
         ResponseDto response = studentService.getStudentById(id);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
-
     @PutMapping("/{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable Long id,@ModelAttribute @Valid StudentDto studentDto) {
-        try {
-            Student updatedStudent = studentService.updateStudent(id, studentDto);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<ResponseDto> updateStudent(@PathVariable Long id, @ModelAttribute @Valid StudentDto studentDto) {
+        ResponseDto response = studentService.updateStudent(id, studentDto);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @PutMapping("/closePendingFor14Days")
-    public ResponseEntity<?> updateStudentStatusToClosed() {
-        try {
-            List<Student> updatedStudents = studentService.updateStudentStatusToClosed();
-            return ResponseEntity.ok(updatedStudents);
-        } catch (Exception e) {
-            log.error("Error updating student status based on days", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating student status.");
-        }
+    public ResponseEntity<ResponseDto> updateStudentStatusToClosed() {
+        ResponseDto response = studentService.updateStudentStatusToClosed();
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
-
     @GetMapping("/pendingFor21Days")
-    public ResponseEntity<?> getStudentsPendingFor21Days(@RequestParam(required = false) Long courseId,
-                                                         @RequestParam(required = false) String academicYear) {
-        try {
-            List<Student> students = studentService.getStudentsPendingForMoreThan21Days(courseId, academicYear);
-            return ResponseEntity.ok(students);
-        } catch (Exception e) {
-            log.error("Error fetching students pending for 21 days", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching students.");
-        }
+    public ResponseEntity<ResponseDto> getStudentsPendingFor21Days(@RequestParam(required = false) Long courseId,
+                                                                   @RequestParam(required = false) String academicYear) {
+        ResponseDto response = studentService.getStudentsPendingForMoreThan21Days(courseId, academicYear);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteStudent(@PathVariable Long id) {
+    public ResponseEntity<ResponseDto> deleteStudent(@PathVariable Long id) {
         ResponseDto response = studentService.deleteStudent(id);
-        if (response.getResponseCode() == HttpStatus.OK) {
-            return ResponseEntity.ok(response.get(Constants.RESPONSE).toString());
-        } else {
-            return ResponseEntity.status(response.getResponseCode()).body(response.get(Constants.RESPONSE).toString());
-        }
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
-
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<Student> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks) {
-        Student updatedStudent = studentService.verifyStudent(studentId, status, remarks);
-        return ResponseEntity.ok(updatedStudent);
+    public ResponseEntity<ResponseDto> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks) {
+        ResponseDto response = studentService.verifyStudent(studentId, status, remarks);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @GetMapping("/pendingVerification")
-    public ResponseEntity<List<Student>> getStudentsPendingVerification() {
-        List<Student> students = studentService.findByVerificationStatus(VerificationStatus.PENDING);
-        return ResponseEntity.ok(students);
+    public ResponseEntity<ResponseDto> getStudentsPendingVerification() {
+        ResponseDto response = studentService.findByVerificationStatus(VerificationStatus.PENDING);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
-
-
 }

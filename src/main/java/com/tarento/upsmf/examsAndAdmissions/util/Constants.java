@@ -82,6 +82,44 @@ public class Constants {
     public static final String API_COURSE_SUBJECT_MAPPING_CREATE = "api.courseSubjectMapping.create";
 
 
+
+    // API Identifiers for StudentService
+    public static final String API_ENROLL_STUDENT = "api.student.enroll";
+    public static final String API_GET_FILTERED_STUDENTS = "api.student.getFiltered";
+    public static final String API_GET_STUDENT_BY_ID = "api.student.getById";
+    public static final String API_UPDATE_STUDENT = "api.student.update";
+    public static final String API_UPDATE_STUDENT_STATUS_TO_CLOSED = "api.student.updateStatusToClosed";
+    public static final String API_GET_STUDENTS_PENDING_FOR_21_DAYS = "api.student.getPendingFor21Days";
+    public static final String API_VERIFY_STUDENT = "api.student.verify";
+    public static final String API_FIND_BY_VERIFICATION_STATUS = "api.student.findByVerificationStatus";
+    public static final String API_DELETE_STUDENT = "api.student.delete";
+
+
+
+    // API Identifiers for StudentResultService
+    public static final String API_IMPORT_INTERNAL_MARKS_FROM_EXCEL = "api.studentResult.importInternalMarks";
+    public static final String API_IMPORT_EXTERNAL_MARKS_FROM_EXCEL = "api.studentResult.importExternalMarks";
+    public static final String API_GET_STUDENT_RESULT_BY_ID = "api.studentResult.getById";
+    public static final String API_GET_ALL_STUDENT_RESULTS = "api.studentResult.getAll";
+    public static final String API_FETCH_STUDENT_BY_ENROLLMENT_NUMBER = "api.studentResult.fetchStudentByEnrollment";
+    public static final String API_FETCH_COURSE_BY_NAME = "api.studentResult.fetchCourseByName";
+    public static final String API_FETCH_EXAM_BY_NAME = "api.studentResult.fetchExamByName";
+    public static final String API_PUBLISH_RESULTS_FOR_COURSE_WITHIN_CYCLE = "api.studentResult.publishForCourse";
+    public static final String API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB = "api.studentResult.findByEnrollmentAndDob";
+    public static final String API_UPDATE_RESULT_AFTER_RETOTALLING = "api.studentResult.updateAfterRetotalling";
+    public static final String API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE = "api.studentResult.getByExamCycleAndGroupedByInstitute";
+    public static final String API_BULK_UPLOAD_RESULTS = "api.studentResult.bulkUpload";
+
+
+    // API Identifiers for ExamCenterService
+    public static final String API_GET_VERIFIED_EXAM_CENTERS = "api.examCenter.getVerifiedInDistrict";
+    public static final String API_ASSIGN_ALTERNATE_EXAM_CENTER = "api.examCenter.assignAlternate";
+    public static final String API_UPDATE_CCTV_STATUS = "api.examCenter.updateCCTVStatus";
+    public static final String API_GET_EXAM_CENTERS_BY_STATUS = "api.examCenter.getByStatus";
+    public static final String API_GET_ALL_EXAM_CENTERS = "api.examCenter.getAll";
+    public static final String API_GET_EXAM_CENTERS_BY_EXAM_CYCLE = "api.examCenter.getByExamCycle";
+
+
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
     public static final String EXAM_CYCLE_ID = "examCycleId";
