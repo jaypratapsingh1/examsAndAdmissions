@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.DispatchTracker;
 import com.tarento.upsmf.examsAndAdmissions.model.Institute;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ApprovalRejectionDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteUserDto;
 import com.tarento.upsmf.examsAndAdmissions.service.DispatchTrackerService;

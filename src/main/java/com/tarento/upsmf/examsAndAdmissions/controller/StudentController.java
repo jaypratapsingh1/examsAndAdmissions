@@ -25,34 +25,30 @@ public class StudentController {
     private StudentService studentService;
 
     @PostMapping("/add")
-    public ResponseEntity<Student> addStudent(@ModelAttribute @Valid StudentDto studentDto) {
-        try {
-            Student addedStudent = studentService.enrollStudent(studentDto);
-            return ResponseEntity.ok(addedStudent);
-        } catch (IOException e) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<ResponseDto> addStudent(@ModelAttribute @Valid StudentDto studentDto) {
+        ResponseDto response = studentService.enrollStudent(studentDto);
+        if (HttpStatus.OK.equals(response.getResponseCode())) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(response.getResponseCode()).body(response);
         }
     }
+
     @GetMapping("/find")
-    public ResponseEntity<List<Student>> getFilteredStudents(
+    public ResponseEntity<ResponseDto> getFilteredStudents(
             @RequestParam(required = false) Long instituteId,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) String academicYear,
             @RequestParam(required = false) VerificationStatus verificationStatus) {
 
-        List<Student> students = studentService.getFilteredStudents(instituteId, courseId, academicYear, verificationStatus);
-        if (students != null && !students.isEmpty()) {
-            return ResponseEntity.ok(students);
-        } else {
-            return ResponseEntity.noContent().build();
-        }
+        ResponseDto response = studentService.getFilteredStudents(instituteId, courseId, academicYear, verificationStatus);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
 
-
     @GetMapping("/{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable Long id) {
-        Optional<Student> student = studentService.getStudentById(id);
-        return student.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<ResponseDto> getStudentById(@PathVariable Long id) {
+        ResponseDto response = studentService.getStudentById(id);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
 
     @PutMapping("/{id}")

@@ -18,7 +18,7 @@ public interface ExamService {
 
     public ResponseDto restoreExam(Long id);
 
-    void publishExamResults(Long examId);
+    ResponseDto publishExamResults(Long examId);
     ResponseDto findByExamCycleId(Long examCycleId);
 
 }
