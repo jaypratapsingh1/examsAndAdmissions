@@ -142,6 +142,8 @@ public class Constants {
     public static final String TOTAL_MARKS = "totalMarks";
     public static final String EXAM_CYCLE_NAME = "examCycleName";
     public static final String COURSE_NAME = "courseName";
+    public static final String COURSE_CODE = "courseCode";
+    public static final String DESCRIPTION = "description";
     public static final String EXAM_NAME = "examName";
     public static final String ID = "id";
     public static final String EXAM_START_TIME = "examStartTime";
