@@ -48,22 +48,19 @@ public class HallTicketController {
         ResponseDto responseDto = hallTicketService.generateAndSaveHallTicketsForMultipleStudents(studentRegistrationIds);
         return ResponseEntity.status(responseDto.getResponseCode()).body(responseDto);
     }
-
     @GetMapping("/downloadHallTicket")
-    public ResponseEntity<?> downloadStudentHallTicket(@RequestParam Long id, @RequestParam String dateOfBirth) {
-        ResponseDto responseDto = hallTicketService.getHallTicketForStudent(id, dateOfBirth);
-        HttpStatus status = HttpStatus.valueOf(responseDto.getResponseCode().value());
-
-        if (status.is2xxSuccessful()) {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "hallticket_" + id + ".pdf");
-            Resource resource = (Resource) responseDto.getResult().get("hallTicketResource");
-            return ResponseEntity.ok().headers(headers).body(resource);
+    public ResponseEntity<ResponseDto> downloadStudentHallTicket(@RequestParam Long id, @RequestParam String dateOfBirth) {
+        ResponseDto response;
+        try {
+            response = hallTicketService.getHallTicketBlobResourcePath(id, dateOfBirth);
+        } catch (Exception e) {
+            log.error("Error fetching hall ticket for student ID: {} with Date of Birth: {}", id, dateOfBirth, e);
+            response = new ResponseDto(Constants.API_HALLTICKET_GET);
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return ResponseEntity.status(responseDto.getResponseCode()).body(responseDto);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
     }
+
     private Resource extractResourceFromResponseDto(ResponseDto responseDto) {
         String base64EncodedData = (String) responseDto.get(Constants.RESPONSE);
 

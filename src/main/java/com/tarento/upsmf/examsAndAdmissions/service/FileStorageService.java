@@ -13,6 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,8 +47,29 @@ public class FileStorageService {
 
     @Value("${gcp.private.key.id}")
     private String gcpPrivateKeyId;
+    public Blob getBlobFromGCP(String fullURL) throws IOException, URISyntaxException {
+        // Extract the file path from the full URL
+        String filePath = extractFilePathFromURL(fullURL);
 
-        public String storeFile(MultipartFile file, DocumentType docType) throws IOException {
+        ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
+                gcpPkcsKey, gcpPrivateKeyId, new ArrayList<>());
+        Storage storage = StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
+
+        BlobId blobId = BlobId.of(gcpBucketName, filePath);
+        return storage.get(blobId);
+    }
+
+    private String extractFilePathFromURL(String fullURL) throws URISyntaxException, UnsupportedEncodingException {
+        URI uri = new URI(fullURL);
+        String[] pathParts = uri.getPath().split("/o/");
+        if (pathParts.length > 1) {
+            return URLDecoder.decode(pathParts[1], StandardCharsets.UTF_8);
+        }
+        return null;
+    }
+
+
+    public String storeFile(MultipartFile file, DocumentType docType) throws IOException {
             validateFileContent(file);
             Path tempFilePath = createTempFile(file, docType);
             try {
