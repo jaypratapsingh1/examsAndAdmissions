@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +41,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -164,6 +166,33 @@ public class HallTicketService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+    public ResponseDto getHallTicketBlobResourcePath(Long id, String dateOfBirth) throws Exception {
+        ResponseDto hallTicketResponse = getHallTicketForStudent(id, dateOfBirth);
+
+        if (hallTicketResponse.getResponseCode().is2xxSuccessful()) {
+            String hallTicketPath = (String) hallTicketResponse.getResult().get(Constants.RESPONSE);
+
+            Blob blob = fileStorageService.getBlobFromGCP(hallTicketPath);
+            if (blob == null || !blob.exists()) {
+                log.error("Blob for hall ticket not found in GCS for path: {}", hallTicketPath);
+                ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
+                ResponseDto.setErrorResponse(response, "BLOB_NOT_FOUND", "Error fetching hall ticket from storage.", HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+
+            // Generate a signed URL for direct download
+            URL signedUrl = blob.signUrl(15, TimeUnit.MINUTES); // This URL will be valid for 15 minutes
+            hallTicketResponse.getResult().put(Constants.RESPONSE, signedUrl.getPath());  // use the signed URL
+            return hallTicketResponse;
+
+        } else {
+            ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
+            ResponseDto.setErrorResponse(response, "REQUEST_ERROR", "Error processing request: " + hallTicketResponse.getError().getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return response;
+        }
+    }
+
+
     public ResponseDto requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
         DataCorrectionRequest request = new DataCorrectionRequest();
