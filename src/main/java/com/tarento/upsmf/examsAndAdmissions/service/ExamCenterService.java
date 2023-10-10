@@ -72,9 +72,10 @@ public class ExamCenterService {
             }
 
             // Save the updated registrations
-            studentExamRegistrationRepository.saveAll(affectedRegistrations);
+            List<StudentExamRegistration> updatedRegistrations = studentExamRegistrationRepository.saveAll(affectedRegistrations);
 
             response.put("message", "Alternate Exam Center assigned successfully.");
+            response.put(Constants.RESPONSE, updatedRegistrations);
             response.setResponseCode(HttpStatus.OK);
 
         } catch (EntityNotFoundException e) {
@@ -99,8 +100,13 @@ public class ExamCenterService {
         center.setIpAddress(updateDTO.getIpAddress());
         center.setRemarks(updateDTO.getRemarks());
         center.setVerified(updateDTO.getStatus());
-        examCenterRepository.save(center);
+        ExamCenter updatedCenter = examCenterRepository.save(center);
+
+        // Convert the updated center to DTO (assuming you have a method for this conversion)
+        ExamCenterDTO updatedCenterDTO = examCenterMapper.toDTO(updatedCenter);
+
         response.put(Constants.MESSAGE, "CCTV status updated successfully.");
+        response.put(Constants.RESPONSE, updatedCenterDTO); // Return the updated center in the response
         response.setResponseCode(HttpStatus.OK);
         return response;
     }

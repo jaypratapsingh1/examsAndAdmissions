@@ -20,4 +20,6 @@ public class ExamCenterDTO {
     private String ipAddress;
     private String remarks;
     private String district;
+    private boolean allowedForExamCentre;
+    private String instituteCode;
 }
