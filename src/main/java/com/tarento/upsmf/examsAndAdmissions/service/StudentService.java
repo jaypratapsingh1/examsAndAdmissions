@@ -356,6 +356,7 @@ public class StudentService {
             }
             response.setResponseCode(HttpStatus.OK);
 
+
         } catch (Exception e) {
             ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }

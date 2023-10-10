@@ -126,6 +126,11 @@ public class Constants {
     public static final String API_GET_ALL_PENDING_REQUESTS = "api.retotalling.getAllPendingRequests";
 
 
+    // API Identifiers for StudentExamRegistrationService
+    public static final String API_REGISTER_STUDENTS_FOR_EXAMS = "api.studentExamRegistration.registerStudentsForExams";
+    public static final String API_GET_ALL_REGISTRATIONS = "api.studentExamRegistration.getAllRegistrations";
+    public static final String API_GET_ALL_REGISTRATIONS_BY_EXAM_CYCLE = "api.studentExamRegistration.getAllRegistrationsByExamCycle";
+
 
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";

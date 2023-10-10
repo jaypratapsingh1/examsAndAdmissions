@@ -4,10 +4,12 @@ import com.tarento.upsmf.examsAndAdmissions.exception.ExamCycleNotFoundException
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +33,16 @@ public class StudentExamRegistrationService {
     @Autowired
     private StudentRepository studentRepository;
     @Transactional
-    public ResponseEntity<?> registerStudentsForExams(List<StudentExamRegistrationDTO> requests, String userId)
+    public ResponseDto registerStudentsForExams(List<StudentExamRegistrationDTO> requests, String userId)
     {
-    // Validate input
-    if (requests == null || requests.isEmpty()) {
-        log.error("Registration request list is null or empty.");
-        return ResponseEntity.badRequest().body("Registration request list is empty.");
-    }
+        ResponseDto response = new ResponseDto(Constants.API_REGISTER_STUDENTS_FOR_EXAMS);
+
+        // Validate input
+        if (requests == null || requests.isEmpty()) {
+            log.error("Registration request list is null or empty.");
+            ResponseDto.setErrorResponse(response, "INVALID_INPUT", "Registration request list is empty.", HttpStatus.BAD_REQUEST);
+            return response;
+        }
 
     try {
         // Extract and validate student, exam, and exam cycle IDs
@@ -123,20 +128,25 @@ public class StudentExamRegistrationService {
         }
 
         if (!newRegistrations.isEmpty() && alreadyRegisteredMessages.isEmpty()) {
-            return ResponseEntity.ok("Students registered successfully.");
+            response.put(Constants.MESSAGE, "Students registered successfully.");
+            response.setResponseCode(HttpStatus.OK);
         } else if (!newRegistrations.isEmpty()) {
-            return ResponseEntity.ok("Students registered with some warnings: " + String.join(" ", alreadyRegisteredMessages));
+            response.put(Constants.MESSAGE, "Students registered with some warnings: " + String.join(" ", alreadyRegisteredMessages));
+            response.setResponseCode(HttpStatus.OK);
         } else {
-            return ResponseEntity.status(400).body("No new registrations were processed. " + String.join(" ", alreadyRegisteredMessages));
+            ResponseDto.setErrorResponse(response, "NO_NEW_REGISTRATIONS", "No new registrations were processed. " + String.join(" ", alreadyRegisteredMessages), HttpStatus.BAD_REQUEST);
         }
     } catch (Exception e) {
         log.error("Error during student registration.", e);
-        return ResponseEntity.status(500).body("An error occurred while processing registrations.");
+        ResponseDto.setErrorResponse(response, "REGISTRATION_ERROR", "An error occurred while processing registrations.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
-}
+
+        return response;
+    }
 
     @GetMapping
-    public ResponseEntity<Page<StudentExamRegistrationDTO>> getAllRegistrations(Pageable pageable) {
+    public ResponseDto getAllRegistrations(Pageable pageable) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_REGISTRATIONS);
         try {
             // Fetch registrations with pagination
             Page<StudentExamRegistration> registrations = registrationRepository.findAll(pageable);
@@ -144,11 +154,19 @@ public class StudentExamRegistrationService {
             // Convert to DTOs
             Page<StudentExamRegistrationDTO> registrationDTOs = registrations.map(this::convertToDto);
 
-            return ResponseEntity.ok(registrationDTOs);
+            if (!registrationDTOs.isEmpty()) {
+                response.put(Constants.MESSAGE, "Registrations fetched successfully.");
+                response.put(Constants.RESPONSE, registrationDTOs);
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                ResponseDto.setErrorResponse(response, "NO_REGISTRATIONS_FOUND", "No registrations found.", HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             log.error("Error fetching registrations.", e);
-            return ResponseEntity.status(500).body(null);
+            ResponseDto.setErrorResponse(response, "FETCH_ERROR", "An error occurred while fetching registrations.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return response;
     }
 
     private StudentExamRegistrationDTO convertToDto(StudentExamRegistration entity) {
@@ -166,16 +184,24 @@ public class StudentExamRegistrationService {
 
         return dto;
     }
-    public List<StudentExamRegistrationDTO> getAllRegistrationsByExamCycle(Long examCycleId) {
-        List<StudentExamRegistration> registrations = registrationRepository.findByExamCycleId(examCycleId);
+    public ResponseDto getAllRegistrationsByExamCycle(Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_REGISTRATIONS_BY_EXAM_CYCLE);
+        try {
+            List<StudentExamRegistration> registrations = registrationRepository.findByExamCycleId(examCycleId);
 
-        if (registrations.isEmpty()) {
-            log.error("Registrations not found for  exam cycle ID: {}", examCycleId);
-            throw new ExamCycleNotFoundException(examCycleId);
+            if (registrations.isEmpty()) {
+                ResponseDto.setErrorResponse(response, "REGISTRATIONS_NOT_FOUND", "No registrations found for exam cycle ID: " + examCycleId, HttpStatus.NOT_FOUND);
+            } else {
+                List<StudentExamRegistrationDTO> dtoList = registrations.stream()
+                        .map(this::convertToDto)
+                        .collect(Collectors.toList());
+                response.put(Constants.MESSAGE, "Registrations fetched successfully.");
+                response.put(Constants.RESPONSE, dtoList);
+                response.setResponseCode(HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return registrations.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return response;
     }
 }

@@ -50,14 +50,14 @@ public class HallTicketController {
     }
 
     @GetMapping("/downloadHallTicket")
-    public ResponseEntity<?> downloadStudentHallTicket(@RequestParam Long studentId, @RequestParam String dateOfBirth) {
-        ResponseDto responseDto = hallTicketService.getHallTicketForStudent(studentId, dateOfBirth);
+    public ResponseEntity<?> downloadStudentHallTicket(@RequestParam Long id, @RequestParam String dateOfBirth) {
+        ResponseDto responseDto = hallTicketService.getHallTicketForStudent(id, dateOfBirth);
         HttpStatus status = HttpStatus.valueOf(responseDto.getResponseCode().value());
 
         if (status.is2xxSuccessful()) {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "hallticket_" + studentId + ".pdf");
+            headers.setContentDispositionFormData("attachment", "hallticket_" + id + ".pdf");
             Resource resource = (Resource) responseDto.getResult().get("hallTicketResource");
             return ResponseEntity.ok().headers(headers).body(resource);
         }
