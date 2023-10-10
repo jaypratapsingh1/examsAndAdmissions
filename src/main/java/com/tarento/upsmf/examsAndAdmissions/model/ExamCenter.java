@@ -36,5 +36,6 @@ public class ExamCenter {
     private String remarks;
     private boolean allowedForExamCentre;
     private String district;
+    private String instituteCode;
 
 }

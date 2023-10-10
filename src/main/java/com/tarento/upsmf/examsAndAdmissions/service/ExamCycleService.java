@@ -77,6 +77,8 @@ public class ExamCycleService {
                 examCenter.setDistrict(institute.getDistrict());
                 examCenter.setAddress(institute.getAddress());
                 examCenter.setName(institute.getInstituteName());
+                examCenter.setInstituteCode(institute.getInstituteCode());
+                examCenter.setAllowedForExamCentre(institute.isAllowedForExamCentre());
                 examCenterRepository.save(examCenter);
             }
 
