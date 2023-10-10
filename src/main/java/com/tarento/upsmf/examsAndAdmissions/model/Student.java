@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDTO;
 import lombok.*;
 
 import javax.persistence.*;
@@ -68,8 +69,11 @@ public class Student {
     @JoinColumn(name = "institute_id")
     @JsonBackReference
     private Institute institute;
+    @Transient
+    private InstituteDTO instituteDTO;
     @ManyToOne
     @JoinColumn(name = "exam_center_id")
     private Institute examCenter;  // This is where the student will take the exam
     private String academicYear;
+    private String intermediateStream;
 }

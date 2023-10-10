@@ -5,6 +5,7 @@ import com.google.cloud.storage.*;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
@@ -221,7 +222,6 @@ public class StudentService {
         } catch (Exception e) {
             ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
         return response;
     }
 
@@ -232,8 +232,16 @@ public class StudentService {
             Optional<Student> studentOptional = studentRepository.findById(id);
 
             if (studentOptional.isPresent()) {
+                Student student = studentOptional.get();
+                if (student.getInstitute() != null) {
+                    student.setInstituteDTO(InstituteDTO.convertToDTO(student.getInstitute()));
+                }
+
+                // Ensure you don't send the actual Institute entity in the response.
+                student.setInstitute(null);
+
                 response.put(Constants.MESSAGE, "Student fetched successfully.");
-                response.put(Constants.RESPONSE, studentOptional.get());
+                response.put(Constants.RESPONSE, student);
                 response.setResponseCode(HttpStatus.OK);
             } else {
                 ResponseDto.setErrorResponse(response, "STUDENT_NOT_FOUND", "Student not found with the given ID.", HttpStatus.NOT_FOUND);

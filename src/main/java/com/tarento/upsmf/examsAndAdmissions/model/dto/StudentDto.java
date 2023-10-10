@@ -49,4 +49,5 @@ public class StudentDto {
     private MultipartFile highSchoolCertificate;
     private MultipartFile intermediateMarksheet;
     private MultipartFile intermediateCertificate;
+    private String intermediateStream;
 }
