@@ -182,7 +182,7 @@ public class HallTicketService {
 
             // Generate a signed URL for direct download
             URL signedUrl = blob.signUrl(15, TimeUnit.MINUTES); // This URL will be valid for 15 minutes
-            hallTicketResponse.getResult().put(Constants.RESPONSE, signedUrl.getPath());  // use the signed URL
+            hallTicketResponse.getResult().put(Constants.RESPONSE, signedUrl);  // use the signed URL
             return hallTicketResponse;
 
         } else {
