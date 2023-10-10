@@ -20,6 +20,8 @@ public class ExamCenterMapper {
         dto.setExamCycle(examCenter.getExamCycle().getId());
         dto.setRemarks(examCenter.getRemarks());
         dto.setDistrict(examCenter.getDistrict());
+        dto.setInstituteCode(examCenter.getInstituteCode());
+        dto.setAllowedForExamCentre(examCenter.isAllowedForExamCentre());
         return dto;
     }
 
