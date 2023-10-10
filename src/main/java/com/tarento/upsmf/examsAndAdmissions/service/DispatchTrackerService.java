@@ -105,53 +105,73 @@ public class DispatchTrackerService {
         return response;
     }
 
-    public Map<String, Object> getDispatchList(Long examCycleId, Long examId) {
-        Map<String, Object> resultMap = new HashMap<>();
+    public ResponseDto getDispatchList(Long examCycleId, Long examId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET); // Replace with the appropriate constant for this API
 
         List<DispatchTracker> result = dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
-        ExamCycle examCycleDetails = result.get(0).getExamCycle();
-        if (examCycleDetails != null) {
 
-            Long courseId = examCycleDetails.getCourse().getId();
-            Optional<Course> course = courseRepository.findById(courseId);
-            if (course.isPresent()) {
-                Institute institute = course.get().getInstitute();
-                resultMap.put("data",result);
-                resultMap.put("lastDateToUpload",Constants.LAST_DATE_TO_UPLOAD);
-                resultMap.put("instituteName", institute.getInstituteName());
-                resultMap.put("instituteId", institute.getId());
-                if (!result.isEmpty()) {
-                    resultMap.put("examName", result.get(0).getExam().getExamName());
-                    resultMap.put("dispatchStatus", result.get(0).getDispatchStatus());
-                } else {
-                    resultMap.put("examName", null);
-                    resultMap.put("dispatchStatus", null);
+        if (!result.isEmpty()) {
+            ExamCycle examCycleDetails = result.get(0).getExamCycle();
+            Map<String, Object> dataMap = new HashMap<>();
+            if (examCycleDetails != null) {
+                Long courseId = examCycleDetails.getCourse().getId();
+                Optional<Course> course = courseRepository.findById(courseId);
+                if (course.isPresent()) {
+                    Institute institute = course.get().getInstitute();
+                    dataMap.put("data", result);
+                    dataMap.put("lastDateToUpload", Constants.LAST_DATE_TO_UPLOAD);
+                    dataMap.put("instituteName", institute.getInstituteName());
+                    dataMap.put("instituteId", institute.getId());
+                    dataMap.put("examName", result.get(0).getExam().getExamName());
+                    dataMap.put("dispatchStatus", result.get(0).getDispatchStatus());
                 }
             }
+            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+            response.put(Constants.RESPONSE, dataMap);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_DISPATCH_TRACKERS", "No dispatch trackers found for the given exam cycle ID and exam ID.", HttpStatus.NOT_FOUND);
         }
-        return resultMap;
+
+        return response;
     }
-    public Map<String, Object> getDispatchList(Long examCycleId) {
-        Map<String, Object> resultMap = new HashMap<>();
-        Optional<DispatchTracker> result = dispatchTrackerRepository.findById(examCycleId);
-        ExamCycle examCycleDetails = result.get().getExamCycle();
-        List<Exam> exam = examRepository.findByExamCycleId(examCycleId);
-        if (examCycleDetails != null) {
-            Long courseId = examCycleDetails.getCourse().getId();
-            Optional<Course> course = courseRepository.findById(courseId);
-            if (course.isPresent()) {
-                Institute institute = course.get().getInstitute();
-                resultMap.put("examCycle",result);
-                resultMap.put("exam",exam);
-                resultMap.put("lastDateToUpload",Constants.LAST_DATE_TO_UPLOAD);
-                resultMap.put("instituteName", institute.getInstituteName());
-                resultMap.put("instituteId", institute.getId());
-                resultMap.put("examName", result.get().getExam().getExamName());
-                resultMap.put("dispatchStatus", result.get().getDispatchStatus());
+
+    public ResponseDto getDispatchList(Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET); // Assuming you have a constant for this API
+
+        Optional<DispatchTracker> optionalResult = dispatchTrackerRepository.findByExamCycleId(examCycleId);
+
+        if (optionalResult.isPresent()) {
+            DispatchTracker dispatchTracker = optionalResult.get();
+            ExamCycle examCycleDetails = dispatchTracker.getExamCycle();
+            List<Exam> exams = examRepository.findByExamCycleId(examCycleId);
+
+            Map<String, Object> dataMap = new HashMap<>();
+
+            if (examCycleDetails != null) {
+                Long courseId = examCycleDetails.getCourse().getId();
+                Optional<Course> course = courseRepository.findById(courseId);
+                if (course.isPresent()) {
+                    Institute institute = course.get().getInstitute();
+                    dataMap.put("examCycle", dispatchTracker);
+                    dataMap.put("exams", exams);
+                    dataMap.put("lastDateToUpload", Constants.LAST_DATE_TO_UPLOAD);
+                    dataMap.put("instituteName", institute.getInstituteName());
+                    dataMap.put("instituteId", institute.getId());
+                    dataMap.put("examName", dispatchTracker.getExam().getExamName());
+                    dataMap.put("dispatchStatus", dispatchTracker.getDispatchStatus());
+                }
             }
+            response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+            response.put(Constants.RESPONSE, dataMap);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_DISPATCH_TRACKERS", "No dispatch trackers found for the given exam cycle ID.", HttpStatus.NOT_FOUND);
         }
-        return resultMap;
+
+        return response;
     }
+
 
     private Blob getBlob(String fileName) throws IOException {
         ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,

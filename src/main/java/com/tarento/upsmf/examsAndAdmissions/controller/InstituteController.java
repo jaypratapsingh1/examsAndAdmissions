@@ -91,25 +91,18 @@ public class InstituteController {
     }
 
     @GetMapping("/dispatchList")
-    public ResponseEntity<?> getDispatchList(
+    public ResponseEntity<ResponseDto> getDispatchList(
             @RequestParam Long examCycleId,
             @RequestParam Long examId) {
-        Map<String,Object> responseData = dispatchTrackerService.getDispatchList(examCycleId, examId);
-        if (responseData != null) {
-           return FeeController.handleSuccessResponse(responseData);
-        } else {
-            return FeeController.handleErrorResponse(new Exception());
-        }
+        ResponseDto responseDto = dispatchTrackerService.getDispatchList(examCycleId, examId);
+        return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
+
     @GetMapping("/dispatchListWithoutExam")
-    public ResponseEntity<?> getDispatchList(
+    public ResponseEntity<ResponseDto> getDispatchList(
             @RequestParam Long examCycleId) {
-        Map<String,Object> responseData = dispatchTrackerService.getDispatchList(examCycleId);
-        if (responseData != null) {
-            return FeeController.handleSuccessResponse(responseData);
-        } else {
-            return FeeController.handleErrorResponse(new Exception());
-        }
+        ResponseDto response = dispatchTrackerService.getDispatchList(examCycleId);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 
     @GetMapping("/preview/{dispatchTrackerId}")
