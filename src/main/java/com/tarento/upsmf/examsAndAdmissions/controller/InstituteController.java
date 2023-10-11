@@ -101,7 +101,7 @@ public class InstituteController {
     @GetMapping("/dispatchListWithoutExam")
     public ResponseEntity<ResponseDto> getDispatchList(
             @RequestParam Long examCycleId) {
-        ResponseDto response = dispatchTrackerService.getDispatchList(examCycleId);
+        ResponseDto response = dispatchTrackerService.getDispatchListByExamCycle(examCycleId);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 

@@ -113,9 +113,11 @@ public class DispatchTrackerService {
         if (!result.isEmpty()) {
             ExamCycle examCycleDetails = result.get(0).getExamCycle();
             Map<String, Object> dataMap = new HashMap<>();
-            if (examCycleDetails != null) {
+
+            if (examCycleDetails != null && examCycleDetails.getCourse() != null) { // Check if course is not null
                 Long courseId = examCycleDetails.getCourse().getId();
                 Optional<Course> course = courseRepository.findById(courseId);
+
                 if (course.isPresent()) {
                     Institute institute = course.get().getInstitute();
                     dataMap.put("data", result);
@@ -136,7 +138,7 @@ public class DispatchTrackerService {
         return response;
     }
 
-    public ResponseDto getDispatchList(Long examCycleId) {
+    public ResponseDto getDispatchListByExamCycle(Long examCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET); // Assuming you have a constant for this API
 
         Optional<DispatchTracker> optionalResult = dispatchTrackerRepository.findByExamCycleId(examCycleId);
