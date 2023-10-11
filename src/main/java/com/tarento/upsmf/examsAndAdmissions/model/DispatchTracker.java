@@ -1,10 +1,13 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.DispatchStatus;
+import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.Date;
 
 @Entity
 @Table(name = "dispatch_tracker")
@@ -24,11 +27,16 @@ public class DispatchTracker {
     @JoinColumn(name = "exam_id")
     private Exam exam;
 
+    @ManyToOne
+    @JoinColumn(name = "exam_center_id")
+    private ExamCenter examCenter;
+
     private LocalDate dispatchDate;
 
     private String dispatchProofFileLocation;
 
-    private Boolean dispatchStatus;
-
-    // Constructors, getters, setters, etc.
+    @Column(name = "dispatch_status")
+    @Enumerated(EnumType.STRING)
+    private DispatchStatus dispatchStatus;
+    private Date dispatchLastDate;
 }
