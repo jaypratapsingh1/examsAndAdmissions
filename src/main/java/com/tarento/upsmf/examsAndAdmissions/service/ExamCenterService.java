@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -172,5 +173,20 @@ public class ExamCenterService {
         }
         return response;
     }
+    public ResponseDto getVerifiedCenterByInstituteCode(String instituteCode) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_VERIFIED_EXAM_CENTER);
 
+        Optional<ExamCenter> examCenterOpt = examCenterRepository.findByInstituteCodeAndVerifiedTrue(instituteCode);
+
+        if (examCenterOpt.isPresent()) {
+            ExamCenterDTO examCenterDTO = examCenterMapper.toDTO(examCenterOpt.get());
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, examCenterDTO);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_VERIFIED_CENTER_FOUND", "No verified exam center found for the provided institute code.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
 }

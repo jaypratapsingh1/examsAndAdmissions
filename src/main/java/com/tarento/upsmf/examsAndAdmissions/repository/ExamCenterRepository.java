@@ -15,5 +15,5 @@ public interface ExamCenterRepository extends JpaRepository<ExamCenter, Long> {
 
     List<ExamCenter> findByExamCycle(ExamCycle examCycle);
     List<ExamCenter> findByDistrictAndVerified(String district, Boolean verified);
-
+    Optional<ExamCenter> findByInstituteCodeAndVerifiedTrue(String instituteCode);
 }
