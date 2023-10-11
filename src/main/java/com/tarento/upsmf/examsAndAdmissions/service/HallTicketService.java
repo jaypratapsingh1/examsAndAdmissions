@@ -195,8 +195,15 @@ public class HallTicketService {
 
     public ResponseDto requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
+        Optional<Student> optionalStudent = studentRepository.findById(studentId);
+        if (!optionalStudent.isPresent()) {
+            response.put(Constants.MESSAGE, "Invalid Student ID");
+            response.setResponseCode(HttpStatus.BAD_REQUEST);
+            return response;
+        }
+
         DataCorrectionRequest request = new DataCorrectionRequest();
-        request.setStudentId(studentId);
+        request.setStudent(optionalStudent.get());
         request.setRequestedCorrection(correctionDetails);
         request.setStatus("NEW");
         if (proof != null && !proof.isEmpty()) {
@@ -213,9 +220,32 @@ public class HallTicketService {
     public ResponseDto getAllDataCorrectionRequests() {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS);
         List<DataCorrectionRequest> requests = dataCorrectionRequestRepository.findAll();
-        if (!requests.isEmpty()) {
+
+        List<Map<String, Object>> formattedRequests = new ArrayList<>();
+
+        for (DataCorrectionRequest request : requests) {
+            Map<String, Object> formattedRequest = new HashMap<>();
+            formattedRequest.put("requestId", request.getId());
+            formattedRequest.put("requestedCorrection", request.getRequestedCorrection());
+            formattedRequest.put("status", request.getStatus());
+            formattedRequest.put("rejectionReason", request.getRejectionReason());
+            formattedRequest.put("proofAttachmentPath", request.getProofAttachmentPath());
+
+            if (request.getStudent() != null) {
+                formattedRequest.put("studentName", request.getStudent().getFirstName() + " " + request.getStudent().getSurname());
+                formattedRequest.put("enrollmentNumber", request.getStudent().getEnrollmentNumber());
+
+                if (request.getStudent().getCourse() != null) {
+                    formattedRequest.put("courseName", request.getStudent().getCourse().getCourseName());
+                }
+            }
+
+            formattedRequests.add(formattedRequest);
+        }
+
+        if (!formattedRequests.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, requests);
+            response.put(Constants.RESPONSE, formattedRequests);
             response.setResponseCode(HttpStatus.OK);
         } else {
             setErrorResponse(response, "NO_DATA_CORRECTION_REQUESTS", "No data correction requests found.", HttpStatus.NOT_FOUND);

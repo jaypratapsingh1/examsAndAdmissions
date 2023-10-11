@@ -142,7 +142,6 @@ public class DispatchTrackerService {
         return response;
     }
 
-
     private Blob getBlob(String fileName) throws IOException {
         ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
                 gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());

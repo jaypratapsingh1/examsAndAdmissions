@@ -1,28 +1,30 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.enums.ExamCycleStatus;
+import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.SearchExamCycleDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
 
+import javax.validation.ConstraintViolationException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleDTO;
-
-import javax.validation.ConstraintViolationException;
 
 @Service
 @Slf4j
@@ -38,6 +40,9 @@ public class ExamCycleService {
     private ExamCenterRepository examCenterRepository;
     @Autowired
     private CourseRepository courseRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     public ResponseDto createExamCycle(ExamCycle examCycle, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_ADD);
@@ -338,4 +343,51 @@ public class ExamCycleService {
         return response;
     }
 
+    public ResponseDto searchExamCycle(SearchExamCycleDTO searchExamCycleDTO) {
+        //validate request
+        validateSearchExamCyclePayload(searchExamCycleDTO);
+        ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_SEARCH);
+        // search for exam cycle
+        List<ExamCycleDTO> examCycleDTOs = Collections.EMPTY_LIST;
+        StringBuilder stringBuilder = new StringBuilder("select * from exam_cycle where date_part('year', start_date) = '")
+                .append(searchExamCycleDTO.getStartYear()).append("' and obsolete = 0 ");
+        try{
+            if(searchExamCycleDTO.getCourseId() != null && !searchExamCycleDTO.getCourseId().isBlank()) {
+                stringBuilder.append(" and course_id = '").append(searchExamCycleDTO.getCourseId()).append("' ");
+            }
+            if(searchExamCycleDTO.getEndYear() != null && searchExamCycleDTO.getEndYear() > 0) {
+                stringBuilder.append("and date_part('year', end_date) <= '").append(searchExamCycleDTO.getEndYear()).append("' ");
+            }
+            List<ExamCycle> examCycles = jdbcTemplate.query(stringBuilder.toString(), new ResultSetExtractor<List<ExamCycle>>() {
+                @Override
+                public List<ExamCycle> extractData(ResultSet rs) throws SQLException, DataAccessException {
+                    List<ExamCycle> examCycleList = new ArrayList<>();
+                    while(rs.next()) {
+                        examCycleList.add(ExamCycle.builder().examCycleName(rs.getString("exam_cycle_name")).id(rs.getLong("id")).build());
+                    }
+                    return examCycleList;
+                }
+            });
+            if(examCycles != null && !examCycles.isEmpty()) {
+                examCycleDTOs = examCycles.stream().map(record -> toDTO(record)).collect(Collectors.toList());
+            }
+            response.put(Constants.MESSAGE, Constants.SUCCESS);
+            response.put(Constants.RESPONSE, examCycleDTOs);
+            response.setResponseCode(HttpStatus.OK);
+            return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+            ResponseDto.setErrorResponse(response, "ERROR_IN_PROCESSING_REQUEST", "Error in Searching Exam Cycles", HttpStatus.INTERNAL_SERVER_ERROR);
+            return response;
+        }
+    }
+
+    private void validateSearchExamCyclePayload(SearchExamCycleDTO searchExamCycleDTO) {
+        if(searchExamCycleDTO == null) {
+            throw new InvalidRequestException(Constants.INVALID_REQUEST_ERROR_MESSAGE);
+        }
+        if(searchExamCycleDTO.getStartYear() == null || searchExamCycleDTO.getStartYear() <= 0) {
+            throw new InvalidRequestException(Constants.MISSING_SEARCH_PARAM_START_ACADEMIC_YEAR);
+        }
+    }
 }

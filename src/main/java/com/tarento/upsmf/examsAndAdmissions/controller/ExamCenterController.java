@@ -48,4 +48,8 @@ public class ExamCenterController {
     public ResponseEntity<ResponseDto> getExamCentersByExamCycle(@PathVariable Long examCycleId) {
         return new ResponseEntity<>(examCenterService.getExamCentersByExamCycle(examCycleId), HttpStatus.OK);
     }
+    @GetMapping("/examCenter/verified")
+    public ResponseDto getVerifiedCenter(@RequestParam String instituteCode) {
+        return examCenterService.getVerifiedCenterByInstituteCode(instituteCode);
+    }
 }
