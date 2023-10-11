@@ -120,6 +120,8 @@ public class Constants {
     public static final String API_GET_EXAM_CENTERS_BY_STATUS = "api.examCenter.getByStatus";
     public static final String API_GET_ALL_EXAM_CENTERS = "api.examCenter.getAll";
     public static final String API_GET_EXAM_CENTERS_BY_EXAM_CYCLE = "api.examCenter.getByExamCycle";
+    public static final String API_GET_VERIFIED_EXAM_CENTER = "api.examcenter.getVerified";
+
 
 
     // API Identifiers for RetotallingService
