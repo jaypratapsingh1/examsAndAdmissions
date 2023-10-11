@@ -131,6 +131,7 @@ public class Constants {
     public static final String API_GET_ALL_REGISTRATIONS = "api.studentExamRegistration.getAllRegistrations";
     public static final String API_GET_ALL_REGISTRATIONS_BY_EXAM_CYCLE = "api.studentExamRegistration.getAllRegistrationsByExamCycle";
 
+    public static final String API_DISPATCH_GET = "api.dispatch.get";
 
     // Payment
     public static final String API_PAYMENT_ADD = "api.payment.add";
