@@ -51,6 +51,7 @@ public class Constants {
     public static final String API_EXAM_CYCLE_ADD_EXAMS = "api.examCycle.addExams";
     public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
     public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
+    public static final String API_EXAM_CYCLE_SEARCH = "api.examCycle.search";
 
     public static final String API_DISPATCH_PROOF_PREVIEW = "api.dispatch.preview";
 
@@ -175,6 +176,10 @@ public class Constants {
     public static final String API_UPDATE_INSTITUTE = "api.institute.update";
     public static final String SUCCESS = "success";
     public static final HttpStatus ERROR = HttpStatus.INTERNAL_SERVER_ERROR;
+    public static final String INVALID_REQUEST_ERROR_MESSAGE = "Invalid Request.";
+    public static final String MISSING_SEARCH_PARAM_COURSE_ID = "Missing Search Param Course ID.";
+    public static final String MISSING_SEARCH_PARAM_START_ACADEMIC_YEAR = "Missing Search Param Start Academic Year.";
+    public static final String MISSING_SEARCH_PARAM_END_ACADEMIC_YEAR = "Missing Search Param End Academic Year.";
 
     public interface Exception {
         String EXCEPTION_METHOD = "Exception in method %s : %s";
