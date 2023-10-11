@@ -70,8 +70,8 @@ public class StudentController {
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @PutMapping("/{studentId}/verify")
-    public ResponseEntity<ResponseDto> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks) {
-        ResponseDto response = studentService.verifyStudent(studentId, status, remarks);
+    public ResponseEntity<ResponseDto> verifyStudent(@PathVariable Long studentId, @RequestParam("status") VerificationStatus status, @RequestParam("remarks") String remarks, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
+        ResponseDto response = studentService.verifyStudent(studentId, status, remarks, userId);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @GetMapping("/pendingVerification")

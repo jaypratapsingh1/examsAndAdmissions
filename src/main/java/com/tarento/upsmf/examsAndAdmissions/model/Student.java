@@ -59,6 +59,7 @@ public class Student {
     private String adminRemarks;
     private LocalDate enrollmentDate;
     private LocalDate verificationDate;
+    private String verifiedBy;
     private boolean requiresRevision;
     @Column(unique = true)
     private String enrollmentNumber;

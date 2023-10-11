@@ -382,7 +382,7 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
-    public ResponseDto verifyStudent(Long studentId, VerificationStatus status, String remarks) {
+    public ResponseDto verifyStudent(Long studentId, VerificationStatus status, String remarks, String verifierUserId) {
         ResponseDto response = new ResponseDto(Constants.API_VERIFY_STUDENT);
 
         try {
@@ -396,6 +396,7 @@ public class StudentService {
             student.setVerificationStatus(status);
             student.setAdminRemarks(remarks);
             student.setVerificationDate(LocalDate.now());
+            student.setVerifiedBy(verifierUserId);
 
             if (status == VerificationStatus.VERIFIED) {
                 String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute().getId() + student.getId();
