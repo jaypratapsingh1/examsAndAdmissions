@@ -1,7 +1,9 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.enums.ExamCycleStatus;
+import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.SearchExamCycleDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -338,4 +340,43 @@ public class ExamCycleService {
         return response;
     }
 
+    public ResponseDto searchExamCycle(SearchExamCycleDTO searchExamCycleDTO) {
+        //validate request
+        validateSearchExamCyclePayload(searchExamCycleDTO);
+        ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_SEARCH);
+        // search for exam cycle
+        List<ExamCycleDTO> examCycleDTOs = Collections.EMPTY_LIST;
+        try{
+            if(searchExamCycleDTO.getEndYear() == null || searchExamCycleDTO.getEndYear() <= 0) {
+                List<ExamCycle> examCyclesForStartYear = repository.searchExamCycleByCourseIdAndStartYear(searchExamCycleDTO.getCourseId(), searchExamCycleDTO.getStartYear());
+                if(examCyclesForStartYear != null && !examCyclesForStartYear.isEmpty()) {
+                    examCycleDTOs = examCyclesForStartYear.stream().map(record -> toDTO(record)).collect(Collectors.toList());
+                }
+            } else {
+                List<ExamCycle> examCyclesForStartAndEndYear = repository.searchExamCycleByCourseIdAndStartYearAndEndYear(searchExamCycleDTO.getCourseId(), searchExamCycleDTO.getStartYear(), searchExamCycleDTO.getEndYear());
+                if(examCyclesForStartAndEndYear != null && !examCyclesForStartAndEndYear.isEmpty()) {
+                    examCycleDTOs = examCyclesForStartAndEndYear.stream().map(record -> toDTO(record)).collect(Collectors.toList());
+                }
+            }
+            response.put(Constants.MESSAGE, Constants.SUCCESS);
+            response.put(Constants.RESPONSE, examCycleDTOs);
+            response.setResponseCode(HttpStatus.OK);
+            return response;
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "ERROR_IN_PROCESSING_REQUEST", "Error in Searching Exam Cycles", HttpStatus.INTERNAL_SERVER_ERROR);
+            return response;
+        }
+    }
+
+    private void validateSearchExamCyclePayload(SearchExamCycleDTO searchExamCycleDTO) {
+        if(searchExamCycleDTO == null) {
+            throw new InvalidRequestException(Constants.INVALID_REQUEST_ERROR_MESSAGE);
+        }
+        if(searchExamCycleDTO.getCourseId() == null || searchExamCycleDTO.getCourseId().isBlank()) {
+            throw new InvalidRequestException(Constants.MISSING_SEARCH_PARAM_COURSE_ID);
+        }
+        if(searchExamCycleDTO.getStartYear() == null || searchExamCycleDTO.getStartYear() <= 0) {
+            throw new InvalidRequestException(Constants.MISSING_SEARCH_PARAM_START_ACADEMIC_YEAR);
+        }
+    }
 }
