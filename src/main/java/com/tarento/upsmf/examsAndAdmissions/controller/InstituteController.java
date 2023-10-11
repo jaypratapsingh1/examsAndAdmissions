@@ -85,23 +85,27 @@ public class InstituteController {
             @RequestParam Long examCycleId,
             @RequestParam Long examId,
             @RequestParam MultipartFile dispatchProofFile,
-            @RequestParam String dispatchDate) throws IOException {
-        ResponseDto response = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, dispatchProofFile, dispatchDate);
+            @RequestParam String dispatchDate,
+            @RequestParam Long examCenterCode) throws IOException {
+        ResponseDto response = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, examCenterCode, dispatchProofFile, dispatchDate);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 
+    //Admin
     @GetMapping("/dispatchList")
-    public ResponseEntity<ResponseDto> getDispatchList(
+    public ResponseEntity<ResponseDto> getDispatchListAll(
             @RequestParam Long examCycleId,
             @RequestParam Long examId) {
-        ResponseDto responseDto = dispatchTrackerService.getDispatchList(examCycleId, examId);
+        ResponseDto responseDto = dispatchTrackerService.getDispatchList(examCycleId,examId);
         return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
 
-    @GetMapping("/dispatchListWithoutExam")
+    //Institute
+    @GetMapping("/dispatchListManage")
     public ResponseEntity<ResponseDto> getDispatchList(
-            @RequestParam Long examCycleId) {
-        ResponseDto response = dispatchTrackerService.getDispatchListByExamCycle(examCycleId);
+            @RequestParam Long examCycleId,
+            @RequestParam Long examCenterId) {
+        ResponseDto response = dispatchTrackerService.getDispatchList(examCycleId,examCenterId);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 
