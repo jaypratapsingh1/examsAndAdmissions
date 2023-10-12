@@ -1,9 +1,11 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
+import com.tarento.upsmf.examsAndAdmissions.model.UploadStatusDetails;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -128,13 +130,49 @@ public class DataImporterService {
             return false;
         }
     }
-    public Boolean saveDtoListToPostgres(List<AttendanceRecord> dtoList, AttendanceRepository repository) {
+
+    public UploadStatusDetails saveDtoListToPostgres(List<AttendanceRecord> dtoList, AttendanceRepository repository) {
+        int total = dtoList.size();
+        int uploaded = 0;
+        int skipped = 0;
+
+        List<AttendanceRecord> entityList = new ArrayList<>();
+
+        for (AttendanceRecord dto : dtoList) {
+            if (isDtoEffectivelyEmpty(dto)) {
+                skipped++;
+                continue;
+            }
+
+            if (!checkIfDataExists(dto)) {
+                AttendanceRecord entity = new AttendanceRecord();
+
+                entity.setFirstName(dto.getFirstName());
+                entity.setLastName(dto.getLastName());
+                entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
+                entity.setMothersName(dto.getMothersName());
+                entity.setFathersName(dto.getFathersName());
+                entity.setCourseName(dto.getCourseName());
+                entity.setExamCycleData(dto.getExamCycleData());
+                entity.setStartDate(dto.getStartDate());
+                entity.setEndDate(dto.getEndDate());
+                entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
+                entity.setPresentDays(dto.getPresentDays());
+                entity.setAbsentDays(dto.getAbsentDays());
+                entity.setAttendancePercentage(dto.getAttendancePercentage());
+
+                entityList.add(entity);
+                uploaded++;
+            } else {
+                skipped++;
+            }
+        }
+
         try {
-            List<AttendanceRecord> entityList = convertAttendenceDtoListToEntities(dtoList);
             repository.saveAll(entityList);
-            return true;
+            return new UploadStatusDetails(total, uploaded, skipped, true, null);
         } catch (Exception e) {
-            return false;
+            return new UploadStatusDetails(total, uploaded, skipped, false, e.getMessage());
         }
     }
     public Boolean saveDtoListToPostgres(List<StudentResult> dtoList, StudentResultRepository repository) {
@@ -176,6 +214,10 @@ public class DataImporterService {
         List<AttendanceRecord> entityList = new ArrayList<>();
 
         for (AttendanceRecord dto : dtoList) {
+            // Check if the DTO is effectively empty
+            if (isDtoEffectivelyEmpty(dto)) {
+                continue;  // skip this iteration
+            }
             boolean isDuplicate = checkIfDataExists(dto);
 
             if (!isDuplicate) {
@@ -200,6 +242,35 @@ public class DataImporterService {
         }
 
         return entityList;
+    }
+    private boolean isDtoEffectivelyEmpty(AttendanceRecord dto) {
+        return
+                // Checking for String fields
+                (dto.getFirstName() == null || dto.getFirstName().trim().isEmpty()) &&
+                        (dto.getLastName() == null || dto.getLastName().trim().isEmpty()) &&
+                        (dto.getStudentEnrollmentNumber() == null || dto.getStudentEnrollmentNumber().trim().isEmpty()) &&
+                        (dto.getMothersName() == null || dto.getMothersName().trim().isEmpty()) &&
+                        (dto.getFathersName() == null || dto.getFathersName().trim().isEmpty()) &&
+                        (dto.getCourseName() == null || dto.getCourseName().trim().isEmpty()) &&
+                        (dto.getExamCycleData() == null || dto.getExamCycleData().trim().isEmpty()) &&
+
+                        // Checking for Date or Object fields
+                        (dto.getStartDate() == null) &&
+                        (dto.getEndDate() == null) &&
+                        (dto.getExamCycle() == null) &&   // Assuming `ExamCycle` is an object or date field
+                        (dto.getRejectionReason() == null) &&  // Assuming `RejectionReason` is an object or date field
+
+                        // Checking for Enum fields (assuming ApprovalStatus is an Enum)
+                        (dto.getApprovalStatus() == ApprovalStatus.PENDING) && // Assuming PENDING is the default status
+
+                        // Checking for numeric fields
+                        (dto.getNumberOfWorkingDays() == 0) &&
+                        (dto.getPresentDays() == 0) &&
+                        (dto.getAbsentDays() == 0) &&
+                        (dto.getTotalDays() == 0) &&
+                        (dto.getPresent() == 0) &&
+                        (dto.getAbsent() == 0) &&
+                        (dto.getAttendancePercentage() == 0.0);
     }
 
     private List<StudentResult> convertResultDtoListToEntities(List<StudentResult> dtoList) {

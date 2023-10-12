@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.UploadStatusDetails;
 import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -221,6 +222,7 @@ public class AttendanceService {
 
         return response;
     }
+
     public ResponseDto processBulkAttendanceUpload(MultipartFile file, String fileType) {
         ResponseDto response = new ResponseDto("API_BULK_UPLOAD_ATTENDANCE");
 
@@ -238,13 +240,15 @@ public class AttendanceService {
             }
 
             List<AttendanceRecord> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, AttendanceRecord.class);
-            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, attendanceRepository);
+            UploadStatusDetails statusDetails = dataImporterService.saveDtoListToPostgres(dtoList, attendanceRepository);
 
-            if (success) {
-                response.put(Constants.MESSAGE, "Bulk attendance uploaded successfully.");
+            if (statusDetails.isSuccess()) {
+                String message = String.format("Bulk attendance upload: %d total, %d uploaded, %d skipped.",
+                        statusDetails.getTotalRecords(), statusDetails.getUploadedRecords(), statusDetails.getSkippedRecords());
+                response.put(Constants.MESSAGE, message);
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", statusDetails.getErrorMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception e) {
             return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
