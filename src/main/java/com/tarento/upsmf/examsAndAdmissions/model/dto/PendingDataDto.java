@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model.dto;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.HallTicketStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +23,7 @@ public class PendingDataDto {
     private String examCenterName;
     private boolean feesPaid;
     private double attendancePercentage;
+    private HallTicketStatus hallTicketStatus;
 
     private ExamCycleDetails examCycle;
 

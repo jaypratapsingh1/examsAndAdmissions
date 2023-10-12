@@ -4,6 +4,7 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.DocumentType;
+import com.tarento.upsmf.examsAndAdmissions.enums.HallTicketStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.PendingDataDto;
@@ -106,6 +107,7 @@ public class HallTicketService {
                 } else {
                     successCount++;
                     registration.setHallTicketPath(path);
+                    registration.setHallTicketStatus(HallTicketStatus.GENERATED);
                     studentExamRegistrationRepository.save(registration);
                 }
 
@@ -445,6 +447,7 @@ public class HallTicketService {
         dto.setRegistrationDate(registration.getRegistrationDate());
         dto.setStatus(registration.getStatus());
         dto.setRemarks(registration.getRemarks());
+        dto.setHallTicketStatus(registration.getHallTicketStatus());
         if (registration.getExamCenter() != null) {
             dto.setExamCenterName(registration.getExamCenter().getName());
         }
