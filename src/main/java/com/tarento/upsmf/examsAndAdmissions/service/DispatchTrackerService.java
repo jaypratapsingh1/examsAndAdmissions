@@ -2,11 +2,9 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
+import com.tarento.upsmf.examsAndAdmissions.enums.DispatchStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
-import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.DispatchTrackerRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
+import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +43,9 @@ public class DispatchTrackerService {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private ExamCenterRepository examCenterRepository;
+
     @Value("${gcp.bucket.folder.name}")
     private String gcpFolderName;
     @Value("${gcp.bucket.name}")
@@ -59,7 +60,7 @@ public class DispatchTrackerService {
     private String gcpPrivateKeyId;
     @Value("${gcp.project.id}")
     private String gcpProjectId;
-    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId, MultipartFile dispatchProofFile, String dispatchDate) throws IOException {
+    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId,Long examCenterId, MultipartFile dispatchProofFile, String dispatchDate) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_UPLOAD_DISPATCH_DETAILS);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date dob;
@@ -75,12 +76,13 @@ public class DispatchTrackerService {
         try {
             ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElseThrow(() -> new EntityNotFoundException("Exam cycle not found"));
             Exam exam = examRepository.findById(examId).orElseThrow(() -> new EntityNotFoundException("Exam not found"));
+            ExamCenter examCenter = examCenterRepository.findById(examCenterId).orElseThrow(() -> new EntityNotFoundException("Exam center invalid"));
 
             Path filePath = Files.createTempFile(dispatchProofFile.getOriginalFilename().split("\\.")[0], "." + dispatchProofFile.getOriginalFilename().split("\\.")[1]);
             dispatchProofFile.transferTo(filePath);
 
             ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
-                    gcpPkcsKey, gcpPrivateKeyId, new ArrayList<String>());
+                    gcpPkcsKey, gcpPrivateKeyId, new ArrayList<>());
             Storage storage = StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
             String gcpFileName = gcpFolderName + "/" + Calendar.getInstance().getTimeInMillis() + "_" + dispatchProofFile.getOriginalFilename();
             BlobId blobId = BlobId.of(gcpBucketName, gcpFileName);
@@ -90,9 +92,11 @@ public class DispatchTrackerService {
             DispatchTracker dispatchTracker = new DispatchTracker();
             dispatchTracker.setExamCycle(examCycle);
             dispatchTracker.setExam(exam);
+            dispatchTracker.setExamCenter(examCenter);
             dispatchTracker.setDispatchDate(localDate);
             dispatchTracker.setDispatchProofFileLocation(gcpFileName);
-
+            dispatchTracker.setDispatchStatus(DispatchStatus.DISPATCHED);
+            dispatchTracker.setDispatchLastDate(Constants.LAST_DATE_TO_UPLOAD);
             dispatchTrackerRepository.save(dispatchTracker);
 
             response.put(Constants.MESSAGE, "Dispatch proof uploaded successfully.");
@@ -105,75 +109,38 @@ public class DispatchTrackerService {
         return response;
     }
 
-    public ResponseDto getDispatchList(Long examCycleId, Long examId) {
-        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET); // Replace with the appropriate constant for this API
+    public ResponseDto getDispatchListAll(Long examCycleId, Long examId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET_FOR_INSTITUTE);
 
-        List<DispatchTracker> result = dispatchTrackerRepository.findByExamCycleIdAndExamId(examCycleId, examId);
-
+        List<DispatchTracker> result = dispatchTrackerRepository.findByExamCycleIdAndExamCycleId(examCycleId,examId);
         if (!result.isEmpty()) {
-            ExamCycle examCycleDetails = result.get(0).getExamCycle();
             Map<String, Object> dataMap = new HashMap<>();
-
-            if (examCycleDetails != null && examCycleDetails.getCourse() != null) { // Check if course is not null
-                Long courseId = examCycleDetails.getCourse().getId();
-                Optional<Course> course = courseRepository.findById(courseId);
-
-                if (course.isPresent()) {
-                    Institute institute = course.get().getInstitute();
-                    dataMap.put("data", result);
-                    dataMap.put("lastDateToUpload", Constants.LAST_DATE_TO_UPLOAD);
-                    dataMap.put("instituteName", institute.getInstituteName());
-                    dataMap.put("instituteId", institute.getId());
-                    dataMap.put("examName", result.get(0).getExam().getExamName());
-                    dataMap.put("dispatchStatus", result.get(0).getDispatchStatus());
-                }
-            }
+            dataMap.put("data",result);
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, dataMap);
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "NO_DISPATCH_TRACKERS", "No dispatch trackers found for the given exam cycle ID and exam ID.", HttpStatus.NOT_FOUND);
         }
-
         return response;
     }
 
-    public ResponseDto getDispatchListByExamCycle(Long examCycleId) {
-        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET); // Assuming you have a constant for this API
+    public ResponseDto getDispatchList(Long examCycleId, Long examCenterId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_GET_FOR_ADMIN);
 
-        Optional<DispatchTracker> optionalResult = dispatchTrackerRepository.findByExamCycleId(examCycleId);
-
-        if (optionalResult.isPresent()) {
-            DispatchTracker dispatchTracker = optionalResult.get();
-            ExamCycle examCycleDetails = dispatchTracker.getExamCycle();
-            List<Exam> exams = examRepository.findByExamCycleId(examCycleId);
-
+        Optional<DispatchTracker> result = dispatchTrackerRepository.findByExamCycleId(examCycleId);
+        System.out.println(result);
+        if (result.isPresent()) {
             Map<String, Object> dataMap = new HashMap<>();
-
-            if (examCycleDetails != null) {
-                Long courseId = examCycleDetails.getCourse().getId();
-                Optional<Course> course = courseRepository.findById(courseId);
-                if (course.isPresent()) {
-                    Institute institute = course.get().getInstitute();
-                    dataMap.put("examCycle", dispatchTracker);
-                    dataMap.put("exams", exams);
-                    dataMap.put("lastDateToUpload", Constants.LAST_DATE_TO_UPLOAD);
-                    dataMap.put("instituteName", institute.getInstituteName());
-                    dataMap.put("instituteId", institute.getId());
-                    dataMap.put("examName", dispatchTracker.getExam().getExamName());
-                    dataMap.put("dispatchStatus", dispatchTracker.getDispatchStatus());
-                }
-            }
+            dataMap.put("data",result);
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
             response.put(Constants.RESPONSE, dataMap);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            ResponseDto.setErrorResponse(response, "NO_DISPATCH_TRACKERS", "No dispatch trackers found for the given exam cycle ID.", HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "NO_DISPATCH_TRACKERS", "No dispatch trackers found for the given exam cycle ID and examCenter ID.", HttpStatus.NOT_FOUND);
         }
-
         return response;
     }
-
 
     private Blob getBlob(String fileName) throws IOException {
         ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,

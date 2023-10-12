@@ -3,6 +3,8 @@ package com.tarento.upsmf.examsAndAdmissions.repository;
 import com.tarento.upsmf.examsAndAdmissions.model.Course;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,4 +20,10 @@ public interface ExamCycleRepository extends JpaRepository<ExamCycle, Long> {
     ExamCycle findByExamCycleName(String name);
 
     ExamCycle findByExamCycleNameAndCourseAndStartDateAndEndDate(String examCycleName, Course course, LocalDate startDate, LocalDate endDate);
+
+    @Query(value = "select * from exam_cycle ec  where ec.course_id =:courseId and date_part('year', ec.start_date) = :startYear", nativeQuery = true)
+    List<ExamCycle> searchExamCycleByCourseIdAndStartYear(@Param("courseId") String courseId, @Param("startYear") Integer startYear);
+
+    @Query(value = "select * from exam_cycle ec  where ec.course_id =:courseId and date_part('year', ec.start_date) = :startYear and date_part('year', ec.end_date) <= :endYear", nativeQuery = true)
+    List<ExamCycle> searchExamCycleByCourseIdAndStartYearAndEndYear(@Param("courseId") String courseId, @Param("startYear") Integer startYear, @Param("endYear") Integer endYear);
 }
