@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import lombok.*;
 
 import javax.persistence.*;
@@ -20,7 +21,8 @@ public class ExamCenter {
 
     private String name;
     private String address;
-    private Boolean verified;
+    @Enumerated(EnumType.STRING)
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
     //private int maxCapacity;
     //private Integer totalSeats;
     //private Integer occupiedSeats = 0; // default to 0

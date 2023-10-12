@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.CCTVStatusUpdateDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCenterDTO;
@@ -35,7 +36,7 @@ public class ExamCenterService {
 
     public ResponseDto getVerifiedExamCentersInDistrict(String district) {
         ResponseDto response = new ResponseDto(Constants.API_GET_VERIFIED_EXAM_CENTERS);
-        List<ExamCenter> examCenters = examCenterRepository.findByDistrictAndVerified(district, true);
+        List<ExamCenter> examCenters = examCenterRepository.findByDistrictAndApprovalStatus(district, ApprovalStatus.APPROVED);
         if (!examCenters.isEmpty()) {
             List<ExamCenterDTO> examCenterDTOs = examCenterMapper.toDTOs(examCenters);
             response.put(Constants.MESSAGE, "Successful.");
@@ -100,7 +101,7 @@ public class ExamCenterService {
 
         center.setIpAddress(updateDTO.getIpAddress());
         center.setRemarks(updateDTO.getRemarks());
-        center.setVerified(updateDTO.getStatus());
+        center.setApprovalStatus(updateDTO.getApprovalStatus());
         ExamCenter updatedCenter = examCenterRepository.save(center);
 
         // Convert the updated center to DTO (assuming you have a method for this conversion)
@@ -119,7 +120,7 @@ public class ExamCenterService {
         center.setName(institute.getInstituteName());
         center.setAddress(institute.getAddress());
         center.setDistrict(institute.getDistrict());
-        center.setVerified(true);
+        center.setApprovalStatus(ApprovalStatus.APPROVED);
         return center;
     }
 
@@ -127,7 +128,7 @@ public class ExamCenterService {
         ResponseDto response = new ResponseDto(Constants.API_GET_EXAM_CENTERS_BY_STATUS);
         ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElse(null);
         if (examCycle != null) {
-            List<ExamCenter> examCenters = examCenterRepository.findByExamCycleAndVerified(examCycle, isVerifiedStatus);
+            List<ExamCenter> examCenters = examCenterRepository.findByExamCycleAndApprovalStatus(examCycle, ApprovalStatus.APPROVED);
             if (!examCenters.isEmpty()) {
                 response.put(Constants.MESSAGE, "Successful.");
                 response.put(Constants.RESPONSE, examCenters);
@@ -176,7 +177,7 @@ public class ExamCenterService {
     public ResponseDto getVerifiedCenterByInstituteCode(String instituteCode) {
         ResponseDto response = new ResponseDto(Constants.API_GET_VERIFIED_EXAM_CENTER);
 
-        Optional<ExamCenter> examCenterOpt = examCenterRepository.findByInstituteCodeAndVerifiedTrue(instituteCode);
+        Optional<ExamCenter> examCenterOpt = examCenterRepository.findByInstituteCodeAndApprovalStatus(instituteCode, ApprovalStatus.APPROVED);
 
         if (examCenterOpt.isPresent()) {
             ExamCenterDTO examCenterDTO = examCenterMapper.toDTO(examCenterOpt.get());

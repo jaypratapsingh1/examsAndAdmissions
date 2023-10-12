@@ -15,7 +15,7 @@ public class ExamCenterMapper {
         dto.setId(examCenter.getId());
         dto.setName(examCenter.getName());
         dto.setAddress(examCenter.getAddress());
-        dto.setVerified(examCenter.getVerified());
+        dto.setApprovalStatus(examCenter.getApprovalStatus());
         dto.setIpAddress(examCenter.getIpAddress());
         dto.setExamCycle(examCenter.getExamCycle().getId());
         dto.setRemarks(examCenter.getRemarks());
