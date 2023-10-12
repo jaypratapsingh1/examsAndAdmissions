@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.ExamCycleStatus;
 import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
@@ -78,7 +79,7 @@ public class ExamCycleService {
                 ExamCenter examCenter = new ExamCenter();
                 examCenter.setInstitute(institute);
                 examCenter.setExamCycle(examCycle);
-                examCenter.setVerified(false); // marking as pending
+                examCenter.setApprovalStatus(ApprovalStatus.PENDING); // marking as pending
                 examCenter.setDistrict(institute.getDistrict());
                 examCenter.setAddress(institute.getAddress());
                 examCenter.setName(institute.getInstituteName());
