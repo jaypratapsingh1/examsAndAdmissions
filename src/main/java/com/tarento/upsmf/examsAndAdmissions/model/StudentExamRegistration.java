@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
+import com.tarento.upsmf.examsAndAdmissions.enums.HallTicketStatus;
 import lombok.*;
 
 import javax.persistence.*;
@@ -44,4 +45,7 @@ public class StudentExamRegistration {
     @JoinColumn(name = "institute_id")
     private Institute institute;
     private String hallTicketPath;
+    @Column(name = "hall_ticket_status")
+    @Enumerated(EnumType.STRING)
+    private HallTicketStatus hallTicketStatus = HallTicketStatus.PENDING;
 }
