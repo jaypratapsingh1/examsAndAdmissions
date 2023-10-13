@@ -1,7 +1,10 @@
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.QuestionPaper;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.QuestionPaperResponseDTO;
+import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.QuestionPaperRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.QuestionPaperService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -11,14 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionPaperServiceImpl implements QuestionPaperService {
     @Autowired
     private QuestionPaperRepository questionPaperRepository;
+    @Autowired
+    private ExamRepository examRepository;
     private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
     @Override
@@ -70,6 +74,73 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
             response.setResponseCode(HttpStatus.NOT_FOUND);
         }
         return response;
+    }
+    public ResponseDto getAllQuestionPapersByExamCycleId(Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_QUESTION_PAPER_GET_ALL);
+        logger.info("Fetching all exams and their question papers for examCycleId...");
+
+        List<Exam> examsForCycle = examRepository.findByExamCycleId(examCycleId);
+
+        if (examsForCycle.isEmpty()) {
+            response.put(Constants.MESSAGE, "No exams found for the given exam cycle.");
+            response.setResponseCode(HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        List<Map<String, Object>> examDataList = new ArrayList<>();
+
+        for (Exam exam : examsForCycle) {
+            Map<String, Object> examData = new HashMap<>();
+            examData.put("examId", exam.getId());
+            examData.put("examName", exam.getExamName());
+            examData.put("courseName",exam.getCourse().getCourseName());
+            examData.put("examDate",exam.getExamDate());
+            examData.put("startTime",exam.getStartTime());
+            examData.put("maximumMark",exam.getMaximumMark());
+
+            List<QuestionPaper> questionPapersForExam = questionPaperRepository.findByExamCycleIdAndExamId(examCycleId, exam.getId());
+            examData.put("questionPapers", questionPapersForExam.stream()
+                    .map(this::mapToQuestionPaperDTO)
+                    .collect(Collectors.toList()));
+
+            examDataList.add(examData);
+        }
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("examCycleId", examCycleId);
+        responseData.put("exams", examDataList);
+
+        response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+        response.put(Constants.RESPONSE, responseData);
+        response.setResponseCode(HttpStatus.OK);
+
+        return response;
+    }
+    public QuestionPaperResponseDTO mapToQuestionPaperDTO(QuestionPaper questionPaper) {
+        QuestionPaperResponseDTO dto = new QuestionPaperResponseDTO();
+
+        dto.setId(questionPaper.getId());
+        dto.setFileName(questionPaper.getFileName());
+        dto.setGcpFileName(questionPaper.getGcpFileName());
+        dto.setExamDate(questionPaper.getExamDate());
+        dto.setExamStartTime(questionPaper.getExamStartTime());
+        dto.setExamCycleName(questionPaper.getExamCycleName());
+        dto.setExamCycleId(questionPaper.getExamCycleId());
+        dto.setExamName(questionPaper.getExamName());
+        dto.setCourseName(questionPaper.getCourseName());
+        dto.setCreatedBy(questionPaper.getCreatedBy());
+        dto.setCreatedOn(questionPaper.getCreatedOn());
+        dto.setModifiedBy(questionPaper.getModifiedBy());
+        dto.setModifiedOn(questionPaper.getModifiedOn());
+        dto.setTotalMarks(questionPaper.getTotalMarks());
+        dto.setInternalMarks(questionPaper.getInternalMarks());
+        dto.setInternalPassingMarks(questionPaper.getInternalPassingMarks());
+        dto.setExternalMarks(questionPaper.getExternalMarks());
+        dto.setExternalPassingMarks(questionPaper.getExternalPassingMarks());
+        dto.setPassingMarks(questionPaper.getPassingMarks());
+        dto.setObsolete(questionPaper.getObsolete());
+
+        return dto;
     }
 
 }

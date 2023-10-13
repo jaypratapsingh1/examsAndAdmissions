@@ -63,5 +63,6 @@ public class Exam implements Serializable {
     @JoinColumn(name = "retotalling_request_id")
     private RetotallingRequest retotallingRequest;
 
-
+    @Column(name = "maximum_mark")
+    private Integer maximumMark;
 }
