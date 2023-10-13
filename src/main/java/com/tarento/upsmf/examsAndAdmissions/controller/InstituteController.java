@@ -85,9 +85,8 @@ public class InstituteController {
             @RequestParam Long examCycleId,
             @RequestParam Long examId,
             @RequestParam MultipartFile dispatchProofFile,
-            @RequestParam String dispatchDate,
             @RequestParam Long examCenterCode) throws IOException {
-        ResponseDto response = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, examCenterCode, dispatchProofFile, dispatchDate);
+        ResponseDto response = dispatchTrackerService.uploadDispatchProof(examCycleId, examId, examCenterCode, dispatchProofFile);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 
@@ -151,5 +150,22 @@ public class InstituteController {
         } catch (Exception e) {
             return FeeController.handleErrorResponse(e);
         }
+    }
+
+    @GetMapping("/dispatchStatus/{examCenterId}/{examCycleId}")
+    public ResponseEntity<ResponseDto> getDispatchStatusByExamCenterAndExamCycle(
+            @PathVariable Long examCenterId,
+            @PathVariable Long examCycleId) {
+
+        ResponseDto response = dispatchTrackerService.getDispatchStatusByExamCenterAndExamCycle(examCenterId, examCycleId);
+        return new ResponseEntity<>(response, response.getResponseCode());
+    }
+    @GetMapping("dispatchStatus/{examCycleId}/{examId}/allInstitutes")
+    public ResponseEntity<ResponseDto> getDispatchStatusForAllInstitutes(
+            @PathVariable Long examCycleId,
+            @PathVariable Long examId) {
+
+        ResponseDto response = dispatchTrackerService.getDispatchStatusForAllInstitutes(examCycleId, examId);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 }

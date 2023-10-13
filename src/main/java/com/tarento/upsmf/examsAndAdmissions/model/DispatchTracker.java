@@ -38,5 +38,5 @@ public class DispatchTracker {
     @Column(name = "dispatch_status")
     @Enumerated(EnumType.STRING)
     private DispatchStatus dispatchStatus;
-    private Date dispatchLastDate;
+    private LocalDate dispatchLastDate;
 }

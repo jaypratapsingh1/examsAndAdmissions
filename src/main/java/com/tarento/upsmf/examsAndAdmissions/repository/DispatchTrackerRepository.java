@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DispatchTrackerRepository extends JpaRepository<DispatchTracker,Long> {
-    List<DispatchTracker> findByExamCycleIdAndExamCenterId(Long examCycleId, Long examCenterId);
     List<DispatchTracker> findByExamCycleIdAndExamCycleId(Long examCycleId, Long examCenterId);
     Optional<DispatchTracker> findByExamCycleId(Long examCycleId);
+    List<DispatchTracker> findByExamCenterIdAndExamCycleId(Long examCenterId, Long examCycleId);
+    List<DispatchTracker> findByExamIdAndExamCycleId(Long examId, Long examCycleId);
 }
