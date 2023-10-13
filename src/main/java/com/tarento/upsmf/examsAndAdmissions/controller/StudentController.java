@@ -37,10 +37,10 @@ public class StudentController {
     public ResponseEntity<ResponseDto> getFilteredStudents(
             @RequestParam(required = false) Long instituteId,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) String academicYear,
+            @RequestParam(required = false) String session,
             @RequestParam(required = false) VerificationStatus verificationStatus) {
 
-        ResponseDto response = studentService.getFilteredStudents(instituteId, courseId, academicYear, verificationStatus);
+        ResponseDto response = studentService.getFilteredStudents(instituteId, courseId, session, verificationStatus);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @GetMapping("/{id}")
@@ -60,8 +60,8 @@ public class StudentController {
     }
     @GetMapping("/pendingFor21Days")
     public ResponseEntity<ResponseDto> getStudentsPendingFor21Days(@RequestParam(required = false) Long courseId,
-                                                                   @RequestParam(required = false) String academicYear) {
-        ResponseDto response = studentService.getStudentsPendingForMoreThan21Days(courseId, academicYear);
+                                                                   @RequestParam(required = false) String session) {
+        ResponseDto response = studentService.getStudentsPendingForMoreThan21Days(courseId, session);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
     @DeleteMapping("/{id}")
