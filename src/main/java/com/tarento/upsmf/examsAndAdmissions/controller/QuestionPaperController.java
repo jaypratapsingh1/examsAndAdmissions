@@ -80,4 +80,9 @@ public class QuestionPaperController {
             return HandleResponse.handleErrorResponse(e);
         }
     }
+    @GetMapping("/examCycle/{examCycleId}")
+    public ResponseEntity<ResponseDto> getAllQuestionPapersByExamCycle(@PathVariable Long examCycleId) {
+        ResponseDto response = questionPaperService.getAllQuestionPapersByExamCycleId(examCycleId);
+        return new ResponseEntity<>(response, response.getResponseCode());
+    }
 }
