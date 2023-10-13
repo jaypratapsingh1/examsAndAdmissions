@@ -199,6 +199,8 @@ public class DispatchTrackerService {
             if (matchedDispatch != null) {
                 statusDto.setProofUploaded(true);
                 statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+                statusDto.setDispatchProofFileLocation(matchedDispatch.getDispatchProofFileLocation());
+                statusDto.setLastDateToUpload(matchedDispatch.getDispatchLastDate()); // Assuming DispatchLastDate is of type Date
             } else {
                 statusDto.setProofUploaded(false);
             }
@@ -216,11 +218,13 @@ public class DispatchTrackerService {
 
         return response;
     }
+
     public ResponseDto getDispatchStatusForAllInstitutes(Long examCycleId, Long examId) {
         ResponseDto response = new ResponseDto(Constants.API_DISPATCH_STATUS_FOR_ALL_INSTITUTES);
 
         List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
         List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
+        Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
 
         List<InstituteDispatchStatusDto> result = new ArrayList<>();
 
@@ -228,6 +232,7 @@ public class DispatchTrackerService {
             InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
             statusDto.setInstituteId(institute.getId());
             statusDto.setInstituteName(institute.getName());
+            statusDto.setExamName(exam != null ? exam.getExamName() : null);  // Set exam name
 
             DispatchTracker matchedDispatch = uploadedProofsForExam.stream()
                     .filter(dispatch -> dispatch.getExamCenter().getId().equals(institute.getId()))
@@ -237,6 +242,7 @@ public class DispatchTrackerService {
             if (matchedDispatch != null) {
                 statusDto.setProofUploaded(true);
                 statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+                statusDto.setDispatchProofFileLocation(matchedDispatch.getDispatchProofFileLocation());  // Set dispatch proof file location
             } else {
                 statusDto.setProofUploaded(false);
             }
@@ -254,5 +260,4 @@ public class DispatchTrackerService {
 
         return response;
     }
-
 }
