@@ -12,4 +12,6 @@ public class ExamDispatchStatusDto {
     private String examName;
     private Boolean proofUploaded;
     private LocalDate updatedDate;
+    private LocalDate lastDateToUpload;
+    private String dispatchProofFileLocation;
 }

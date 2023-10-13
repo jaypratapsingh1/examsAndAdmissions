@@ -11,6 +11,6 @@ public class InstituteDispatchStatusDto {
     private String instituteName;
     private Boolean proofUploaded;
     private LocalDate updatedDate;
-
-    // Getters, setters, and other methods
+    private String examName;
+    private String dispatchProofFileLocation;
 }
