@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityNotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -72,10 +74,7 @@ public class DispatchTrackerService {
 
             Path filePath = Files.createTempFile(dispatchProofFile.getOriginalFilename().split("\\.")[0], "." + dispatchProofFile.getOriginalFilename().split("\\.")[1]);
             dispatchProofFile.transferTo(filePath);
-
-            ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
-                    gcpPkcsKey, gcpPrivateKeyId, new ArrayList<>());
-            Storage storage = StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
+            Storage storage = getGcsStorage();
             String gcpFileName = gcpFolderName + "/" + Calendar.getInstance().getTimeInMillis() + "_" + dispatchProofFile.getOriginalFilename();
             BlobId blobId = BlobId.of(gcpBucketName, gcpFileName);
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
@@ -199,7 +198,7 @@ public class DispatchTrackerService {
             if (matchedDispatch != null) {
                 statusDto.setProofUploaded(true);
                 statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
-                statusDto.setDispatchProofFileLocation(matchedDispatch.getDispatchProofFileLocation());
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
                 statusDto.setLastDateToUpload(matchedDispatch.getDispatchLastDate()); // Assuming DispatchLastDate is of type Date
             } else {
                 statusDto.setProofUploaded(false);
@@ -242,7 +241,7 @@ public class DispatchTrackerService {
             if (matchedDispatch != null) {
                 statusDto.setProofUploaded(true);
                 statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
-                statusDto.setDispatchProofFileLocation(matchedDispatch.getDispatchProofFileLocation());  // Set dispatch proof file location
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
             } else {
                 statusDto.setProofUploaded(false);
             }
@@ -260,4 +259,30 @@ public class DispatchTrackerService {
 
         return response;
     }
+    private String generateSignedUrl(String blobName) {
+        try {
+            // Define resource
+            BlobId blobId = BlobId.of(gcpBucketName, blobName);
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+
+            // Define signed URL options
+            long durationMinutes = 15; // Duration for which the URL is valid (e.g., 15 minutes)
+            URL signedUrl = getGcsStorage().signUrl(blobInfo, durationMinutes, TimeUnit.MINUTES,
+                    Storage.SignUrlOption.httpMethod(HttpMethod.GET),
+                    Storage.SignUrlOption.withV4Signature(),
+                    Storage.SignUrlOption.withVirtualHostedStyle());
+
+            return signedUrl.toString();
+
+        } catch (Exception e) {
+            log.error("Error generating signed URL for blob: " + blobName, e);
+            return null;
+        }
+    }
+    private Storage getGcsStorage() throws IOException {
+        ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(gcpClientId, gcpClientEmail,
+                gcpPkcsKey, gcpPrivateKeyId, new ArrayList<>());
+        return StorageOptions.newBuilder().setProjectId(gcpProjectId).setCredentials(credentials).build().getService();
+    }
+
 }
