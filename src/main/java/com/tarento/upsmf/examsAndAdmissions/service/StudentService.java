@@ -182,7 +182,7 @@ public class StudentService {
         return student.getCourse().getCourseCode() + "-" + UUID.randomUUID().toString();
     }
 
-    public ResponseDto getFilteredStudents(Long instituteId, Long courseId, String academicYear, VerificationStatus verificationStatus) {
+    public ResponseDto getFilteredStudents(Long instituteId, Long courseId, String session, VerificationStatus verificationStatus) {
         ResponseDto response = new ResponseDto(Constants.API_GET_FILTERED_STUDENTS);
 
         try {
@@ -198,10 +198,10 @@ public class StudentService {
             if (courseId != null) {
                 predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
             }
-            if (academicYear != null && !academicYear.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
-            } else if (academicYear != null) {
-                predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+            if (session != null && !session.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("session"), session));
+            } else if (session != null) {
+                predicates.add(criteriaBuilder.isNull(studentRoot.get("session")));
             }
             if (verificationStatus != null) {
                 predicates.add(criteriaBuilder.equal(studentRoot.get("verificationStatus"), verificationStatus));
@@ -328,7 +328,7 @@ public class StudentService {
         return response;
     }
 
-    public ResponseDto getStudentsPendingForMoreThan21Days(Long courseId, String academicYear) {
+    public ResponseDto getStudentsPendingForMoreThan21Days(Long courseId, String session) {
         ResponseDto response = new ResponseDto(Constants.API_GET_STUDENTS_PENDING_FOR_21_DAYS);
 
         try {
@@ -346,10 +346,10 @@ public class StudentService {
             if (courseId != null) {
                 predicates.add(criteriaBuilder.equal(studentRoot.get("course").get("id"), courseId));
             }
-            if (academicYear != null && !academicYear.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(studentRoot.get("academicYear"), academicYear));
-            } else if (academicYear != null) {
-                predicates.add(criteriaBuilder.isNull(studentRoot.get("academicYear")));
+            if (session != null && !session.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(studentRoot.get("session"), session));
+            } else if (session != null) {
+                predicates.add(criteriaBuilder.isNull(studentRoot.get("session")));
             }
 
             criteriaQuery.where(predicates.toArray(new Predicate[0]));

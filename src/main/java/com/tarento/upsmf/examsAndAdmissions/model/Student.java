@@ -75,6 +75,5 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "exam_center_id")
     private Institute examCenter;  // This is where the student will take the exam
-    private String academicYear;
     private String intermediateStream;
 }
