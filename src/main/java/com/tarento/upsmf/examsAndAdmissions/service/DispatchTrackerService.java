@@ -4,6 +4,8 @@ import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
 import com.tarento.upsmf.examsAndAdmissions.enums.DispatchStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamDispatchStatusDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDispatchStatusDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -60,18 +62,8 @@ public class DispatchTrackerService {
     private String gcpPrivateKeyId;
     @Value("${gcp.project.id}")
     private String gcpProjectId;
-    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId,Long examCenterId, MultipartFile dispatchProofFile, String dispatchDate) throws IOException {
+    public ResponseDto uploadDispatchProof(Long examCycleId, Long examId,Long examCenterId, MultipartFile dispatchProofFile) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_UPLOAD_DISPATCH_DETAILS);
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        Date dob;
-        LocalDate localDate;
-        try {
-            dob = formatter.parse(dispatchDate);
-            localDate = dob.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        } catch (ParseException e) {
-            ResponseDto.setErrorResponse(response, "INVALID_DATE_FORMAT", "Invalid date format", HttpStatus.BAD_REQUEST);
-            return response;
-        }
 
         try {
             ExamCycle examCycle = examCycleRepository.findById(examCycleId).orElseThrow(() -> new EntityNotFoundException("Exam cycle not found"));
@@ -93,7 +85,7 @@ public class DispatchTrackerService {
             dispatchTracker.setExamCycle(examCycle);
             dispatchTracker.setExam(exam);
             dispatchTracker.setExamCenter(examCenter);
-            dispatchTracker.setDispatchDate(localDate);
+            dispatchTracker.setDispatchDate(LocalDate.now());
             dispatchTracker.setDispatchProofFileLocation(gcpFileName);
             dispatchTracker.setDispatchStatus(DispatchStatus.DISPATCHED);
             dispatchTracker.setDispatchLastDate(Constants.LAST_DATE_TO_UPLOAD);
@@ -186,4 +178,81 @@ public class DispatchTrackerService {
         }
         return response;
     }
+    public ResponseDto getDispatchStatusByExamCenterAndExamCycle(Long examCenterId, Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_STATUS_BY_EXAM_AND_CENTER);
+
+        List<Exam> allExamsForCycle = examRepository.findByExamCycleId(examCycleId);
+        List<DispatchTracker> uploadedProofs = dispatchTrackerRepository.findByExamCenterIdAndExamCycleId(examCenterId, examCycleId);
+
+        List<ExamDispatchStatusDto> result = new ArrayList<>();
+
+        for (Exam exam : allExamsForCycle) {
+            ExamDispatchStatusDto statusDto = new ExamDispatchStatusDto();
+            statusDto.setExamId(exam.getId());
+            statusDto.setExamName(exam.getExamName());
+
+            DispatchTracker matchedDispatch = uploadedProofs.stream()
+                    .filter(dispatch -> dispatch.getExam().getId().equals(exam.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (matchedDispatch != null) {
+                statusDto.setProofUploaded(true);
+                statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+            } else {
+                statusDto.setProofUploaded(false);
+            }
+
+            result.add(statusDto);
+        }
+
+        if (!result.isEmpty()) {
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, result);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for given exam center and exam cycle.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
+    public ResponseDto getDispatchStatusForAllInstitutes(Long examCycleId, Long examId) {
+        ResponseDto response = new ResponseDto(Constants.API_DISPATCH_STATUS_FOR_ALL_INSTITUTES);
+
+        List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
+        List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
+
+        List<InstituteDispatchStatusDto> result = new ArrayList<>();
+
+        for (ExamCenter institute : allInstitutes) {
+            InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
+            statusDto.setInstituteId(institute.getId());
+            statusDto.setInstituteName(institute.getName());
+
+            DispatchTracker matchedDispatch = uploadedProofsForExam.stream()
+                    .filter(dispatch -> dispatch.getExamCenter().getId().equals(institute.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (matchedDispatch != null) {
+                statusDto.setProofUploaded(true);
+                statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+            } else {
+                statusDto.setProofUploaded(false);
+            }
+
+            result.add(statusDto);
+        }
+
+        if (!result.isEmpty()) {
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, result);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for the given exam and exam cycle across all institutes.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
+
 }

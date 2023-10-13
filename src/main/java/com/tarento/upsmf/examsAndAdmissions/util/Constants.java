@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.util;
 
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -26,7 +27,7 @@ public class Constants {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String APPLICATION_JSON = "application/json";
     public static final String API_VERSION_1 = "1.0";
-    public static final Date LAST_DATE_TO_UPLOAD = new Date(2023, 9, 25);
+    public static final LocalDate LAST_DATE_TO_UPLOAD = LocalDate.of(2023, 9, 25);
     public static final int CLIENT_ERROR = 400;
     public static final int SERVER_ERROR = 500;
     public static final String UNAUTHORIZED = "Unauthorized";
@@ -54,8 +55,8 @@ public class Constants {
     public static final String API_EXAM_CYCLE_SEARCH = "api.examCycle.search";
 
     public static final String API_DISPATCH_PROOF_PREVIEW = "api.dispatch.preview";
-
-
+    public static final String API_DISPATCH_STATUS_BY_EXAM_AND_CENTER = "API_DISPATCH_STATUS_BY_EXAM_AND_CENTER";
+    public static final String API_DISPATCH_STATUS_FOR_ALL_INSTITUTES = "API_DISPATCH_STATUS_FOR_ALL_INSTITUTES";
 
     //Question Paper
     public static final String API_QUESTION_PAPER_GET_ALL = "api.questionPaper.get";
