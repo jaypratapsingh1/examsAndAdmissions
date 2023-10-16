@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 public class CourseSubjectMappingDTO {
 
-    private List<Long> subjectId;
+    private List<Long> subjectIds;
     private Long courseId;
 }

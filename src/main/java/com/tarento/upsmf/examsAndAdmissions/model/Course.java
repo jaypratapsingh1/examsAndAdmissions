@@ -5,6 +5,7 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -34,4 +35,11 @@ public class Course implements Serializable {
     @OneToMany(mappedBy = "course")
     @JsonIgnore
     private List<Exam> exams;
+
+    @ManyToMany
+    @JoinTable(
+            name = "course_subject_mapping",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "subject_id"))
+    private List<Subject> subjects = new ArrayList<>();
 }
