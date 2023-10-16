@@ -38,4 +38,6 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     void updateExamFeeByStudentId(@Param("status") Boolean status, @Param("studentId") Long studentId);
 
     List<StudentExamRegistration> findByExamCenterIsNullAndInstitute(Institute institute);
+
+    StudentExamRegistration findByStudent(Student student);
 }
