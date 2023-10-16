@@ -15,4 +15,5 @@ public interface StorageService {
 	public ResponseDto deleteFile(String fileName, String containerName);
 
 	ResponseDto downloadFile(String fileName);
+	public String generateSignedUrl(String blobName);
 }
