@@ -76,4 +76,25 @@ public class ServerProperties {
 	@Value("${entity.audit.index}")
 	private String entityAuditIndex;
 
+	@Value("${gcp.bucket.folder.name}")
+	private String gcpFolderName;
+
+	@Value("${gcp.bucket.name}")
+	private String gcpBucketName;
+
+	@Value("${gcp.client.id}")
+	private String gcpClientId;
+
+	@Value("${gcp.client.email}")
+	private String gcpClientEmail;
+
+	@Value("${gcp.pkcs.key}")
+	private String gcpPkcsKey;
+
+	@Value("${gcp.private.key.id}")
+	private String gcpPrivateKeyId;
+
+	@Value("${gcp.project.id}")
+	private String gcpProjectId;
+
 }

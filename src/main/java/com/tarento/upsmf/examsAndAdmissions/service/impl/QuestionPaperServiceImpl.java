@@ -7,6 +7,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.dto.QuestionPaperResponseDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.QuestionPaperRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.QuestionPaperService;
+import com.tarento.upsmf.examsAndAdmissions.service.StorageService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,9 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
     private QuestionPaperRepository questionPaperRepository;
     @Autowired
     private ExamRepository examRepository;
+    @Autowired
+    private StorageService StorageService;
+
     private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
     @Override
@@ -121,7 +125,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
 
         dto.setId(questionPaper.getId());
         dto.setFileName(questionPaper.getFileName());
-        dto.setGcpFileName(questionPaper.getGcpFileName());
+        dto.setGcpFileName(StorageService.generateSignedUrl(questionPaper.getGcpFileName()));
         dto.setExamDate(questionPaper.getExamDate());
         dto.setExamStartTime(questionPaper.getExamStartTime());
         dto.setExamCycleName(questionPaper.getExamCycleName());

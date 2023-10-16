@@ -1,5 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.service.impl;
 
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.storage.*;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.service.StorageService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -18,8 +20,12 @@ import scala.Option;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class StorageServiceImpl implements StorageService {
@@ -121,6 +127,31 @@ public class StorageServiceImpl implements StorageService {
 			response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
 			return response;
 		}
+	}
+	public String generateSignedUrl(String blobName) {
+		try {
+			// Define resource
+			BlobId blobId = BlobId.of(serverProperties.getGcpBucketName(), blobName);
+			BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
+
+			// Define signed URL options
+			long durationMinutes = 15; // Duration for which the URL is valid (e.g., 15 minutes)
+			URL signedUrl = getGcsStorage().signUrl(blobInfo, durationMinutes, TimeUnit.MINUTES,
+					Storage.SignUrlOption.httpMethod(HttpMethod.GET),
+					Storage.SignUrlOption.withV4Signature(),
+					Storage.SignUrlOption.withVirtualHostedStyle());
+
+			return signedUrl.toString();
+
+		} catch (Exception e) {
+			logger.error("Error generating signed URL for blob: " + blobName, e);
+			return null;
+		}
+	}
+	private Storage getGcsStorage() throws IOException {
+		ServiceAccountCredentials credentials = ServiceAccountCredentials.fromPkcs8(serverProperties.getGcpClientId(), serverProperties.getGcpClientEmail(),
+				serverProperties.getGcpPkcsKey(), serverProperties.getGcpPrivateKeyId(), new ArrayList<>());
+		return StorageOptions.newBuilder().setProjectId(serverProperties.getGcpProjectId()).setCredentials(credentials).build().getService();
 	}
 
 	protected void finalize() {
