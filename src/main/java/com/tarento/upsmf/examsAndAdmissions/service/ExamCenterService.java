@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -186,6 +185,35 @@ public class ExamCenterService {
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "NO_VERIFIED_CENTER_FOUND", "No verified exam center found for the provided institute code.", HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
+    public ResponseDto getExamCenterStatus(Long examCycleId, Long examCenterId) {
+        ResponseDto response = new ResponseDto("API_GET_EXAM_CENTER_STATUS");
+
+        Optional<ExamCenter> examCenterOpt = examCenterRepository.findByExamCycleIdAndId(examCycleId, examCenterId);
+
+        if (examCenterOpt.isPresent()) {
+            ExamCenterDTO examCenterDTO = examCenterMapper.toDTO(examCenterOpt.get());
+
+            // Check for null value in approvalStatus property
+            if (examCenterDTO.getApprovalStatus() == null) {
+                ResponseDto.setErrorResponse(response, "DATA_INCONSISTENCY", "Data inconsistency found. Please check the database.", HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+
+            Map<String, String> innerResponse = new HashMap<>();
+            innerResponse.put("ApprovalStatus", examCenterDTO.getApprovalStatus().toString());
+
+            List<Map<String, String>> innerResponseList = new ArrayList<>();
+            innerResponseList.add(innerResponse);
+
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, innerResponseList);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "NO_EXAM_CENTER_FOUND", "No exam center found for the provided exam cycle and exam center ID.", HttpStatus.NOT_FOUND);
         }
 
         return response;
