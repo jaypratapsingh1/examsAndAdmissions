@@ -218,27 +218,58 @@ public class HallTicketService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
-
     public ResponseDto getAllDataCorrectionRequests() {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS);
         List<DataCorrectionRequest> requests = dataCorrectionRequestRepository.findAll();
-
         List<Map<String, Object>> formattedRequests = new ArrayList<>();
 
         for (DataCorrectionRequest request : requests) {
             Map<String, Object> formattedRequest = new HashMap<>();
-            formattedRequest.put("requestId", request.getId());
+            formattedRequest.put("id", request.getId());
             formattedRequest.put("requestedCorrection", request.getRequestedCorrection());
             formattedRequest.put("status", request.getStatus());
             formattedRequest.put("rejectionReason", request.getRejectionReason());
             formattedRequest.put("proofAttachmentPath", request.getProofAttachmentPath());
 
             if (request.getStudent() != null) {
-                formattedRequest.put("studentName", request.getStudent().getFirstName() + " " + request.getStudent().getSurname());
-                formattedRequest.put("enrollmentNumber", request.getStudent().getEnrollmentNumber());
+                Student student = request.getStudent();
+                formattedRequest.put("firstName", student.getFirstName());
+                formattedRequest.put("lastName", student.getSurname());  // changed from 'surName'
+                formattedRequest.put("enrollmentNumber", student.getEnrollmentNumber());
 
-                if (request.getStudent().getCourse() != null) {
-                    formattedRequest.put("courseName", request.getStudent().getCourse().getCourseName());
+                StudentExamRegistration registration = studentExamRegistrationRepository.findByStudent(student);
+                if (registration != null) {
+                    Map<String, Object> examCycleData = new HashMap<>();
+                    ExamCycle examCycle = registration.getExamCycle();
+
+                    examCycleData.put("id", examCycle.getId());
+                    examCycleData.put("examCyclename", examCycle.getExamCycleName());
+                    examCycleData.put("startDate", examCycle.getStartDate());
+                    examCycleData.put("endDate", examCycle.getEndDate());
+                    examCycleData.put("createdBy", examCycle.getCreatedBy());
+                    examCycleData.put("modifiedBy", examCycle.getModifiedBy());
+                    examCycleData.put("status", examCycle.getStatus());
+                    examCycleData.put("obsolete", examCycle.getObsolete());
+
+                    List<Map<String, Object>> examsData = new ArrayList<>();
+                    List<Exam> exams = examRepository.findByExamCycleId(examCycle.getId());
+                    for (Exam exam : exams) {
+                        Map<String, Object> examData = new HashMap<>();
+
+                        examData.put("examName", exam.getExamName());
+                        examData.put("examDate", exam.getExamDate());
+                        examData.put("startTime", exam.getStartTime());
+                        examData.put("endTime", exam.getEndTime());
+                        examData.put("createdBy", exam.getCreatedBy());
+                        examData.put("modifiedBy", exam.getModifiedBy());
+                        examData.put("isResultsPublished", exam.getIsResultsPublished());
+                        examData.put("obsolete", exam.getObsolete());
+
+                        examsData.add(examData);
+                    }
+
+                    examCycleData.put("exams", examsData);
+                    formattedRequest.put("examCycle", examCycleData);
                 }
             }
 
@@ -250,8 +281,9 @@ public class HallTicketService {
             response.put(Constants.RESPONSE, formattedRequests);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            setErrorResponse(response, "NO_DATA_CORRECTION_REQUESTS", "No data correction requests found.", HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "NO_DATA_CORRECTION_REQUESTS", "No data correction requests found.", HttpStatus.NOT_FOUND);
         }
+
         return response;
     }
 

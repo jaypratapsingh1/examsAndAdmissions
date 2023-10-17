@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -39,24 +40,33 @@ public class CourseSubjectMappingServiceImpl implements CourseSubjectMappingServ
 
     private Map<String, Object> courseMap = new HashMap<String, Object>();
 
-    @Override
     public ResponseDto create(CourseSubjectMappingDTO courseSubjectMappingDTO) {
         ResponseDto response = new ResponseDto(Constants.API_COURSE_SUBJECT_MAPPING_CREATE);
         try {
-            CourseSubjectMapping courseSubjectMapping = new CourseSubjectMapping();
-            List<Subject> subjects = subjectRepository.findByIdIn(courseSubjectMappingDTO.getSubjectId());
-            courseSubjectMapping.setSubjects(subjects);
+            // Fetch the Course from the database
             Course course = courseRepository.findById(courseSubjectMappingDTO.getCourseId()).orElse(null);
-            courseSubjectMapping.setCourse(course);
-            courseSubjectMapping.setCreatedOn(new Timestamp(System.currentTimeMillis()));
-            courseSubjectMapping = courseSubjectMappingRepository.save(courseSubjectMapping);
+            if (course == null) {
+                throw new Exception("Course not found!");
+            }
+
+            // Fetch the Subjects from the database
+            List<Subject> subjects = subjectRepository.findAllById(courseSubjectMappingDTO.getSubjectIds());
+            if(subjects.isEmpty()) {
+                throw new Exception("No subjects found for the provided IDs!");
+            }
+
+            // Link subjects to the course
+            course.setSubjects(subjects);
+
+            // Save the Course to the database, which will also update the course_subject_mapping table
+            courseRepository.save(course);
+
             response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-            response.put(Constants.RESPONSE, courseSubjectMapping);
+            response.put(Constants.RESPONSE, course);
             response.setResponseCode(HttpStatus.OK);
+
         } catch (Exception e) {
-            response.getParams().setStatus(Constants.FAILED);
-            response.getParams().setErrmsg(e.getMessage());
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
     }

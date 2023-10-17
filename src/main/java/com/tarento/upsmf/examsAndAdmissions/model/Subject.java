@@ -1,7 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 
 import javax.persistence.*;
@@ -14,7 +13,6 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(exclude = {"courseSubjectMapping"})
 public class Subject {
 
     @Id
@@ -44,11 +42,9 @@ public class Subject {
 
     @Column(name = "obsolete", nullable = false, columnDefinition = "int default 0")
     private Integer obsolete = 0;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_subject_mapping_id")
     @JsonBackReference
     private CourseSubjectMapping courseSubjectMapping;
-
 
 }
