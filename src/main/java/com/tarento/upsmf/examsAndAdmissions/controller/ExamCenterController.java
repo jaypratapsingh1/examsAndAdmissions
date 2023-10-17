@@ -52,4 +52,9 @@ public class ExamCenterController {
     public ResponseDto getVerifiedCenter(@RequestParam String instituteCode) {
         return examCenterService.getVerifiedCenterByInstituteCode(instituteCode);
     }
+    @GetMapping("/examCenterStatus")
+    public ResponseEntity<ResponseDto> getExamCenterStatus(@RequestParam Long examCycleId, @RequestParam Long examCenterId) {
+        return new ResponseEntity<>(examCenterService.getExamCenterStatus(examCycleId, examCenterId), HttpStatus.OK);
+    }
+
 }
