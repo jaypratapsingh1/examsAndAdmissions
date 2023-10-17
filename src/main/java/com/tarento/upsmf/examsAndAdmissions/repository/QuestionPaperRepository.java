@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface QuestionPaperRepository extends JpaRepository<QuestionPaper, Long> {
     List<QuestionPaper> findByExamCycleIdAndExamId(Long examCycleId, Long id);
+    List<QuestionPaper> findByExamCycleIdAndExamIdAndObsolete(Long examCycleId, Long examId, int obsolete);
 }

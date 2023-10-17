@@ -102,7 +102,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
             examData.put("startTime",exam.getStartTime());
             examData.put("maximumMark",exam.getMaximumMark());
 
-            List<QuestionPaper> questionPapersForExam = questionPaperRepository.findByExamCycleIdAndExamId(examCycleId, exam.getId());
+            List<QuestionPaper> questionPapersForExam = questionPaperRepository.findByExamCycleIdAndExamIdAndObsolete(examCycleId, exam.getId(), 0);
             examData.put("questionPapers", questionPapersForExam.stream()
                     .map(this::mapToQuestionPaperDTO)
                     .collect(Collectors.toList()));
