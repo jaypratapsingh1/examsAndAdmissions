@@ -474,7 +474,7 @@ public class StudentResultService {
 
         } catch (Exception e) {
             log.error("Error processing bulk result upload", e);
-            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return response;
