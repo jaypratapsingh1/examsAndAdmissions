@@ -1,5 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.model.dto;
 
+import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import lombok.*;
 
@@ -23,5 +24,9 @@ public class DataCorrectionRequest {
     private String rejectionReason;
     @Column(name = "proof_attachment_path")
     private String proofAttachmentPath;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "exam_id")
+    private Exam exam;  // Associating with Exam
 
 }
