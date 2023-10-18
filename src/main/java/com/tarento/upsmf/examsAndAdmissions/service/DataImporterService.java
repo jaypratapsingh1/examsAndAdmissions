@@ -273,9 +273,6 @@ public class DataImporterService {
                         (dto.getNumberOfWorkingDays() == 0) &&
                         (dto.getPresentDays() == 0) &&
                         (dto.getAbsentDays() == 0) &&
-                        (dto.getTotalDays() == 0) &&
-                        (dto.getPresent() == 0) &&
-                        (dto.getAbsent() == 0) &&
                         (dto.getAttendancePercentage() == 0.0);
     }
 

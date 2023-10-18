@@ -77,9 +77,9 @@ public class AttendanceService {
 
             record.setStartDate(getDateValue(row.getCell(7)));
             record.setEndDate(getDateValue(row.getCell(8)));
-            record.setTotalDays(getIntValue(row.getCell(9)));
-            record.setPresent(getIntValue(row.getCell(10)));
-            record.setAbsent(getIntValue(row.getCell(11)));
+            record.setNumberOfWorkingDays(getIntValue(row.getCell(9)));
+            record.setPresentDays(getIntValue(row.getCell(10)));
+            record.setAbsentDays(getIntValue(row.getCell(11)));
             //record.setAttendancePercentage(getDoubleValue(row.getCell(12)));
 
             records.add(record);

@@ -527,7 +527,7 @@ public class HallTicketService {
 
         // Compute the attendance percentage based on the details in the attendance record
         double daysAttended = attendanceRecord.getPresentDays(); // Assuming this method exists
-        double totalDays = attendanceRecord.getTotalDays(); // Assuming this method exists
+        double totalDays = attendanceRecord.getNumberOfWorkingDays(); // Assuming this method exists
 
         double attendancePercentage = (daysAttended / totalDays) * 100;
 
