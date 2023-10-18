@@ -52,9 +52,6 @@ public class AttendanceRecord {
     @JsonSerialize(using = CustomDateSerializer.class)
     @JsonDeserialize(using = CustomDateDeserializer.class)
     private Date endDate;
-    private int totalDays;
-    private int present;
-    private int absent;
     private String rejectionReason;
     @Enumerated(EnumType.STRING)
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
@@ -70,7 +67,7 @@ public class AttendanceRecord {
     @PrePersist
     @PreUpdate
     public void calculateAttendancePercentage() {
-        this.attendancePercentage = (double) (this.present * 100) / this.totalDays;
+        this.attendancePercentage = (double) (this.presentDays * 100) / this.numberOfWorkingDays;
     }
 
     public void setNumberOfWorkingDays(int numberOfWorkingDays) {
