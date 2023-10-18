@@ -145,21 +145,7 @@ public class DataImporterService {
             }
 
             if (!checkIfDataExists(dto)) {
-                AttendanceRecord entity = new AttendanceRecord();
-
-                entity.setFirstName(dto.getFirstName());
-                entity.setLastName(dto.getLastName());
-                entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
-                entity.setMothersName(dto.getMothersName());
-                entity.setFathersName(dto.getFathersName());
-                entity.setCourseName(dto.getCourseName());
-                entity.setExamCycleData(dto.getExamCycleData());
-                entity.setStartDate(dto.getStartDate());
-                entity.setEndDate(dto.getEndDate());
-                entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
-                entity.setPresentDays(dto.getPresentDays());
-                entity.setAbsentDays(dto.getAbsentDays());
-                entity.setAttendancePercentage(dto.getAttendancePercentage());
+                AttendanceRecord entity = getAttendanceRecord(dto);
 
                 entityList.add(entity);
                 uploaded++;
@@ -175,6 +161,26 @@ public class DataImporterService {
             return new UploadStatusDetails(total, uploaded, skipped, false, e.getMessage());
         }
     }
+
+    private static AttendanceRecord getAttendanceRecord(AttendanceRecord dto) {
+        AttendanceRecord entity = new AttendanceRecord();
+
+        entity.setFirstName(dto.getFirstName());
+        entity.setLastName(dto.getLastName());
+        entity.setStudentEnrollmentNumber(dto.getStudentEnrollmentNumber());
+        entity.setMothersName(dto.getMothersName());
+        entity.setFathersName(dto.getFathersName());
+        entity.setCourseName(dto.getCourseName());
+        entity.setExamCycleData(dto.getExamCycleData());
+        entity.setStartDate(dto.getStartDate());
+        entity.setEndDate(dto.getEndDate());
+        entity.setNumberOfWorkingDays(dto.getNumberOfWorkingDays());
+        entity.setPresentDays(dto.getPresentDays());
+        entity.setAbsentDays(dto.getAbsentDays());
+        entity.setAttendancePercentage(dto.getAttendancePercentage());
+        return entity;
+    }
+
     public Boolean saveDtoListToPostgres(List<StudentResult> dtoList, StudentResultRepository repository) {
         try {
             List<StudentResult> entityList = convertResultDtoListToEntities(dtoList);
@@ -287,9 +293,9 @@ public class DataImporterService {
                 entity.setEnrollmentNumber(dto.getEnrollmentNumber());
                 entity.setMotherName(dto.getMotherName());
                 entity.setFatherName(dto.getFatherName());
-                entity.setCourseValue(dto.getCourseValue());
-                entity.setExamCycleValue(dto.getExamCycleValue());
-                entity.setExamValue(dto.getExamValue());
+                entity.setCourse_name(dto.getCourse_name());
+                entity.setExamCycle_name(dto.getExamCycle_name());
+                entity.setExam_name(dto.getExam_name());
                 entity.setInternalMarks(dto.getInternalMarks());
                 entity.setPassingInternalMarks(dto.getPassingInternalMarks());
                 entity.setInternalMarksObtained(dto.getInternalMarksObtained());
