@@ -435,9 +435,9 @@ public class StudentResultService {
                     dto.setMotherName(result.getMotherName());
                     dto.setFatherName(result.getFatherName());
 
-                    dto.setCourseValue(result.getCourseValue());
-                    dto.setExamCycleValue(result.getExamCycleValue());
-                    dto.setExamValue(result.getExamValue());
+                    dto.setCourseValue(result.getCourse_name());
+                    dto.setExamCycleValue(result.getExamCycle_name());
+                    dto.setExamValue(result.getExam_name());
 
                     dto.setInternalMarks(result.getInternalMarks());
                     dto.setPassingInternalMarks(result.getPassingInternalMarks());
@@ -539,9 +539,9 @@ public class StudentResultService {
                         dto.setEnrollmentNumber(result.getEnrollmentNumber());
                         dto.setMotherName(result.getMotherName());
                         dto.setFatherName(result.getFatherName());
-                        dto.setCourseValue(result.getCourseValue());
-                        dto.setExamCycleValue(result.getExamCycleValue());
-                        dto.setExamValue(result.getExamValue());
+                        dto.setCourseValue(result.getCourse_name());
+                        dto.setExamCycleValue(result.getExamCycle_name());
+                        dto.setExamValue(result.getExam_name());
                         dto.setInternalMarks(result.getInternalMarks());
                         dto.setPassingInternalMarks(result.getPassingInternalMarks());
                         dto.setInternalMarksObtained(result.getInternalMarksObtained());
