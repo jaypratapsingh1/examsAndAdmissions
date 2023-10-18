@@ -40,4 +40,6 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     List<StudentExamRegistration> findByExamCenterIsNullAndInstitute(Institute institute);
 
     StudentExamRegistration findByStudent(Student student);
+
+    Optional<StudentExamRegistration> findByStudentIdAndExamCycleId(Long studentId, Long examCycleId);
 }

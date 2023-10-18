@@ -41,6 +41,8 @@ public class Constants {
     public static final String API_EXAM_UPDATE = "api.exam.update";
     public static final String API_EXAM_RESTORE = "api.exam.restore";
     public static final String API_EXAM_PUBLISH_RESULTS = "API_EXAM_PUBLISH_RESULTS";
+    public static final String API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE = "api.results.getByInstituteAndCycle";
+
 
     // ExamCycle
     public static final String API_EXAM_CYCLE_ADD = "api.examCycle.add";
@@ -168,7 +170,7 @@ public class Constants {
     public static final String API_HALLTICKET_DOWNLOAD_PROOF = "api.hallticket.downloadProof";
     public static final String API_HALLTICKET_GET_PROOF_URL_BY_REQUEST = "api.hallticket.getProofUrl";
     public static final String API_GENERATE_AND_SAVE_HALL_TICKETS_FOR_MULTIPLE_STUDENTS = "api.hallticket.generateAndSaveForMultipleStudents";
-
+    public static final String API_HALLTICKET_GET_DETAILS_BY_STUDENT_AND_EXAM_CYCLE = "api.hallticket.getDetailsByStudentAndExamCycle";
 
 
     public static final String API_EXAMCYCLE_BULK_UPLOAD = "api.examCycle.bulkUpload";

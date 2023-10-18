@@ -116,4 +116,11 @@ public class HallTicketController {
         ResponseDto responseDto = hallTicketService.getProofUrlByRequestId(requestId);
         return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
+    @GetMapping("/hallTicketDetail")
+    public ResponseDto getDetailsByStudentIdAndExamCycleId(
+            @RequestParam("studentId") Long studentId,
+            @RequestParam("examCycleId") Long examCycleId) {
+
+        return hallTicketService.getDetailsByStudentIdAndExamCycleId(studentId, examCycleId);
+    }
 }

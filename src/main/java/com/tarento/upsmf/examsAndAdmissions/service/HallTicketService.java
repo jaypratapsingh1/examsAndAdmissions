@@ -546,4 +546,72 @@ public class HallTicketService {
 
         return response.getBody();
     }
+
+    public ResponseDto getDetailsByStudentIdAndExamCycleId(Long studentId, Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_DETAILS_BY_STUDENT_AND_EXAM_CYCLE);
+
+        Optional<StudentExamRegistration> optionalRegistration =
+                studentExamRegistrationRepository.findByStudentIdAndExamCycleId(studentId, examCycleId);
+
+        if (!optionalRegistration.isPresent()) {
+            ResponseDto.setErrorResponse(response, "NOT_FOUND", "No data found for given student ID and exam cycle ID.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        StudentExamRegistration registration = optionalRegistration.get();
+
+        Map<String, Object> formattedData = new HashMap<>();
+
+        // Student details
+        Student student = registration.getStudent();
+        formattedData.put("firstName", student.getFirstName());
+        formattedData.put("lastName", student.getSurname());
+        formattedData.put("enrollmentNumber", student.getEnrollmentNumber());
+        formattedData.put("dateOfBirth", student.getDateOfBirth());
+        if(student.getCourse() != null) {
+            formattedData.put("courseName", student.getCourse().getCourseName());
+            formattedData.put("courseYear", student.getCourse().getCourseYear());
+        }
+
+        // Exam cycle details
+        Map<String, Object> examCycleData = new HashMap<>();
+        ExamCycle examCycle = registration.getExamCycle();
+
+        examCycleData.put("id", examCycle.getId());
+        examCycleData.put("examCyclename", examCycle.getExamCycleName());
+        examCycleData.put("startDate", examCycle.getStartDate());
+        examCycleData.put("endDate", examCycle.getEndDate());
+        examCycleData.put("createdBy", examCycle.getCreatedBy());
+        examCycleData.put("modifiedBy", examCycle.getModifiedBy());
+        examCycleData.put("status", examCycle.getStatus());
+        examCycleData.put("obsolete", examCycle.getObsolete());
+
+        formattedData.put("examCycle", examCycleData);
+
+        // Exams details
+        List<Exam> exams = examRepository.findByExamCycleId(examCycle.getId());
+        List<Map<String, Object>> examsData = new ArrayList<>();
+
+        for (Exam exam : exams) {
+            Map<String, Object> examData = new HashMap<>();
+
+            examData.put("examName", exam.getExamName());
+            examData.put("examDate", exam.getExamDate());
+            examData.put("startTime", exam.getStartTime());
+            examData.put("endTime", exam.getEndTime());
+            examData.put("createdBy", exam.getCreatedBy());
+            examData.put("modifiedBy", exam.getModifiedBy());
+            examData.put("isResultsPublished", exam.getIsResultsPublished());
+            examData.put("obsolete", exam.getObsolete());
+
+            examsData.add(examData);
+        }
+
+        formattedData.put("exams", examsData);
+
+        response.put(Constants.RESPONSE, formattedData);
+        response.setResponseCode(HttpStatus.OK);
+
+        return response;
+    }
 }
