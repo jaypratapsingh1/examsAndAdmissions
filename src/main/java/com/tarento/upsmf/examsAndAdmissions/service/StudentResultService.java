@@ -4,6 +4,7 @@ import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -403,9 +404,9 @@ public class StudentResultService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
-
     public ResponseDto getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
         ResponseDto response = new ResponseDto(Constants.API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE);
+
         List<StudentResult> results;
         if (examCycle != null && exam != null) {
             results = studentResultRepository.findByExamCycleAndExam(examCycle, exam);
@@ -422,15 +423,56 @@ public class StudentResultService {
             return response;
         }
 
-        Map<Institute, List<StudentResult>> groupedResults = results.stream()
-                .collect(Collectors.groupingBy(result -> result.getStudent().getInstitute()));
+        // Instead of grouping by institute, create a list of DTOs that correspond to the table rows
+        List<ResultDisplayDto> displayResults = results.stream()
+                .map(result -> {ResultDisplayDto dto = new ResultDisplayDto();
+                    dto.setId(result.getId());
+                    dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
+                    dto.setInstituteId(result.getStudent().getInstitute().getId());
+                    dto.setFirstName(result.getFirstName());
+                    dto.setLastName(result.getLastName());
+                    dto.setEnrollmentNumber(result.getEnrollmentNumber());
+                    dto.setMotherName(result.getMotherName());
+                    dto.setFatherName(result.getFatherName());
+
+                    dto.setCourseValue(result.getCourseValue());
+                    dto.setExamCycleValue(result.getExamCycleValue());
+                    dto.setExamValue(result.getExamValue());
+
+                    dto.setInternalMarks(result.getInternalMarks());
+                    dto.setPassingInternalMarks(result.getPassingInternalMarks());
+                    dto.setInternalMarksObtained(result.getInternalMarksObtained());
+
+                    dto.setPracticalMarks(result.getPracticalMarks());
+                    dto.setPassingPracticalMarks(result.getPassingPracticalMarks());
+                    dto.setPracticalMarksObtained(result.getPracticalMarksObtained());
+
+                    dto.setOtherMarks(result.getOtherMarks());
+                    dto.setPassingOtherMarks(result.getPassingOtherMarks());
+                    dto.setOtherMarksObtained(result.getOtherMarksObtained());
+
+                    dto.setExternalMarks(result.getExternalMarks());
+                    dto.setPassingExternalMarks(result.getPassingExternalMarks());
+                    dto.setExternalMarksObtained(result.getExternalMarksObtained());
+
+                    dto.setTotalMarks(result.getTotalMarks());
+                    dto.setPassingTotalMarks(result.getPassingTotalMarks());
+                    dto.setTotalMarksObtained(result.getTotalMarksObtained());
+
+                    dto.setGrade(result.getGrade());
+                    dto.setResult(result.getResult());
+                    dto.setStatus(result.getStatus());
+                    dto.setPublished(result.isPublished());
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
 
         response.put(Constants.MESSAGE, "Successful.");
-        response.put(Constants.RESPONSE, groupedResults);
+        response.put(Constants.RESPONSE, displayResults);
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
-
 
     private ExamResultDTO convertToDTO(StudentResult result) {
         ExamResultDTO dto = new ExamResultDTO();
@@ -475,6 +517,45 @@ public class StudentResultService {
         } catch (Exception e) {
             log.error("Error processing bulk result upload", e);
             return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    }
+
+
+    public ResponseDto getResultsByInstituteAndExamCycle(Long instituteId, Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE);
+        List<StudentResult> results = studentResultRepository.findByStudent_Institute_IdAndExamCycle_Id(instituteId, examCycleId);
+
+        if (!results.isEmpty()) {
+            List<ResultDisplayDto> dtos = results.stream()
+                    .map(result -> {
+                        ResultDisplayDto dto = new ResultDisplayDto();
+                        dto.setId(result.getId());
+                        dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
+                        dto.setInstituteId(result.getStudent().getInstitute().getId());
+                        dto.setFirstName(result.getFirstName());
+                        dto.setLastName(result.getLastName());
+                        dto.setEnrollmentNumber(result.getEnrollmentNumber());
+                        dto.setMotherName(result.getMotherName());
+                        dto.setFatherName(result.getFatherName());
+                        dto.setCourseValue(result.getCourseValue());
+                        dto.setExamCycleValue(result.getExamCycleValue());
+                        dto.setExamValue(result.getExamValue());
+                        dto.setInternalMarks(result.getInternalMarks());
+                        dto.setPassingInternalMarks(result.getPassingInternalMarks());
+                        dto.setInternalMarksObtained(result.getInternalMarksObtained());
+                        //... similarly, map other fields
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            response.put(Constants.MESSAGE, Constants.SUCCESS);
+            response.put(Constants.RESPONSE, dtos);
+            response.setResponseCode(HttpStatus.OK);
+
+        } else {
+            ResponseDto.setErrorResponse(response, "RESULTS_NOT_FOUND", "No results found for the given institute and exam cycle.", HttpStatus.NOT_FOUND);
         }
 
         return response;

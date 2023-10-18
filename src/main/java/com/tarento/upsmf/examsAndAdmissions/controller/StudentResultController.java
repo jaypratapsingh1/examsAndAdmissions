@@ -1,6 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.RetotallingRequestRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentResultService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/studentResults")
@@ -73,5 +75,14 @@ public class StudentResultController {
             @RequestParam(required = false) ExamCycle examCycle,
             @RequestParam(required = false) Exam exam) {
         return new ResponseEntity<>(studentResultService.getResultsByExamCycleAndExamGroupedByInstitute(examCycle, exam), HttpStatus.OK);
+    }
+    @GetMapping("/resultsByInstitute")
+    public ResponseEntity<ResponseDto> getStudentsExamDetails(
+            @RequestParam Long instituteId,
+            @RequestParam Long examCycleId) {
+
+        ResponseDto response = studentResultService.getResultsByInstituteAndExamCycle(instituteId, examCycleId);
+        return new ResponseEntity<>(response, response.getResponseCode());
+
     }
 }
