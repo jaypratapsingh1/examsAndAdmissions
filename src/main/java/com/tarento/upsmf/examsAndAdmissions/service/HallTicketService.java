@@ -212,6 +212,12 @@ public class HallTicketService {
             return response;
         }
 
+        if (proof == null || proof.isEmpty()) {
+            response.put(Constants.MESSAGE, "Proof attachment is mandatory for data correction request.");
+            response.setResponseCode(HttpStatus.BAD_REQUEST);
+            return response;
+        }
+
         DataCorrectionRequest request = new DataCorrectionRequest();
         request.setStudent(optionalStudent.get());
         if (updatedFirstName != null) {
@@ -225,10 +231,8 @@ public class HallTicketService {
         }
         request.setStatus("NEW");
 
-        if (proof != null && !proof.isEmpty()) {
-            String path = studentService.storeFile(proof);
-            request.setProofAttachmentPath(path);
-        }
+        String path = studentService.storeFile(proof);
+        request.setProofAttachmentPath(path);
 
         dataCorrectionRequestRepository.save(request);
         DataCorrectionRequestDto responseDto = toDto(request);
@@ -237,6 +241,7 @@ public class HallTicketService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+
     private DataCorrectionRequestDto toDto(DataCorrectionRequest request) {
         DataCorrectionRequestDto dto = new DataCorrectionRequestDto();
         dto.setId(request.getId());
