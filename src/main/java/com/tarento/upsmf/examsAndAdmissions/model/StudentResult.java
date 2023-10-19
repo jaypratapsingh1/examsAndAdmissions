@@ -92,6 +92,9 @@ public class StudentResult {
     private ResultStatus status = ResultStatus.ENTERED;
 
     private boolean published;
+    private boolean internalMarkFlag;
+    private boolean finalMarkFlag;
+    private boolean revisedFinalMarkFlag;
 
     public StudentResult(Student student, String firstName, String lastName, String enrollmentNumber,
                            String motherName, String fatherName, Course course, String course_name,
@@ -101,7 +104,7 @@ public class StudentResult {
                            Integer otherMarks, Integer passingOtherMarks, Integer otherMarksObtained,
                            Integer externalMarks, Integer passingExternalMarks, Integer externalMarksObtained,
                            Integer totalMarks, Integer passingTotalMarks, Integer totalMarksObtained,
-                           String grade, String result, ResultStatus status, boolean published) {
+                           String grade, String result, ResultStatus status, boolean published, boolean internalMarkFlag, boolean finalMarkFlag, boolean revisedFinalMarkFlag) {
 
         this.student = student;
         this.firstName = firstName;
@@ -134,7 +137,8 @@ public class StudentResult {
         this.result = result;
         this.status = status;
         this.published = published;
+        this.internalMarkFlag = internalMarkFlag;
+        this.finalMarkFlag = finalMarkFlag;
+        this.revisedFinalMarkFlag = revisedFinalMarkFlag;
     }
-
-
 }

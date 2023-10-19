@@ -4,7 +4,9 @@ import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ProcessedResultDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentResultDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,8 @@ public class StudentResultService {
     @Autowired
     private ExamRepository examRepository;
     @Autowired
+    private ExamCycleRepository examCycleRepository;
+    @Autowired
     private RetotallingRequestRepository retotallingRequestRepository;
     @Autowired
     private DataImporterService dataImporterService;
@@ -66,8 +70,10 @@ public class StudentResultService {
                     StudentResult dbResult = existingResult.get();
                     dbResult.setInternalMarksObtained(result.getInternalMarksObtained());
                     dbResult.setPracticalMarksObtained(result.getPracticalMarksObtained());
+                    dbResult.setInternalMarkFlag(true);
                     studentResultRepository.save(dbResult);
                 } else {
+                    result.setInternalMarkFlag(true);
                     studentResultRepository.save(result);
                 }
             }
@@ -97,9 +103,13 @@ public class StudentResultService {
 
                 if (existingResult.isPresent()) {
                     StudentResult dbResult = existingResult.get();
+                    dbResult.setExternalMarks(result.getExternalMarks());
+                    dbResult.setPassingExternalMarks(result.getPassingExternalMarks());
                     dbResult.setExternalMarksObtained(result.getExternalMarksObtained());
+                    dbResult.setFinalMarkFlag(true);
                     studentResultRepository.save(dbResult);
                 } else {
+                    result.setFinalMarkFlag(true);
                     studentResultRepository.save(result);
                 }
             }
@@ -145,6 +155,12 @@ public class StudentResultService {
                     }
                     Course courseEntity = (Course) courseResponse.get(Constants.RESPONSE);
 
+                    ResponseDto examCycleResponse = fetchExamCycleByName(getStringValue(row.getCell(6))); // Assuming Exam Cycle is in the 6th cell
+                    if (examCycleResponse.getResponseCode() != HttpStatus.OK) {
+                        throw new RuntimeException("Failed to fetch exam cycle details");
+                    }
+                    ExamCycle examCycleEntity = (ExamCycle) examCycleResponse.get(Constants.RESPONSE);
+
                     ResponseDto examResponse = fetchExamByName(getStringValue(row.getCell(7)));
                     if (examResponse.getResponseCode() != HttpStatus.OK) {
                         throw new RuntimeException("Failed to fetch exam details");
@@ -153,6 +169,7 @@ public class StudentResultService {
 
                     result.setStudent(studentEntity);
                     result.setCourse(courseEntity);
+                    result.setExamCycle(examCycleEntity);
                     result.setExam(examEntity);
 
                     result.setInternalMarks(getIntegerValue(row.getCell(8)));
@@ -274,7 +291,20 @@ public class StudentResultService {
 
         return response;
     }
+    public ResponseDto fetchExamCycleByName(String examCycleName) {
+        ResponseDto response = new ResponseDto(Constants.API_FETCH_EXAM_CYCLE_BY_NAME);
+        Optional<ExamCycle> examCycleOpt = Optional.ofNullable(examCycleRepository.findByExamCycleName(examCycleName));
 
+        if (examCycleOpt.isPresent()) {
+            response.put(Constants.MESSAGE, "Successful.");
+            response.put(Constants.RESPONSE, examCycleOpt.get());
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "EXAM_CYCLE_NOT_FOUND", "Exam cycle not found with name: " + examCycleName, HttpStatus.NOT_FOUND);
+        }
+
+        return response;
+    }
     public ResponseDto fetchExamByName(String examName) {
         ResponseDto response = new ResponseDto(Constants.API_FETCH_EXAM_BY_NAME);
         Optional<Exam> examOpt = examRepository.findByExamName(examName);
@@ -342,9 +372,9 @@ public class StudentResultService {
                 || isValidMark(result.getTotalMarks())
                 || isValidMark(result.getPassingTotalMarks())
                 || isValidMark(result.getTotalMarksObtained())) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private static boolean isValidMark(Integer marks) {
@@ -422,14 +452,14 @@ public class StudentResultService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
-    public ResponseDto getResultsByExamCycleAndExamGroupedByInstitute(ExamCycle examCycle, Exam exam) {
+    public ResponseDto getResultsByExamCycleAndExamGroupedByInstitute(Long examCycle, Exam exam) {
         ResponseDto response = new ResponseDto(Constants.API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE);
 
         List<StudentResult> results;
         if (examCycle != null && exam != null) {
             results = studentResultRepository.findByExamCycleAndExam(examCycle, exam);
         } else if (examCycle != null) {
-            results = studentResultRepository.findByExamCycle(examCycle);
+            results = studentResultRepository.findByExamCycleId(examCycle);
         } else if (exam != null) {
             results = studentResultRepository.findByExam(exam);
         } else {
@@ -577,5 +607,73 @@ public class StudentResultService {
         }
 
         return response;
+    }
+    public ResponseDto getExamResultsByExamCycle(Long examCycle) {
+
+        ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_MANAGE_RESULTS);
+
+        // Fetching the results based on the examCycle
+        List<StudentResult> results = studentResultRepository.findByExamCycleId(examCycle);
+
+        if (results == null || results.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "RESULTS_NOT_FOUND", "No results found for the given exam cycle.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        // Processing the results to get the desired format
+        List<ProcessedResultDto> processedResults = results.stream().map(result -> {
+
+            boolean hasInternalMarks = result.isInternalMarkFlag();
+            boolean hasFinalMarks = result.isFinalMarkFlag();
+            boolean hasRevisedFinalMarks = result.isRevisedFinalMarkFlag();
+
+            String instituteName = result.getStudent().getInstitute().getInstituteName();
+            Long instituteId = result.getStudent().getInstitute().getId();
+            String course = result.getCourse().getCourseName();
+
+            return new ProcessedResultDto(
+                    hasInternalMarks,
+                    hasFinalMarks,
+                    hasRevisedFinalMarks,
+                    instituteName,
+                    instituteId,
+                    course
+            );
+
+        }).collect(Collectors.toList());
+
+        response.put(Constants.MESSAGE, "Results fetched successfully.");
+        response.put(Constants.RESPONSE, processedResults);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+    public ResponseDto getMarksByInstituteAndExamCycle(Long examCycle, Long exam, Long institute) {
+        ResponseDto response = new ResponseDto(Constants.API_SINGLE_EXAM_MARK);
+        List<StudentResult> studentResults = studentResultRepository.findByExamCycleAndExamAndInstitute(examCycle, exam, institute);
+
+        // If no results found, return a not found response.
+        if(studentResults.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "RESULTS_NOT_FOUND", "No results found for the provided criteria.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        List<StudentResultDto> dtos = studentResults.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+
+        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+        response.put(Constants.RESPONSE, dtos);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
+    private StudentResultDto convertToDto(StudentResult result) {
+        StudentResultDto dto = new StudentResultDto();
+        dto.setFirstName(result.getStudent().getFirstName());
+        dto.setLastName(result.getStudent().getSurname());
+        dto.setCourseName(result.getCourse().getCourseName());
+        dto.setExam(result.getExam().getExamName());
+        dto.setInternalMark(result.getInternalMarksObtained());
+        return dto;
     }
 }
