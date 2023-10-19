@@ -2,8 +2,6 @@ package com.tarento.upsmf.examsAndAdmissions.model.dto;
 
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,8 +13,8 @@ public class ExamResultDTO {
     private String studentName;
     private String courseName;
     private String examName;
-    private BigDecimal internalMarks;
-    private BigDecimal FinalMarks;
-    private BigDecimal RevisedFinalMarks;
+    private Integer internalMarks;
+    private Integer FinalMarks;
+    private Integer RevisedFinalMarks;
     // ... other fields, getters, setters, etc.
 }

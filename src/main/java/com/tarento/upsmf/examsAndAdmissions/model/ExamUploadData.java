@@ -32,34 +32,28 @@ public class ExamUploadData {
     @JsonProperty("Course")
     private String course;
 
-    @Column(name = "start_date")
     @JsonProperty("Start Date")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate startDate;
 
-    @Column(name = "end_date")
     @JsonProperty("End Date")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate endDate;
 
-    @Column(name = "exam_name")
     @JsonProperty("Exam Name")
     private String examName;
 
-    @Column(name = "date")
     @JsonProperty("Date")
-    @JsonFormat(pattern = "dd.MM.yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate date;
 
-    @Column(name = "start_time")
     @JsonProperty("Start Time")
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime startTime;
 
-    @Column(name = "end_time")
     @JsonProperty("End Time")
     @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime endTime;

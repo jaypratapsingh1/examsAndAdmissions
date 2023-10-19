@@ -28,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AttendanceService {
@@ -39,6 +40,13 @@ public class AttendanceService {
     private ExamCycleRepository examCycleRepository;
     @Autowired
     private DataImporterService dataImporterService;
+    Map<String, Class<?>> columnConfig = Map.of(
+            "Start Date", Date.class,
+            "End Date", Date.class,
+            "Start Time", Date.class,
+            "End Time", Date.class
+            // Add other columns and their data types as needed
+    );
 
     public ResponseDto uploadAttendanceRecords(MultipartFile file) throws IOException {
         ResponseDto response = new ResponseDto("API_UPLOAD_ATTENDANCE");
@@ -230,7 +238,7 @@ public class AttendanceService {
             JSONArray jsonArray;
             switch (fileType.toLowerCase()) {
                 case Constants.CSV:
-                    jsonArray = dataImporterService.csvToJson(file);
+                    jsonArray = dataImporterService.csvToJson(file,columnConfig);
                     break;
                 case Constants.EXCEL:
                     jsonArray = dataImporterService.excelToJson(file);

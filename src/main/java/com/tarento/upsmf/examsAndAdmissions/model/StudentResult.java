@@ -5,7 +5,6 @@ import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import lombok.*;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "student_results")
@@ -55,35 +54,35 @@ public class StudentResult {
     private String exam_name;
 
     @JsonProperty("Internal Marks")
-    private BigDecimal internalMarks;
+    private Integer internalMarks;
     @JsonProperty("Passing Internal Marks")
-    private BigDecimal passingInternalMarks;
+    private Integer passingInternalMarks;
     @JsonProperty("Internal Marks Obtained")
-    private BigDecimal internalMarksObtained;
+    private Integer internalMarksObtained;
     @JsonProperty("Practical Marks")
-    private BigDecimal practicalMarks;
+    private Integer practicalMarks;
     @JsonProperty("Passing Practical Marks")
-    private BigDecimal passingPracticalMarks;
+    private Integer passingPracticalMarks;
     @JsonProperty("Practical Marks Obtained")
-    private BigDecimal practicalMarksObtained;
+    private Integer practicalMarksObtained;
     @JsonProperty("Other Marks")
-    private BigDecimal otherMarks;
+    private Integer otherMarks;
     @JsonProperty("Passing Other Marks")
-    private BigDecimal passingOtherMarks;
+    private Integer passingOtherMarks;
     @JsonProperty("Other Marks Obtained")
-    private BigDecimal otherMarksObtained;
+    private Integer otherMarksObtained;
     @JsonProperty("External Marks")
-    private BigDecimal externalMarks;
+    private Integer externalMarks;
     @JsonProperty("Passing External Marks")
-    private BigDecimal passingExternalMarks;
+    private Integer passingExternalMarks;
     @JsonProperty("External Marks Obtained")
-    private BigDecimal externalMarksObtained;
+    private Integer externalMarksObtained;
     @JsonProperty("Total Marks")
-    private BigDecimal totalMarks;
+    private Integer totalMarks;
     @JsonProperty("Passing Total Marks")
-    private BigDecimal passingTotalMarks;
+    private Integer passingTotalMarks;
     @JsonProperty("Total Marks Obtained")
-    private BigDecimal totalMarksObtained;
+    private Integer totalMarksObtained;
     @JsonProperty("Grade")
     private String grade;
     @JsonProperty("Result")
@@ -97,11 +96,11 @@ public class StudentResult {
     public StudentResult(Student student, String firstName, String lastName, String enrollmentNumber,
                            String motherName, String fatherName, Course course, String course_name,
                            ExamCycle examCycle, String examCycle_name, Exam exam, String exam_name,
-                           BigDecimal internalMarks, BigDecimal passingInternalMarks, BigDecimal internalMarksObtained,
-                           BigDecimal practicalMarks, BigDecimal passingPracticalMarks, BigDecimal practicalMarksObtained,
-                           BigDecimal otherMarks, BigDecimal passingOtherMarks, BigDecimal otherMarksObtained,
-                           BigDecimal externalMarks, BigDecimal passingExternalMarks, BigDecimal externalMarksObtained,
-                           BigDecimal totalMarks, BigDecimal passingTotalMarks, BigDecimal totalMarksObtained,
+                           Integer internalMarks, Integer passingInternalMarks, Integer internalMarksObtained,
+                           Integer practicalMarks, Integer passingPracticalMarks, Integer practicalMarksObtained,
+                           Integer otherMarks, Integer passingOtherMarks, Integer otherMarksObtained,
+                           Integer externalMarks, Integer passingExternalMarks, Integer externalMarksObtained,
+                           Integer totalMarks, Integer passingTotalMarks, Integer totalMarksObtained,
                            String grade, String result, ResultStatus status, boolean published) {
 
         this.student = student;

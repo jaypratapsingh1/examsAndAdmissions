@@ -12,6 +12,7 @@ import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.DataImporterService;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
+import com.tarento.upsmf.examsAndAdmissions.util.DataValidation;
 import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,14 @@ public class ExamCycleController {
 
     @Autowired
     private CourseRepository courseRepository;
+
+    Map<String, Class<?>> columnConfig = Map.of(
+            "Start Date", Date.class,
+            "End Date", Date.class,
+            "Start Time", Date.class,
+            "End Time", Date.class
+            // Add other columns and their data types as needed
+    );
 
     @PostMapping("/create")
     public ResponseEntity<ResponseDto> createExamCycle(@RequestBody ExamCycle examCycle, @RequestAttribute(Constants.Parameters.USER_ID) String userId) {
@@ -107,7 +117,7 @@ public class ExamCycleController {
         try {
             switch (fileType.toLowerCase()) {
                 case Constants.CSV:
-                    jsonArray = dataImporterService.csvToJson(file);
+                    jsonArray = dataImporterService.csvToJson(file, columnConfig);
                     break;
                 case Constants.EXCEL:
                     jsonArray = dataImporterService.excelToJson(file);
