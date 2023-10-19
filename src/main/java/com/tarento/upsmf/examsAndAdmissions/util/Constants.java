@@ -42,6 +42,8 @@ public class Constants {
     public static final String API_EXAM_RESTORE = "api.exam.restore";
     public static final String API_EXAM_PUBLISH_RESULTS = "API_EXAM_PUBLISH_RESULTS";
     public static final String API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE = "api.results.getByInstituteAndCycle";
+    public static final String API_EXAM_CYCLE_MANAGE_RESULTS = "api.exam.cycle.manage.results";
+    public static final String API_SINGLE_EXAM_MARK="api.single.exam.mark";
 
 
     // ExamCycle
@@ -55,6 +57,7 @@ public class Constants {
     public static final String API_EXAM_CYCLE_REMOVE_EXAM = "api.examCycle.removeExam";
     public static final String API_EXAM_CYCLE_PUBLISH = "api.examCycle.publish";
     public static final String API_EXAM_CYCLE_SEARCH = "api.examCycle.search";
+    public static final String API_FETCH_EXAM_CYCLE_BY_NAME = "api.fetch.examCycleByName";
 
     public static final String API_DISPATCH_PROOF_PREVIEW = "api.dispatch.preview";
     public static final String API_DISPATCH_STATUS_BY_EXAM_AND_CENTER = "API_DISPATCH_STATUS_BY_EXAM_AND_CENTER";

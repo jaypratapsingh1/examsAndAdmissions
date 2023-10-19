@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentResultDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.RetotallingRequestRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.RetotallingService;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentResultService;
@@ -71,11 +72,13 @@ public class StudentResultController {
     }
 
     @GetMapping("/manageResults")
-    public ResponseEntity<ResponseDto> getResultsByExamCycleAndExamGroupedByInstitute(
-            @RequestParam(required = false) ExamCycle examCycle,
-            @RequestParam(required = false) Exam exam) {
-        return new ResponseEntity<>(studentResultService.getResultsByExamCycleAndExamGroupedByInstitute(examCycle, exam), HttpStatus.OK);
+    public ResponseEntity<ResponseDto> getExamResultsByExamCycle(
+            @RequestParam Long examCycle) {
+
+        ResponseDto response = studentResultService.getExamResultsByExamCycle(examCycle);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
+
     @GetMapping("/resultsByInstitute")
     public ResponseEntity<ResponseDto> getStudentsExamDetails(
             @RequestParam Long instituteId,
@@ -84,5 +87,15 @@ public class StudentResultController {
         ResponseDto response = studentResultService.getResultsByInstituteAndExamCycle(instituteId, examCycleId);
         return new ResponseEntity<>(response, response.getResponseCode());
 
+    }
+    @GetMapping("/examMarksByInstitute")
+    public ResponseEntity<?> getMarksByInstitute(
+            @RequestParam Long examCycle,
+            @RequestParam Long exam,
+            @RequestParam Long institute) {
+
+        ResponseDto response = studentResultService.getMarksByInstituteAndExamCycle(examCycle, exam, institute);
+
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 }
