@@ -48,4 +48,5 @@ public class StudentExamRegistration {
     @Column(name = "hall_ticket_status")
     @Enumerated(EnumType.STRING)
     private HallTicketStatus hallTicketStatus = HallTicketStatus.PENDING;
+    private LocalDate hallTicketGenerationDate;
 }
