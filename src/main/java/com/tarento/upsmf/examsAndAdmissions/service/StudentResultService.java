@@ -14,12 +14,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,6 +41,14 @@ public class StudentResultService {
     private RetotallingRequestRepository retotallingRequestRepository;
     @Autowired
     private DataImporterService dataImporterService;
+
+    Map<String, Class<?>> columnConfig = Map.of(
+            "Start Date", Date.class,
+            "End Date", Date.class,
+            "Start Time", Date.class,
+            "End Time", Date.class
+            // Add other columns and their data types as needed
+    );
 
     public ResponseDto importInternalMarksFromExcel(MultipartFile file) {
         ResponseDto response = new ResponseDto(Constants.API_IMPORT_INTERNAL_MARKS_FROM_EXCEL);
@@ -148,25 +153,27 @@ public class StudentResultService {
                     result.setStudent(studentEntity);
                     result.setCourse(courseEntity);
                     result.setExam(examEntity);
-                    result.setInternalMarks(getBigDecimalValue(row.getCell(8)));
-                    result.setPassingInternalMarks(getBigDecimalValue(row.getCell(9)));
-                    result.setInternalMarksObtained(getBigDecimalValue(row.getCell(10)));
 
-                    result.setExternalMarks(getBigDecimalValue(row.getCell(11)));
-                    result.setPassingExternalMarks(getBigDecimalValue(row.getCell(12)));
-                    result.setExternalMarksObtained(getBigDecimalValue(row.getCell(13)));
+                    result.setInternalMarks(getIntegerValue(row.getCell(8)));
+                    result.setPassingInternalMarks(getIntegerValue(row.getCell(9)));
+                    result.setInternalMarksObtained(getIntegerValue(row.getCell(10)));
 
-                    result.setPracticalMarks(getBigDecimalValue(row.getCell(14)));
-                    result.setPassingPracticalMarks(getBigDecimalValue(row.getCell(15)));
-                    result.setPracticalMarksObtained(getBigDecimalValue(row.getCell(16)));
+                    result.setExternalMarks(getIntegerValue(row.getCell(11)));
+                    result.setPassingExternalMarks(getIntegerValue(row.getCell(12)));
+                    result.setExternalMarksObtained(getIntegerValue(row.getCell(13)));
 
-                    result.setOtherMarks(getBigDecimalValue(row.getCell(17)));
-                    result.setPassingOtherMarks(getBigDecimalValue(row.getCell(18)));
-                    result.setOtherMarksObtained(getBigDecimalValue(row.getCell(19)));
+                    result.setPracticalMarks(getIntegerValue(row.getCell(14)));
+                    result.setPassingPracticalMarks(getIntegerValue(row.getCell(15)));
+                    result.setPracticalMarksObtained(getIntegerValue(row.getCell(16)));
 
-                    result.setTotalMarks(getBigDecimalValue(row.getCell(20)));
-                    result.setPassingTotalMarks(getBigDecimalValue(row.getCell(21)));
-                    result.setTotalMarksObtained(getBigDecimalValue(row.getCell(22)));
+                    result.setOtherMarks(getIntegerValue(row.getCell(17)));
+                    result.setPassingOtherMarks(getIntegerValue(row.getCell(18)));
+                    result.setOtherMarksObtained(getIntegerValue(row.getCell(19)));
+
+                    result.setTotalMarks(getIntegerValue(row.getCell(20)));
+                    result.setPassingTotalMarks(getIntegerValue(row.getCell(21)));
+                    result.setTotalMarksObtained(getIntegerValue(row.getCell(22)));
+
                     result.setGrade(getStringValue(row.getCell(23)));
                     result.setResult(getStringValue(row.getCell(24)));
 
@@ -294,10 +301,24 @@ public class StudentResultService {
         }
     }
 
-    private BigDecimal getBigDecimalValue(Cell cell) {
-        if (cell == null || cell.getCellType() != CellType.NUMERIC) return null;
-        return BigDecimal.valueOf(cell.getNumericCellValue());
+    public static Integer getIntegerValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC) {
+            double numericValue = cell.getNumericCellValue();
+            return (int) numericValue;
+        } else if (cell.getCellType() == CellType.STRING) {
+            try {
+                return Integer.parseInt(cell.getStringCellValue());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
+
     private boolean validateStudentResult(StudentResult result) {
         // Validate mandatory fields
         if (result.getStudent() == null || result.getCourse() == null || result.getExam() == null) {
@@ -305,31 +326,28 @@ public class StudentResultService {
         }
 
         // Validate marks
-        if (!isValidMark(result.getInternalMarks())
-                || !isValidMark(result.getPassingInternalMarks())
-                || !isValidMark(result.getInternalMarksObtained())
-                || !isValidMark(result.getExternalMarks())
-                || !isValidMark(result.getPassingExternalMarks())
-                || !isValidMark(result.getExternalMarksObtained())
-                || !isValidMark(result.getPracticalMarks())
-                || !isValidMark(result.getPassingPracticalMarks())
-                || !isValidMark(result.getPracticalMarksObtained())
-                || !isValidMark(result.getOtherMarks())
-                || !isValidMark(result.getPassingOtherMarks())
-                || !isValidMark(result.getOtherMarksObtained())
-                || !isValidMark(result.getTotalMarks())
-                || !isValidMark(result.getPassingTotalMarks())
-                || !isValidMark(result.getTotalMarksObtained())) {
+        if (isValidMark(result.getInternalMarks())
+                || isValidMark(result.getPassingInternalMarks())
+                || isValidMark(result.getInternalMarksObtained())
+                || isValidMark(result.getExternalMarks())
+                || isValidMark(result.getPassingExternalMarks())
+                || isValidMark(result.getExternalMarksObtained())
+                || isValidMark(result.getPracticalMarks())
+                || isValidMark(result.getPassingPracticalMarks())
+                || isValidMark(result.getPracticalMarksObtained())
+                || isValidMark(result.getOtherMarks())
+                || isValidMark(result.getPassingOtherMarks())
+                || isValidMark(result.getOtherMarksObtained())
+                || isValidMark(result.getTotalMarks())
+                || isValidMark(result.getPassingTotalMarks())
+                || isValidMark(result.getTotalMarksObtained())) {
             return false;
         }
         return true;
     }
 
-    private boolean isValidMark(BigDecimal mark) {
-        if (mark == null) {
-            return true;  // Assuming marks can be null (not entered)
-        }
-        return mark.compareTo(BigDecimal.ZERO) >= 0 && mark.compareTo(new BigDecimal("100")) <= 0;
+    private static boolean isValidMark(Integer marks) {
+        return marks == null || (marks >= 0 && marks <= 100);
     }
     public ResponseDto publishResultsForCourseWithinCycle(Long courseId, Long examCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_PUBLISH_RESULTS_FOR_COURSE_WITHIN_CYCLE);
@@ -440,7 +458,7 @@ public class StudentResultService {
         dto.setStudentName(result.getFirstName() + " " + result.getLastName());
         dto.setCourseName(result.getCourse().getCourseName());
         dto.setExamName(result.getExam().getExamName());
-        dto.setInternalMarks(result.getInternalMarksObtained());
+        dto.setInternalMarks(result.getInternalMarks());
 
         return dto;
     }
@@ -452,7 +470,7 @@ public class StudentResultService {
 
             switch (fileType.toLowerCase()) {
                 case Constants.CSV:
-                    jsonArray = dataImporterService.csvToJson(file);
+                    jsonArray = dataImporterService.csvToJson(file,columnConfig);
                     break;
                 case Constants.EXCEL:
                     jsonArray = dataImporterService.excelToJson(file);
@@ -463,7 +481,7 @@ public class StudentResultService {
             }
 
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
-            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, studentResultRepository);
+            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository);
 
             if (success) {
                 response.put(Constants.MESSAGE, "File processed successfully.");

@@ -4,5 +4,5 @@ import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExamEntityRepository extends JpaRepository<ExamUploadData, Long>{
-    boolean findByCourseAndExamcycleName(String course, String examcycleName);
+    Boolean findByCourseAndExamcycleName(String course, String examcycleName);
 }
