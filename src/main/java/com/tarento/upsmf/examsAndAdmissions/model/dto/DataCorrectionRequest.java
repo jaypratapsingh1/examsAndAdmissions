@@ -5,6 +5,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -28,5 +29,9 @@ public class DataCorrectionRequest {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "exam_id")
     private Exam exam;  // Associating with Exam
+    private String updatedFirstName;
+    private String updatedLastName;
+    private LocalDate updatedDOB;
+
 
 }

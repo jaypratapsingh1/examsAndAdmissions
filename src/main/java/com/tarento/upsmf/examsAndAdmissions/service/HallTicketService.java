@@ -7,6 +7,8 @@ import com.tarento.upsmf.examsAndAdmissions.enums.DocumentType;
 import com.tarento.upsmf.examsAndAdmissions.enums.HallTicketStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequest;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionRequestDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.DataCorrectionResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.PendingDataDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -196,10 +198,14 @@ public class HallTicketService {
         }
     }
 
-
-    public ResponseDto requestHallTicketDataCorrection(Long studentId, String correctionDetails, @RequestParam("file") MultipartFile proof) throws IOException {
+    public ResponseDto requestHallTicketDataCorrection(Long studentId,
+                                                       String updatedFirstName,
+                                                       String updatedLastName,
+                                                       LocalDate updatedDOB,
+                                                       @RequestParam("file") MultipartFile proof) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
         Optional<Student> optionalStudent = studentRepository.findById(studentId);
+
         if (!optionalStudent.isPresent()) {
             response.put(Constants.MESSAGE, "Invalid Student ID");
             response.setResponseCode(HttpStatus.BAD_REQUEST);
@@ -208,18 +214,40 @@ public class HallTicketService {
 
         DataCorrectionRequest request = new DataCorrectionRequest();
         request.setStudent(optionalStudent.get());
-        request.setRequestedCorrection(correctionDetails);
+        if (updatedFirstName != null) {
+            request.setUpdatedFirstName(updatedFirstName);
+        }
+        if (updatedLastName != null) {
+            request.setUpdatedLastName(updatedLastName);
+        }
+        if (updatedDOB != null) {
+            request.setUpdatedDOB(updatedDOB);
+        }
         request.setStatus("NEW");
+
         if (proof != null && !proof.isEmpty()) {
             String path = studentService.storeFile(proof);
             request.setProofAttachmentPath(path);
         }
+
         dataCorrectionRequestRepository.save(request);
+        DataCorrectionRequestDto responseDto = toDto(request);
         response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-        response.put(Constants.RESPONSE, request);
+        response.put(Constants.RESPONSE, responseDto);
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+    private DataCorrectionRequestDto toDto(DataCorrectionRequest request) {
+        DataCorrectionRequestDto dto = new DataCorrectionRequestDto();
+        dto.setId(request.getId());
+        dto.setUpdatedFirstName(request.getUpdatedFirstName());
+        dto.setUpdatedLastName(request.getUpdatedLastName());
+        dto.setUpdatedDOB(request.getUpdatedDOB());
+        dto.setStatus(request.getStatus());
+        dto.setProofAttachmentPath(request.getProofAttachmentPath());
+        return dto;
+    }
+
     public ResponseDto getAllDataCorrectionRequests() {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS);
         List<DataCorrectionRequest> requests = dataCorrectionRequestRepository.findAll();
@@ -291,15 +319,55 @@ public class HallTicketService {
 
     public ResponseDto approveDataCorrection(Long requestId) {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_APPROVE_DATA_CORRECTION);
-        DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
-        if (request != null) {
-            request.setStatus("APPROVED");
-            dataCorrectionRequestRepository.save(request);
-            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-            response.put(Constants.RESPONSE, request);
-            response.setResponseCode(HttpStatus.OK);
-        } else {
-            setErrorResponse(response, "REQUEST_NOT_FOUND", "Request not found.", HttpStatus.NOT_FOUND);
+
+        try {
+            DataCorrectionRequest request = dataCorrectionRequestRepository.findById(requestId).orElse(null);
+            if (request != null) {
+                // 1. Fetch the associated student details and update
+                Student student = request.getStudent();
+                student.setFirstName(request.getUpdatedFirstName());
+                student.setSurname(request.getUpdatedLastName());
+                student.setDateOfBirth(request.getUpdatedDOB());
+                studentRepository.save(student);
+
+                // 2. Regenerate the hall ticket with the updated details
+                Optional<StudentExamRegistration> registrationOptional = Optional.ofNullable(studentExamRegistrationRepository.findByStudent(student));
+                if (registrationOptional.isPresent()) {
+                    StudentExamRegistration registration = registrationOptional.get();
+                    byte[] hallTicketData = generateHallTicket(registration);
+                    if (hallTicketData.length > 0) {
+                        MultipartFile hallTicket = new ByteArrayMultipartFile(hallTicketData, "hallticket_updated_" + student.getId() + ".pdf");
+                        String path = fileStorageService.storeFile(hallTicket, DocumentType.HALL_TICKET);
+                        if (path != null) {
+                            registration.setHallTicketPath(path);
+                            registration.setHallTicketStatus(HallTicketStatus.UPDATED); // Assuming there's an UPDATED status
+                            studentExamRegistrationRepository.save(registration);
+                        }
+                    }
+                }
+
+                request.setStatus("APPROVED");
+                dataCorrectionRequestRepository.save(request);
+
+                // Convert saved request to DTO
+                DataCorrectionResponseDto responseDto = new DataCorrectionResponseDto();
+                responseDto.setId(request.getId());
+                responseDto.setStudentId(request.getStudent().getId());
+                responseDto.setStatus(request.getStatus());
+                responseDto.setProofAttachmentPath(request.getProofAttachmentPath());
+                responseDto.setUpdatedFirstName(request.getUpdatedFirstName());
+                responseDto.setUpdatedLastName(request.getUpdatedLastName());
+                responseDto.setUpdatedDOB(request.getUpdatedDOB().toString());
+
+                response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+                response.put(Constants.RESPONSE, responseDto);
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                setErrorResponse(response, "REQUEST_NOT_FOUND", "Request not found.", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            setErrorResponse(response, "APPROVAL_ERROR", "Error during approval process: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Error during data correction approval", e);  // Assuming you have a logger set up.
         }
         return response;
     }
