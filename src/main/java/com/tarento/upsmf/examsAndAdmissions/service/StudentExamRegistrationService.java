@@ -1,8 +1,10 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
-import com.tarento.upsmf.examsAndAdmissions.exception.ExamCycleNotFoundException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamInfoDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamInfoDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentWithUnregisteredExams;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -243,6 +244,43 @@ public class StudentExamRegistrationService {
         } catch (Exception e) {
             ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return response;
+    }
+    public ResponseDto getVerifiedStudentsNotRegisteredForExamCycleByInstitute(Long examCycleId, Long instituteId) {
+        ResponseDto response = new ResponseDto(Constants.API_VERIFIED_NOT_REGISTERED);
+
+        List<Student> students = registrationRepository.findVerifiedStudentsNotRegisteredForExamCycleByInstitute(examCycleId, instituteId);
+        List<Exam> allExamsForCycle = examRepository.findByExamCycleId(examCycleId);  // fetch all exams by examCycleId
+
+        List<StudentExamInfoDTO> resultDTOs = new ArrayList<>();
+        for (Student student : students) {
+            List<Exam> registeredExams = examRepository.findRegisteredExamsForStudentInCycle(student.getId(), examCycleId); // This method will fetch exams for which student is registered in that cycle.
+            List<Exam> unregisteredExams = new ArrayList<>(allExamsForCycle);
+            unregisteredExams.removeAll(registeredExams); // Removing registered exams from the list of all exams to get unregistered exams
+
+            StudentExamInfoDTO dto = new StudentExamInfoDTO();
+            dto.setFirstName(student.getFirstName());
+            dto.setSurname(student.getSurname());
+            dto.setEnrollmentNumber(student.getEnrollmentNumber());
+            dto.setCourseName(student.getCourse().getCourseName());
+            dto.setAdmissionDate(student.getAdmissionDate().getYear());
+            dto.setNumberOfExams(unregisteredExams.size());
+            List<ExamInfoDto> exams = unregisteredExams.stream().map(exam ->
+                    new ExamInfoDto(exam.getId(), exam.getExamName())
+            ).collect(Collectors.toList());
+            dto.setExams(exams);
+
+            resultDTOs.add(dto);
+        }
+
+        if (!resultDTOs.isEmpty()) {
+            response.put(Constants.MESSAGE, "Successfully fetched the list of students and their unregistered exams.");
+            response.put(Constants.RESPONSE, resultDTOs);
+            response.setResponseCode(HttpStatus.OK);
+        } else {
+            ResponseDto.setErrorResponse(response, "STUDENTS_OR_EXAMS_NOT_FOUND", "No students or exams found for the given criteria.", HttpStatus.NOT_FOUND);
+        }
+
         return response;
     }
 }

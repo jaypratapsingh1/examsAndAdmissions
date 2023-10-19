@@ -137,6 +137,8 @@ public class Constants {
     public static final String API_REGISTER_STUDENTS_FOR_EXAMS = "api.studentExamRegistration.registerStudentsForExams";
     public static final String API_GET_ALL_REGISTRATIONS = "api.studentExamRegistration.getAllRegistrations";
     public static final String API_GET_ALL_REGISTRATIONS_BY_EXAM_CYCLE = "api.studentExamRegistration.getAllRegistrationsByExamCycle";
+    public static final String API_VERIFIED_NOT_REGISTERED = "API_VERIFIED_NOT_REGISTERED";
+
     public static final String API_DISPATCH_GET_FOR_ADMIN = "api.dispatch.get.for.admin";
     public static final String API_DISPATCH_GET_FOR_INSTITUTE = "api.dispatch.get.for.institute";
     // Payment
