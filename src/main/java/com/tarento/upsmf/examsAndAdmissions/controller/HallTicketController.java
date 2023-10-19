@@ -30,10 +30,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/hallticket")
@@ -75,11 +73,20 @@ public class HallTicketController {
     @PostMapping("/dataCorrection/request")
     public ResponseEntity<ResponseDto> requestDataCorrection(
             @RequestParam("studentId") Long studentId,
-            @RequestParam("correctionDetails") String correctionDetails,
+            @RequestParam(value = "updatedFirstName", required = false) Optional<String> updatedFirstNameOpt,
+            @RequestParam(value = "updatedLastName", required = false) Optional<String> updatedLastNameOpt,
+            @RequestParam(value = "updatedDOB", required = false) Optional<String> dobOpt, // Taking as string for optional handling
             @RequestParam("proof") MultipartFile proof) throws IOException {
-        ResponseDto responseDto = hallTicketService.requestHallTicketDataCorrection(studentId, correctionDetails, proof);
+
+        // Convert Optional<String> to actual value or null if not present
+        String updatedFirstName = updatedFirstNameOpt.orElse(null);
+        String updatedLastName = updatedLastNameOpt.orElse(null);
+        LocalDate updatedDOB = dobOpt.isPresent() ? LocalDate.parse(dobOpt.get()) : null;
+
+        ResponseDto responseDto = hallTicketService.requestHallTicketDataCorrection(studentId, updatedFirstName, updatedLastName, updatedDOB, proof);
         return ResponseEntity.status(responseDto.getResponseCode().value()).body(responseDto);
     }
+
 
     @GetMapping("/dataCorrection/requests")
     public ResponseEntity<ResponseDto> viewDataCorrectionRequests() {
