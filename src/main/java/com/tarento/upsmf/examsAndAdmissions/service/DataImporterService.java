@@ -102,7 +102,6 @@ public class DataImporterService {
             return jsonArray;
         }
     }
-
     public JSONArray csvToJson(MultipartFile csvFile, Map<String, Class<?>> columnConfig) throws IOException {
         try (Reader reader = new InputStreamReader(csvFile.getInputStream());
              CSVParser csvParser = CSVFormat.DEFAULT.withHeader().parse(reader)) {
@@ -116,19 +115,23 @@ public class DataImporterService {
                             Class<?> columnType = columnConfig.get(columnName);
 
                             if (columnType == Date.class) {
-                                // Parse dates or times based on the column type
                                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                                 SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
 
                                 try {
-                                    if (columnName.equals("Start Date") || columnName.equals("End Date")) {
-                                        Date date = dateFormat.parse(columnValue);
-                                        map.put(columnName, date);
-                                    } else if (columnName.equals("Start Time") || columnName.equals("End Time")) {
-                                        Date time = timeFormat.parse(columnValue);
-                                        map.put(columnName, time);
+                                    if (columnValue != null && !columnValue.isEmpty()) {
+                                        if (columnName.equals("Start Date") || columnName.equals("End Date")) {
+                                            Date date = dateFormat.parse(columnValue);
+                                            map.put(columnName, date);
+                                        } else if (columnName.equals("Start Time") || columnName.equals("End Time")) {
+                                            Date time = timeFormat.parse(columnValue);
+                                            map.put(columnName, time);
+                                        } else {
+                                            // Handle other date or time columns if needed
+                                        }
                                     } else {
-                                        // Handle other cases if needed
+                                        // Handle cases where the columnValue is empty or null
+                                        map.put(columnName, null);
                                     }
                                 } catch (ParseException e) {
                                     e.printStackTrace(); // Handle parsing exceptions
@@ -155,7 +158,12 @@ public class DataImporterService {
     public <T> List<T> convertJsonToDtoList(JSONArray jsonArray, Class<T> dtoClass) {
         try {
             System.out.println("JSON data before deserialization: " + jsonArray.toString());
-            List<T> dtoList = objectMapper.readValue(jsonArray.toString(), objectMapper.getTypeFactory().constructCollectionType(List.class, dtoClass));
+
+            // Use your custom ObjectMapper
+            ObjectMapper customMapper = new ObjectMapper();
+            customMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+
+            List<T> dtoList = customMapper.readValue(jsonArray.toString(), customMapper.getTypeFactory().constructCollectionType(List.class, dtoClass));
             System.out.println("DTOs after deserialization: " + dtoList);
             return dtoList;
         } catch (Exception e) {
@@ -337,18 +345,18 @@ public class DataImporterService {
                 if (!DataValidation.isCourseNameValid(dto.getCourse())) {
                     validationErrors.add("- Course is invalid: " + dto.getCourse());
                 }
-                if (!DataValidation.isDateValid(dto.getStartDate())) {
-                    validationErrors.add("- Start Date is invalid: " + dto.getStartDate());
-                }
-                if (!DataValidation.isDateValid(dto.getEndDate())) {
-                    validationErrors.add("- End Date is invalid: " + dto.getEndDate());
-                }
+//                if (!DataValidation.isDateValid(dto.getStartDate())) {
+//                    validationErrors.add("- Start Date is invalid: " + dto.getStartDate());
+//                }
+//                if (!DataValidation.isDateValid(dto.getEndDate())) {
+//                    validationErrors.add("- End Date is invalid: " + dto.getEndDate());
+//                }
                 if (!DataValidation.isExamValid(dto.getExamName())) {
                     validationErrors.add("- Exam Name is invalid: " + dto.getExamName());
                 }
-                if (!DataValidation.isDateValid(dto.getDate())) {
-                    validationErrors.add("- Date is invalid: " + dto.getDate());
-                }
+//                if (!DataValidation.isDateValid(dto.getDate())) {
+//                    validationErrors.add("- Date is invalid: " + dto.getDate());
+//                }
 //                if (!DataValidation.isTimeFormatValid(String.valueOf(dto.getStartTime()))) {
 //                    validationErrors.add("- Start Time is invalid: " + dto.getStartTime());
 //                }
