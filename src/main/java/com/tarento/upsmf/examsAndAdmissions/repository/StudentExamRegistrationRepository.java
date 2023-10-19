@@ -47,4 +47,7 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     List<StudentExamRegistration> findByStudentIdInAndExamCycleIdIn(Set<Long> studentIds, ArrayList<Long> longs);
 
     List<StudentExamRegistration> findByExamCycleIdAndInstituteId(Long examCycleId, Long instituteId);
+
+    @Query("SELECT s FROM Student s WHERE s.verificationStatus = com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus.VERIFIED AND s.institute.id = :instituteId AND NOT EXISTS (SELECT ser FROM StudentExamRegistration ser WHERE ser.student.id = s.id AND ser.examCycle.id = :examCycleId)")
+    List<Student> findVerifiedStudentsNotRegisteredForExamCycleByInstitute(Long examCycleId, Long instituteId);
 }

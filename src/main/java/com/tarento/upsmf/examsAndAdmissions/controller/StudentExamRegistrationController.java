@@ -1,12 +1,14 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.Student;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
 import com.tarento.upsmf.examsAndAdmissions.service.StudentExamRegistrationService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,5 +44,13 @@ public class StudentExamRegistrationController {
             @PathVariable Long instituteId) {
         ResponseDto response = registrationService.getAllRegistrationsByExamCycleAndInstitute(examCycleId, instituteId);
         return ResponseEntity.status(response.getResponseCode()).body(response);
+    }
+    @GetMapping("/getVerifiedNotRegistered")
+    public ResponseEntity<ResponseDto> getVerifiedStudentsNotRegisteredForExamCycleByInstitute(
+            @RequestParam("examCycleId") Long examCycleId,
+            @RequestParam("instituteId") Long instituteId) {
+
+        ResponseDto response = registrationService.getVerifiedStudentsNotRegisteredForExamCycleByInstitute(examCycleId, instituteId);
+        return new ResponseEntity<>(response, response.getResponseCode());
     }
 }
