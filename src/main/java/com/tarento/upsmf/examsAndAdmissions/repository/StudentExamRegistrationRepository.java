@@ -45,4 +45,6 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     Optional<StudentExamRegistration> findByStudentIdAndExamCycleId(Long studentId, Long examCycleId);
 
     List<StudentExamRegistration> findByStudentIdInAndExamCycleIdIn(Set<Long> studentIds, ArrayList<Long> longs);
+
+    List<StudentExamRegistration> findByExamCycleIdAndInstituteId(Long examCycleId, Long instituteId);
 }

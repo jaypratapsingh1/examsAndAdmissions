@@ -36,4 +36,11 @@ public class StudentExamRegistrationController {
         ResponseDto response = registrationService.getAllRegistrationsByExamCycle(examCycleId);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
+    @GetMapping("/getRegistrationDetail/{examCycleId}/{instituteId}")
+    public ResponseEntity<ResponseDto> getAllRegistrationsByExamCycleAndInstitute(
+            @PathVariable Long examCycleId,
+            @PathVariable Long instituteId) {
+        ResponseDto response = registrationService.getAllRegistrationsByExamCycleAndInstitute(examCycleId, instituteId);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
+    }
 }

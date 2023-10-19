@@ -225,4 +225,24 @@ public class StudentExamRegistrationService {
         }
         return response;
     }
+    public ResponseDto getAllRegistrationsByExamCycleAndInstitute(Long examCycleId, Long instituteId) {
+        ResponseDto response = new ResponseDto(Constants.API_GET_ALL_REGISTRATIONS_BY_EXAM_CYCLE);
+        try {
+            List<StudentExamRegistration> registrations = registrationRepository.findByExamCycleIdAndInstituteId(examCycleId, instituteId);
+
+            if (registrations.isEmpty()) {
+                ResponseDto.setErrorResponse(response, "REGISTRATIONS_NOT_FOUND", "No registrations found for exam cycle ID: " + examCycleId + " and institute ID: " + instituteId, HttpStatus.NOT_FOUND);
+            } else {
+                List<StudentExamRegistrationDTO> dtoList = registrations.stream()
+                        .map(this::convertToDto)
+                        .collect(Collectors.toList());
+                response.put(Constants.MESSAGE, "Registrations fetched successfully.");
+                response.put(Constants.RESPONSE, dtoList);
+                response.setResponseCode(HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 }
