@@ -4,7 +4,6 @@ import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamInfoDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamInfoDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamRegistrationDTO;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentWithUnregisteredExams;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
