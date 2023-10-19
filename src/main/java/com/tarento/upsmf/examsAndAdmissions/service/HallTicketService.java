@@ -204,41 +204,45 @@ public class HallTicketService {
                                                        LocalDate updatedDOB,
                                                        @RequestParam("file") MultipartFile proof) throws IOException {
         ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_REQUEST_DATA_CORRECTION);
-        Optional<Student> optionalStudent = studentRepository.findById(studentId);
 
-        if (!optionalStudent.isPresent()) {
-            response.put(Constants.MESSAGE, "Invalid Student ID");
-            response.setResponseCode(HttpStatus.BAD_REQUEST);
-            return response;
-        }
+        try {
+            Optional<Student> optionalStudent = studentRepository.findById(studentId);
 
-        if (proof == null || proof.isEmpty()) {
-            response.put(Constants.MESSAGE, "Proof attachment is mandatory for data correction request.");
-            response.setResponseCode(HttpStatus.BAD_REQUEST);
-            return response;
-        }
+            if (!optionalStudent.isPresent()) {
+                setErrorResponse(response, "INVALID_STUDENT_ID", "Invalid Student ID", HttpStatus.BAD_REQUEST);
+                return response;
+            }
 
-        DataCorrectionRequest request = new DataCorrectionRequest();
-        request.setStudent(optionalStudent.get());
-        if (updatedFirstName != null) {
-            request.setUpdatedFirstName(updatedFirstName);
-        }
-        if (updatedLastName != null) {
-            request.setUpdatedLastName(updatedLastName);
-        }
-        if (updatedDOB != null) {
-            request.setUpdatedDOB(updatedDOB);
-        }
-        request.setStatus("NEW");
+            if (proof == null || proof.isEmpty()) {
+                setErrorResponse(response, "PROOF_MISSING", "Proof attachment is required", HttpStatus.BAD_REQUEST);
+                return response;
+            }
 
-        String path = studentService.storeFile(proof);
-        request.setProofAttachmentPath(path);
+            DataCorrectionRequest request = new DataCorrectionRequest();
+            request.setStudent(optionalStudent.get());
+            if (updatedFirstName != null) {
+                request.setUpdatedFirstName(updatedFirstName);
+            }
+            if (updatedLastName != null) {
+                request.setUpdatedLastName(updatedLastName);
+            }
+            if (updatedDOB != null) {
+                request.setUpdatedDOB(updatedDOB);
+            }
+            request.setStatus("NEW");
 
-        dataCorrectionRequestRepository.save(request);
-        DataCorrectionRequestDto responseDto = toDto(request);
-        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-        response.put(Constants.RESPONSE, responseDto);
-        response.setResponseCode(HttpStatus.OK);
+            String path = studentService.storeFile(proof);
+            request.setProofAttachmentPath(path);
+
+            dataCorrectionRequestRepository.save(request);
+            DataCorrectionRequestDto responseDto = toDto(request);
+            response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+            response.put(Constants.RESPONSE, responseDto);
+            response.setResponseCode(HttpStatus.OK);
+        } catch (Exception e) {
+            setErrorResponse(response, "DATA_CORRECTION_ERROR", "Error during data correction request: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Error during data correction request", e);  // Assuming you have a logger set up.
+        }
         return response;
     }
 
