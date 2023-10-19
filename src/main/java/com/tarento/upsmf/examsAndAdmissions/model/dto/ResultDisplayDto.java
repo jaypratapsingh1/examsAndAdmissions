@@ -28,25 +28,25 @@ public class ResultDisplayDto {
     private String examCycleValue;
     private String examValue;
 
-    private BigDecimal internalMarks;
-    private BigDecimal passingInternalMarks;
-    private BigDecimal internalMarksObtained;
+    private Integer internalMarks;
+    private Integer passingInternalMarks;
+    private Integer internalMarksObtained;
 
-    private BigDecimal practicalMarks;
-    private BigDecimal passingPracticalMarks;
-    private BigDecimal practicalMarksObtained;
+    private Integer practicalMarks;
+    private Integer passingPracticalMarks;
+    private Integer practicalMarksObtained;
 
-    private BigDecimal otherMarks;
-    private BigDecimal passingOtherMarks;
-    private BigDecimal otherMarksObtained;
+    private Integer otherMarks;
+    private Integer passingOtherMarks;
+    private Integer otherMarksObtained;
 
-    private BigDecimal externalMarks;
-    private BigDecimal passingExternalMarks;
-    private BigDecimal externalMarksObtained;
+    private Integer externalMarks;
+    private Integer passingExternalMarks;
+    private Integer externalMarksObtained;
 
-    private BigDecimal totalMarks;
-    private BigDecimal passingTotalMarks;
-    private BigDecimal totalMarksObtained;
+    private Integer totalMarks;
+    private Integer passingTotalMarks;
+    private Integer totalMarksObtained;
 
     private String grade;
     private String result;
