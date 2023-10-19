@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,4 +43,6 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
     StudentExamRegistration findByStudent(Student student);
 
     Optional<StudentExamRegistration> findByStudentIdAndExamCycleId(Long studentId, Long examCycleId);
+
+    List<StudentExamRegistration> findByStudentIdInAndExamCycleIdIn(Set<Long> studentIds, ArrayList<Long> longs);
 }

@@ -62,6 +62,27 @@ public class StudentExamRegistrationService {
         Map<Long, Exam> examMap = exams.stream().collect(Collectors.toMap(Exam::getId, Function.identity()));
         Map<Long, ExamCycle> examCycleMap = examCycles.stream().collect(Collectors.toMap(ExamCycle::getId, Function.identity()));
 
+        // Fetch all registrations for the given student and exam cycle IDs
+        List<StudentExamRegistration> allRegistrationsForStudents = registrationRepository.findByStudentIdInAndExamCycleIdIn(studentIds, new ArrayList<>(examCycleIds));
+
+        // Convert this list into a map for efficient lookups
+        Map<Long, Set<Long>> studentToRegisteredExams = new HashMap<>();
+        for (StudentExamRegistration registration : allRegistrationsForStudents) {
+            studentToRegisteredExams
+                    .computeIfAbsent(registration.getStudent().getId(), k -> new HashSet<>())
+                    .add(registration.getExam().getId());
+        }
+
+        // Filter out students who are registered for all exams and adjust available exams
+        students = students.stream()
+                .filter(student -> {
+                    Set<Long> registeredExamIds = studentToRegisteredExams.getOrDefault(student.getId(), Collections.emptySet());
+                    return registeredExamIds.size() != exams.size();
+                })
+                .collect(Collectors.toList());
+
+        examIds.removeAll(allRegistrationsForStudents.stream().map(reg -> reg.getExam().getId()).collect(Collectors.toSet()));
+
         // Fetch existing registrations in bulk
         List<StudentExamRegistration> existingRegistrations = registrationRepository.findByStudentIdInAndExamIdIn(studentIds, examIds);
         Set<String> existingRegistrationKeys = existingRegistrations.stream()
