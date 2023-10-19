@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.US);
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
 
     @Override
     public LocalTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
