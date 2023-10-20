@@ -34,6 +34,7 @@ public class StudentExamRegistration {
 
     private LocalDate registrationDate;
     private String status;
+    private String remarks;
     private String createdBy;
     private String updatedBy;
     @ManyToOne

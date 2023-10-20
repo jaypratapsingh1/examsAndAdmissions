@@ -137,6 +137,7 @@ public class StudentExamRegistrationService {
             registration.setExamCycle(examCycleMap.get(request.getExamCycleId()));
             registration.setRegistrationDate(request.getRegistrationDate());
             registration.setStatus(request.getStatus());
+            registration.setRemarks(request.getRemarks());
             registration.setUpdatedBy(userId);
 
             newRegistrations.add(registration);
@@ -198,6 +199,7 @@ public class StudentExamRegistrationService {
         dto.setExamCycleId(entity.getExamCycle().getId());
         dto.setRegistrationDate(entity.getRegistrationDate());
         dto.setStatus(entity.getStatus());
+        dto.setRemarks(entity.getRemarks());
         dto.setCreatedBy(entity.getCreatedBy());
         dto.setUpdatedBy(entity.getUpdatedBy());
 

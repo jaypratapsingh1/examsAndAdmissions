@@ -19,6 +19,7 @@ public class PendingDataDto {
     private String studentEnrollmentNumber;
     private LocalDate registrationDate;
     private String status;
+    private String remarks;
     private String examCenterName;
     private boolean feesPaid;
     private double attendancePercentage;
