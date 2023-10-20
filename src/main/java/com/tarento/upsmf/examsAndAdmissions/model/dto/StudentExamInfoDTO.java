@@ -16,7 +16,8 @@ public class StudentExamInfoDTO {
     private String surname;
     private String enrollmentNumber;
     private String courseName;
-    private int admissionDate;
+    private String session;
     private int numberOfExams;
+    private Long id;
     private List<ExamInfoDto> exams;
 }

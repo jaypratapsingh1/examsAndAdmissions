@@ -262,11 +262,15 @@ public class StudentExamRegistrationService {
             dto.setSurname(student.getSurname());
             dto.setEnrollmentNumber(student.getEnrollmentNumber());
             dto.setCourseName(student.getCourse().getCourseName());
-            dto.setAdmissionDate(student.getAdmissionDate().getYear());
+            dto.setSession(student.getSession());
             dto.setNumberOfExams(unregisteredExams.size());
-            List<ExamInfoDto> exams = unregisteredExams.stream().map(exam ->
-                    new ExamInfoDto(exam.getId(), exam.getExamName())
-            ).collect(Collectors.toList());
+            dto.setId(student.getId());
+            List<ExamInfoDto> exams = Optional.of(unregisteredExams.stream()
+                            .map(exam -> new ExamInfoDto(exam.getId(), exam.getExamName()))
+                            .collect(Collectors.toList()))
+                    .filter(list -> !list.isEmpty())
+                    .orElseGet(() -> Collections.singletonList(new ExamInfoDto(0L, null)));
+
             dto.setExams(exams);
 
             resultDTOs.add(dto);
