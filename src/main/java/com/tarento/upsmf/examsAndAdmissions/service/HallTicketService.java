@@ -191,6 +191,8 @@ public class HallTicketService {
             hallTicketResponse.getResult().put(Constants.RESPONSE, signedUrl);  // use the signed URL
             return hallTicketResponse;
 
+        } else if (hallTicketResponse.getResponseCode() == HttpStatus.NOT_FOUND) {
+            return hallTicketResponse;  // Directly return the 404 response if the record isn't found
         } else {
             ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
             ResponseDto.setErrorResponse(response, "REQUEST_ERROR", "Error processing request: " + hallTicketResponse.getError().getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
