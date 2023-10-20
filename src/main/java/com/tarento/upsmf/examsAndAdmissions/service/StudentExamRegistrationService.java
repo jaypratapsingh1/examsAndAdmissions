@@ -233,11 +233,26 @@ public class StudentExamRegistrationService {
             if (registrations.isEmpty()) {
                 ResponseDto.setErrorResponse(response, "REGISTRATIONS_NOT_FOUND", "No registrations found for exam cycle ID: " + examCycleId + " and institute ID: " + instituteId, HttpStatus.NOT_FOUND);
             } else {
-                List<StudentExamRegistrationDTO> dtoList = registrations.stream()
-                        .map(this::convertToDto)
-                        .collect(Collectors.toList());
+                List<StudentExamInfoDTO> resultDTOs = new ArrayList<>();
+
+                for (StudentExamRegistration registration : registrations) {
+                    StudentExamInfoDTO dto = new StudentExamInfoDTO();
+                    dto.setFirstName(registration.getStudent().getFirstName());
+                    dto.setSurname(registration.getStudent().getSurname());
+                    dto.setEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
+                    dto.setCourseName(registration.getStudent().getCourse().getCourseName());
+                    dto.setSession(registration.getStudent().getSession());
+
+                    Exam examForRegistration = registration.getExam();
+                    List<ExamInfoDto> exams = Collections.singletonList(new ExamInfoDto(examForRegistration.getId(), examForRegistration.getExamName()));
+                    dto.setExams(exams);
+                    dto.setNumberOfExams(1);
+
+                    resultDTOs.add(dto);
+                }
+
                 response.put(Constants.MESSAGE, "Registrations fetched successfully.");
-                response.put(Constants.RESPONSE, dtoList);
+                response.put(Constants.RESPONSE, resultDTOs);
                 response.setResponseCode(HttpStatus.OK);
             }
         } catch (Exception e) {
@@ -272,7 +287,6 @@ public class StudentExamRegistrationService {
                     .orElseGet(() -> Collections.singletonList(new ExamInfoDto(0L, null)));
 
             dto.setExams(exams);
-
             resultDTOs.add(dto);
         }
 
