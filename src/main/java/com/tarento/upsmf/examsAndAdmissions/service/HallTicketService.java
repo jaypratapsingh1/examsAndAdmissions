@@ -674,9 +674,6 @@ public class HallTicketService {
             examCycleData.put("modifiedBy", examCycle.getModifiedBy());
             examCycleData.put("status", examCycle.getStatus());
             examCycleData.put("obsolete", examCycle.getObsolete());
-
-            formattedData.put("examCycle", examCycleData);
-
             // Exams details
             List<Exam> exams = examRepository.findByExamCycleId(examCycle.getId());
             List<Map<String, Object>> examsData = new ArrayList<>();
@@ -696,7 +693,10 @@ public class HallTicketService {
                 examsData.add(examData);
             }
 
-            formattedData.put("exams", examsData);
+            // Add examsData list inside examCycleData
+            examCycleData.put("exams", examsData);
+
+            formattedData.put("examCycle", examCycleData);
 
             response.put(Constants.RESPONSE, formattedData);
             response.setResponseCode(HttpStatus.OK);
