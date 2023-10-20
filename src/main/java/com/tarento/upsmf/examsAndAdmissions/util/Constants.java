@@ -135,6 +135,7 @@ public class Constants {
     public static final String API_REQUEST_RETOTALLING = "api.retotalling.requestRetotalling";
     public static final String API_GET_ALL_PENDING_REQUESTS = "api.retotalling.getAllPendingRequests";
 
+    public static final String API_ATTENDANCE_BY_EXAM_CYCLE_ID="api.attendance.getByExamCycleId";
 
     // API Identifiers for StudentExamRegistrationService
     public static final String API_REGISTER_STUDENTS_FOR_EXAMS = "api.studentExamRegistration.registerStudentsForExams";

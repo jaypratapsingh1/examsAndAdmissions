@@ -5,6 +5,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.UploadStatusDetails;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.AttendanceRecordDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.AttendanceRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.ExamCycleRepository;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
@@ -25,10 +26,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AttendanceService {
@@ -263,6 +266,42 @@ public class AttendanceService {
         }
 
         return response;
+    }
+    public ResponseDto getByExamCycleId(Long ExamCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_ATTENDANCE_BY_EXAM_CYCLE_ID);
+        List<AttendanceRecord> records = attendanceRepository.findByExamCycleId(ExamCycleId);
+
+        if (records.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "NO_RECORDS_FOUND", "No attendance records found", HttpStatus.NOT_FOUND);
+        } else {
+            List<AttendanceRecordDto> dtoList = records.stream()
+                    .map(this::toDto)
+                    .collect(Collectors.toList());
+            response.put(Constants.RESPONSE, dtoList);
+            response.setResponseCode(HttpStatus.OK);
+        }
+        return response;
+    }
+
+    private AttendanceRecordDto toDto(AttendanceRecord record) {
+        AttendanceRecordDto dto = new AttendanceRecordDto();
+        dto.setId(record.getId());
+        dto.setFirstName(record.getFirstName());
+        dto.setLastName(record.getLastName());
+        dto.setStudentEnrollmentNumber(record.getStudentEnrollmentNumber());
+        dto.setMothersName(record.getMothersName());
+        dto.setFathersName(record.getFathersName());
+        dto.setCourseName(record.getCourseName());
+        dto.setExamCycleData(record.getExamCycleData());
+        dto.setStartDate(record.getStartDate());
+        dto.setEndDate(record.getEndDate());
+        dto.setRejectionReason(record.getRejectionReason());
+        dto.setApprovalStatus(record.getApprovalStatus());
+        dto.setNumberOfWorkingDays(record.getNumberOfWorkingDays());
+        dto.setPresentDays(record.getPresentDays());
+        dto.setAbsentDays(record.getAbsentDays());
+        dto.setAttendancePercentage(record.getAttendancePercentage());
+        return dto;
     }
 
 }
