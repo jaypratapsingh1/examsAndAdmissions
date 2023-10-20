@@ -559,7 +559,6 @@ public class HallTicketService {
         dto.setStudentEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
         dto.setRegistrationDate(registration.getRegistrationDate());
         dto.setStatus(registration.getStatus());
-        dto.setRemarks(registration.getRemarks());
         dto.setHallTicketStatus(registration.getHallTicketStatus());
         if (registration.getExamCenter() != null) {
             dto.setExamCenterName(registration.getExamCenter().getName());
