@@ -44,4 +44,8 @@ public class AttendanceController {
         ResponseDto response = attendanceService.processBulkAttendanceUpload(file, fileType);
         return new ResponseEntity<>(response, response.getResponseCode());
     }
+    @GetMapping("/getByExamCycle/{ExamCycleId}")
+    public ResponseEntity<ResponseDto> getByExamCycle(@PathVariable Long ExamCycleId) {
+        return new ResponseEntity<>(attendanceService.getByExamCycleId(ExamCycleId), HttpStatus.OK);
+    }
 }
