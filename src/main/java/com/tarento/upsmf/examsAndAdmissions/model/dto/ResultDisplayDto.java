@@ -3,8 +3,6 @@ package com.tarento.upsmf.examsAndAdmissions.model.dto;
 import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 @NoArgsConstructor

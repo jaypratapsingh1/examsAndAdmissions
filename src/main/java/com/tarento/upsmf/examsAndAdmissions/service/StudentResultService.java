@@ -567,6 +567,43 @@ public class StudentResultService {
         return response;
     }
 
+    public ResponseDto processBulkResultUploadWithExternals(MultipartFile file, String fileType) {
+        ResponseDto response = new ResponseDto(Constants.API_BULK_UPLOAD_RESULTS);
+
+        try {
+            JSONArray jsonArray;
+
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file,columnConfig);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    // Handle unsupported file type
+                    return ResponseDto.setErrorResponse(response, "UNSUPPORTED_FILE_TYPE", "Unsupported file type", HttpStatus.BAD_REQUEST);
+            }
+            String[] selectedColumns = { "First Name", "Last Name", "Enrolment Number","External Marks", "Passing External Marks", "External Marks Obtained" };
+            JSONArray filteredJsonArray = dataImporterService.filterColumns(jsonArray, selectedColumns);
+            List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(filteredJsonArray, StudentResult.class);
+            boolean success = dataImporterService.convertResultDtoListToEntitiesExternalMarks(dtoList, studentResultRepository);
+
+            if (success) {
+                response.put(Constants.MESSAGE, "File processed successfully.");
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing bulk result upload", e);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    }
+
 
     public ResponseDto getResultsByInstituteAndExamCycle(Long instituteId, Long examCycleId, Long examId) {
         ResponseDto response = new ResponseDto(Constants.API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE);

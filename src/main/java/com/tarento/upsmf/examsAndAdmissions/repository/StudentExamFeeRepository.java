@@ -18,4 +18,6 @@ public interface StudentExamFeeRepository extends PagingAndSortingRepository<Stu
 
     @Query(value = "select student_id from student_exam_mapping where reference_no =:refNo", nativeQuery = true)
     List<Long> getStudentIdsByRefNo(String refNo);
+
+    List<StudentExam> findByReferenceNo(String referenceNo);
 }

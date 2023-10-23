@@ -5,6 +5,9 @@ import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectResponse;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamFeeDto;
+
+import java.util.List;
 
 public interface FeeService {
 
@@ -15,4 +18,6 @@ public interface FeeService {
     ExamFee getExamFeeByRefNo(String refNo);
 
     void updateExamFeeStatusByRefNo(String refNo);
+
+    List<StudentExamFeeDto> getStudentDetailsByRefNo(String refNo);
 }
