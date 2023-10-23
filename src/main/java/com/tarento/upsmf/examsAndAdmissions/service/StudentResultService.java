@@ -3,10 +3,7 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamResultDTO;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ProcessedResultDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentResultDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
@@ -571,9 +568,9 @@ public class StudentResultService {
     }
 
 
-    public ResponseDto getResultsByInstituteAndExamCycle(Long instituteId, Long examCycleId) {
+    public ResponseDto getResultsByInstituteAndExamCycle(Long instituteId, Long examCycleId, Long examId) {
         ResponseDto response = new ResponseDto(Constants.API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE);
-        List<StudentResult> results = studentResultRepository.findByStudent_Institute_IdAndExamCycle_Id(instituteId, examCycleId);
+        List<StudentResult> results = studentResultRepository.findByStudent_Institute_IdAndExamCycle_IdAndExam_id(instituteId, examCycleId, examId);
 
         if (!results.isEmpty()) {
             List<ResultDisplayDto> dtos = results.stream()
@@ -674,6 +671,50 @@ public class StudentResultService {
         dto.setCourseName(result.getCourse().getCourseName());
         dto.setExam(result.getExam().getExamName());
         dto.setInternalMark(result.getInternalMarksObtained());
+        dto.setLastName(result.getEnrollmentNumber());
         return dto;
+    }
+    public ResponseDto getExamsForExamCycleAndUploadStatus(Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_EXAMS_FOR_EXAM_CYCLE);
+
+        List<StudentResult> studentResults = studentResultRepository.findByExamCycleId(examCycleId);
+
+        if(studentResults.isEmpty()) {
+            ResponseDto.setErrorResponse(response, "EXAMS_NOT_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        List<ExamDetailsDto> dtos = studentResults.stream()
+                .map(result -> {
+                    ExamDetailsDto dto = new ExamDetailsDto();
+                    dto.setExamId(result.getExam().getId());
+                    dto.setExamName(result.getExam().getExamName());
+                    dto.setInternalMarksUploadStatus(result.isInternalMarkFlag());
+                    dto.setLastDateToUploadInternalMarks(result.getLastDateToUploadInternalMarks());
+                    return dto;
+                })
+                .distinct()
+                .collect(Collectors.toList());
+
+        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+        response.put(Constants.RESPONSE, dtos);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
+    public ResponseDto deleteExternalMarks(Long examCycleId, Long instituteId) {
+        ResponseDto response = new ResponseDto(Constants.API_DELETE_FINAL_MARKS);
+
+        // Logic to set external marks to null for all students of the given institute for the specified exam cycle
+        int updatedCount = studentResultRepository.setExternalMarksToNull(examCycleId, instituteId);
+
+        if(updatedCount == 0) {
+            ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No external marks found for the provided criteria.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        response.put(Constants.MESSAGE, "External marks removed successfully for " + updatedCount + " students.");
+        response.setResponseCode(HttpStatus.OK);
+        return response;
     }
 }

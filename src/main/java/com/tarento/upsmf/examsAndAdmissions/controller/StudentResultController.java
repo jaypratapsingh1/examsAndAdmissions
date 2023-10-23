@@ -1,6 +1,7 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamDetailsDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ResultDisplayDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentResultDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.RetotallingRequestRepository;
@@ -82,9 +83,10 @@ public class StudentResultController {
     @GetMapping("/resultsByInstitute")
     public ResponseEntity<ResponseDto> getStudentsExamDetails(
             @RequestParam Long instituteId,
-            @RequestParam Long examCycleId) {
+            @RequestParam Long examCycleId,
+            @RequestParam(required = false) Long examId) {
 
-        ResponseDto response = studentResultService.getResultsByInstituteAndExamCycle(instituteId, examCycleId);
+        ResponseDto response = studentResultService.getResultsByInstituteAndExamCycle(instituteId, examCycleId, examId);
         return new ResponseEntity<>(response, response.getResponseCode());
 
     }
@@ -97,5 +99,19 @@ public class StudentResultController {
         ResponseDto response = studentResultService.getMarksByInstituteAndExamCycle(examCycle, exam, institute);
 
         return new ResponseEntity<>(response, response.getResponseCode());
+    }
+
+    @GetMapping("/examsForExamCycleAndUploadStatus")
+    public ResponseEntity<ResponseDto> getExamsForExamCycleAndUploadStatus(@RequestParam Long examCycleId) {
+        ResponseDto response = studentResultService.getExamsForExamCycleAndUploadStatus(examCycleId);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode().value()));
+    }
+    @DeleteMapping("/deleteFinalMarks")
+    public ResponseEntity<ResponseDto> deleteFinalMarksByCriteria(
+            @RequestParam Long examCycleId,
+            @RequestParam Long instituteId) {
+
+        ResponseDto response = studentResultService.deleteExternalMarks(examCycleId, instituteId);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode().value()));
     }
 }

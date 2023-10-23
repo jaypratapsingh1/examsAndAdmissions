@@ -13,4 +13,5 @@ public class StudentResultDto {
     private String courseName;
     private String exam;
     private int internalMark;
+    private String enrollmentNumber;
 }
