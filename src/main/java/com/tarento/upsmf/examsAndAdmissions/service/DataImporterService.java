@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,7 +40,6 @@ import java.util.stream.StreamSupport;
 public class DataImporterService {
     @Autowired
     private ObjectMapper objectMapper;
-
     @Autowired
     private StudentResultRepository studentResultRepository;
     @Autowired
@@ -153,6 +153,23 @@ public class DataImporterService {
             }
         }
     }
+    public JSONArray filterColumns(JSONArray jsonArray, String... selectedColumns) throws JSONException {
+        JSONArray filteredArray = new JSONArray();
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject originalObject = jsonArray.getJSONObject(i);
+            JSONObject filteredObject = new JSONObject();
+
+            for (String column : selectedColumns) {
+                if (originalObject.has(column)) {
+                    filteredObject.put(column, originalObject.get(column));
+                }
+            }
+            filteredArray.put(filteredObject);
+        }
+        return filteredArray;
+    }
+
 
 
     public <T> List<T> convertJsonToDtoList(JSONArray jsonArray, Class<T> dtoClass) {
@@ -291,15 +308,6 @@ public class DataImporterService {
                 if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
                     validationErrors.add("- Other Marks Obtained is invalid: " + dto.getOtherMarksObtained());
                 }
-                if (!DataValidation.isMarksValid(dto.getTotalMarks())) {
-                    validationErrors.add("- Total Marks is invalid: " + dto.getTotalMarks());
-                }
-                if (!DataValidation.isPassingMarksValid(dto.getPassingTotalMarks())) {
-                    validationErrors.add("- Passing Total Marks is invalid: " + dto.getPassingTotalMarks());
-                }
-                if (!DataValidation.isMarksValid(dto.getTotalMarksObtained())) {
-                    validationErrors.add("- Total Marks Obtained is invalid: " + dto.getTotalMarksObtained());
-                }
                 if (!DataValidation.isGradeValid(dto.getGrade())) {
                     validationErrors.add("- Grade is invalid: " + dto.getGrade());
                 }
@@ -313,9 +321,6 @@ public class DataImporterService {
                     StudentResult entity = getStudentResult(dto);
                     entityList.add(entity);
                 }
-
-                StudentResult entity = getStudentResult(dto);
-                entityList.add(entity);
             }
         }
         if (!validationErrors.isEmpty()) {
@@ -330,6 +335,118 @@ public class DataImporterService {
 
         return isValid;
     }
+
+    public boolean convertResultDtoListToEntitiesExternalMarks(List<StudentResult> dtoList, StudentResultRepository repository) throws ValidationException {
+        List<StudentResult> entityList = new ArrayList<>();
+        boolean isValid = true;
+        List<String> validationErrors = new ArrayList<>();
+
+        for (StudentResult dto : dtoList) {
+            boolean isDuplicate = checkIfDataExists(dto);
+
+            if (isDuplicate) {
+                if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
+                    validationErrors.add("- First Name is invalid: " + dto.getFirstName());
+                }
+                if (!DataValidation.isLastNameValid(dto.getLastName())) {
+                    validationErrors.add("- Last Name is invalid: " + dto.getLastName());
+                }
+                if (!DataValidation.isEnrollmentNumberValid(dto.getEnrollmentNumber())) {
+                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber());
+                }
+                if (!DataValidation.isMarksValid(dto.getOtherMarks())) {
+                    validationErrors.add("- External marks is invalid: " + dto.getOtherMarks());
+                }
+                if (!DataValidation.isPassingMarksValid(dto.getPassingOtherMarks())) {
+                    validationErrors.add("- Passing External Marks is invalid: " + dto.getPassingOtherMarks());
+                }
+                if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
+                    validationErrors.add("- External Marks Obtained is invalid: " + dto.getOtherMarksObtained());
+                }
+
+
+                if (!validationErrors.isEmpty()) {
+                    isValid = false;
+                } else {
+                    // Search for an existing entity based on first name, last name, and enrollment number
+                    StudentResult existingEntity = repository.findByFirstNameAndLastNameAndEnrollmentNumber(dto.getFirstName(), dto.getLastName(), dto.getEnrollmentNumber());
+//                    List<StudentResult> marks = calculateResult(dto.getInternalMarks(),dto.getPassingInternalMarks(),dto.getInternalMarksObtained(),dto.getPracticalMarks(),
+//                            dto.getPassingPracticalMarks(),dto.getPracticalMarksObtained(),dto.getExternalMarks(),dto.getPassingExternalMarks(),dto.getExternalMarksObtained());
+                    if (existingEntity != null) {
+                        // Update the specific columns
+                        existingEntity.setExternalMarks(dto.getExternalMarks());
+                        existingEntity.setPassingExternalMarks(dto.getPassingExternalMarks());
+                        existingEntity.setExternalMarksObtained(dto.getExternalMarksObtained());
+//                        existingEntity.setTotalMarks(marks.get(0).getTotalMarks());
+//                        existingEntity.setPassingTotalMarks(marks.get(0).getPassingTotalMarks());
+//                        existingEntity.setTotalMarksObtained(marks.get(0).getTotalMarksObtained());
+                    } else {
+                        throw new ValidationException(false, "Record not found for: " + dto.getFirstName() + " " + dto.getLastName() + " Enrollment Number: " + dto.getEnrollmentNumber());
+                    }
+                }
+            }
+        }
+        if (!validationErrors.isEmpty()) {
+            StringBuilder errorMessage = new StringBuilder("Validation failed. The following fields contain invalid values:\n");
+
+            for (String validationError : validationErrors) {
+                errorMessage.append(validationError).append("\n");
+            }
+            throw new ValidationException(isValid, errorMessage.toString());
+        }
+        repository.saveAll(entityList);
+
+        return isValid;
+    }
+
+    private List<StudentResult> calculateResult(
+            Integer internalMarks, Integer passingInternalMarks, Integer internalMarksObtained,
+            Integer practicalMarks, Integer passingPracticalMarks, Integer practicalMarksObtained,
+            Integer externalMarks, Integer passingExternalMarks, Integer externalMarksObtained) {
+
+        List<StudentResult> results = new ArrayList<>();
+
+        int totalMarks = internalMarks + practicalMarks + externalMarks;
+        int totalPassingMarks = passingInternalMarks + passingPracticalMarks + passingExternalMarks;
+        int totalMarksObtained = internalMarksObtained + practicalMarksObtained + externalMarksObtained;
+
+        String grade;
+        String result;
+
+        if (totalMarks >= 90) {
+            grade = "A";
+        } else if (totalMarks >= 80) {
+            grade = "B";
+        } else if (totalMarks >= 70) {
+            grade = "C";
+        } else if (totalMarks >= 60) {
+            grade = "D";
+        } else if (totalMarks >= 50) {
+            grade = "E";
+        } else {
+            grade = "F";
+        }
+
+        if (totalMarksObtained >= 50) {
+            result = "Pass";
+        } else {
+            result = "Fail";
+        }
+
+
+        // Assuming you have a StudentResult constructor that accepts these values.
+        StudentResult studentResult = new StudentResult();
+        studentResult.setTotalMarks(totalMarks);
+        studentResult.setPassingTotalMarks(totalPassingMarks);
+        studentResult.setTotalMarksObtained(totalMarksObtained);
+        studentResult.setGrade(grade);
+        studentResult.setResult(result);
+
+        results.add(studentResult);
+
+        return results;
+    }
+
 
     private List<ExamUploadData> convertExamDtoListToEntities(List<ExamUploadData> dtoList) {
         List<ExamUploadData> entityList = new ArrayList<>();
@@ -540,12 +657,6 @@ public class DataImporterService {
         entity.setOtherMarks(dto.getOtherMarks());
         entity.setPassingOtherMarks(dto.getPassingOtherMarks());
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
-//        entity.setExternalMarks(dto.getExternalMarks());
-//        entity.setPassingExternalMarks(dto.getPassingExternalMarks());
-//        entity.setExternalMarksObtained(dto.getExternalMarksObtained());
-        entity.setTotalMarks(dto.getTotalMarks());
-        entity.setPassingTotalMarks(dto.getPassingTotalMarks());
-        entity.setTotalMarksObtained(dto.getTotalMarksObtained());
         entity.setGrade(dto.getGrade());
         entity.setResult(dto.getResult());
         return entity;
