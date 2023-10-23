@@ -1,15 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "exam_fee", indexes = {@Index(columnList = "reference_no")})
@@ -18,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @ToString
-public class ExamFee {
+public class ExamFee implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -37,11 +34,6 @@ public class ExamFee {
     @OneToOne
     @JoinColumn(name = "institute_id")
     private Institute institute;
-
-    @JsonIgnore
-    @OneToMany(targetEntity = StudentExam.class, mappedBy = "referenceNo", fetch = FetchType.EAGER)
-    @Fetch(value = FetchMode.SUBSELECT)
-    private List<StudentExam> studentExams;
 
     @Column(name = "created_by", nullable = false)
     private String createdBy;

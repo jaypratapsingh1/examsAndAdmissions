@@ -68,8 +68,13 @@ public class StudentResultController {
     }
 
     @PostMapping("/bulkUpload")
-    public ResponseEntity<ResponseDto> processBulkResultUpload(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+    public ResponseEntity<ResponseDto> processBulkResultUploadWithOutExternals(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
         return new ResponseEntity<>(studentResultService.processBulkResultUpload(file, fileType), HttpStatus.OK);
+    }
+
+    @PostMapping("/bulkUploadExternal")
+    public ResponseEntity<ResponseDto> processBulkResultUploadWithExternals(@RequestParam("file") MultipartFile file, @RequestParam("fileType") String fileType) {
+        return new ResponseEntity<>(studentResultService.processBulkResultUploadWithExternals(file, fileType), HttpStatus.OK);
     }
 
     @GetMapping("/manageResults")

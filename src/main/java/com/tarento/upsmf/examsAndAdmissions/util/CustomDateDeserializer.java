@@ -12,10 +12,9 @@ import java.util.Date;
 import java.util.List;
 
 public class CustomDateDeserializer extends JsonDeserializer<Date> {
-
     private static final List<SimpleDateFormat> DATE_FORMATS = Arrays.asList(
             new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"), // Add this format
             new SimpleDateFormat("yyyy-MM-dd"),
             new SimpleDateFormat("dd.MM.yyyy")
             // Add more formats as needed

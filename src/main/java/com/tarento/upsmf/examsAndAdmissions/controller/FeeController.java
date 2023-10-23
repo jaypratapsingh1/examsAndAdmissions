@@ -1,19 +1,19 @@
 package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeValidationException;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamFee;
-import com.tarento.upsmf.examsAndAdmissions.model.PaymentRedirectResponse;
-import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.model.ResponseParams;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/fee")
@@ -47,6 +47,16 @@ public class FeeController {
         try {
             ExamFee examFee = feeService.getExamFeeByRefNo(refNo);
             return handleSuccessResponse(examFee);
+        } catch (Exception e) {
+            return handleErrorResponse(e);
+        }
+    }
+
+    @GetMapping("/{refNo}/details")
+    public ResponseEntity<ResponseDto> getStudentDetailsByRefNo(@PathVariable("refNo") String refNo) {
+        try {
+            List<StudentExamFeeDto> studentExam = feeService.getStudentDetailsByRefNo(refNo);
+            return handleSuccessResponse(studentExam);
         } catch (Exception e) {
             return handleErrorResponse(e);
         }
