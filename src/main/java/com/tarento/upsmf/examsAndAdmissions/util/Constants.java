@@ -44,6 +44,8 @@ public class Constants {
     public static final String API_RESULTS_GET_BY_INSTITUTE_AND_CYCLE = "api.results.getByInstituteAndCycle";
     public static final String API_EXAM_CYCLE_MANAGE_RESULTS = "api.exam.cycle.manage.results";
     public static final String API_SINGLE_EXAM_MARK="api.single.exam.mark";
+    public static final String API_EXAMS_FOR_EXAM_CYCLE = "api.exam.for.exam.cycle";
+    public static final String API_DELETE_FINAL_MARKS = "api.delete.finalMarks";
 
 
     // ExamCycle

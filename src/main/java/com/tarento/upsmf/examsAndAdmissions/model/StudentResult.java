@@ -5,6 +5,7 @@ import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "student_results")
@@ -95,6 +96,7 @@ public class StudentResult {
     private boolean internalMarkFlag;
     private boolean finalMarkFlag;
     private boolean revisedFinalMarkFlag;
+    private LocalDate lastDateToUploadInternalMarks;
 
     public StudentResult(Student student, String firstName, String lastName, String enrollmentNumber,
                            String motherName, String fatherName, Course course, String course_name,
@@ -104,7 +106,7 @@ public class StudentResult {
                            Integer otherMarks, Integer passingOtherMarks, Integer otherMarksObtained,
                            Integer externalMarks, Integer passingExternalMarks, Integer externalMarksObtained,
                            Integer totalMarks, Integer passingTotalMarks, Integer totalMarksObtained,
-                           String grade, String result, ResultStatus status, boolean published, boolean internalMarkFlag, boolean finalMarkFlag, boolean revisedFinalMarkFlag) {
+                           String grade, String result, ResultStatus status, boolean published, boolean internalMarkFlag, boolean finalMarkFlag, boolean revisedFinalMarkFlag,LocalDate lastDateToUploadInternalMarks) {
 
         this.student = student;
         this.firstName = firstName;
@@ -140,5 +142,6 @@ public class StudentResult {
         this.internalMarkFlag = internalMarkFlag;
         this.finalMarkFlag = finalMarkFlag;
         this.revisedFinalMarkFlag = revisedFinalMarkFlag;
+        this.lastDateToUploadInternalMarks=lastDateToUploadInternalMarks;
     }
 }
