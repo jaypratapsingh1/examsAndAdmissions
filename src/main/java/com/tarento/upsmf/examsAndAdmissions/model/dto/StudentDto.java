@@ -50,4 +50,5 @@ public class StudentDto {
     private MultipartFile intermediateMarksheet;
     private MultipartFile intermediateCertificate;
     private String intermediateStream;
+    private String keycloakId;
 }

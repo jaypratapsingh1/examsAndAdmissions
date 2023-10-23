@@ -518,4 +518,21 @@ public class StudentService {
         }
     }
 
+    public ResponseDto getStudentByKeycloakId(String keycloakId) {
+        ResponseDto response = new ResponseDto(Constants.API_FIND_BY_KEYCLOAK_ID);
+        try {
+            Optional<Student> student = studentRepository.findByKeycloakId(keycloakId);
+            if (student.isPresent()) {
+                response.put(Constants.MESSAGE, "Student fetched successfully.");
+                response.put(Constants.RESPONSE, student);
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                response.put(Constants.MESSAGE, "No students found with ID : " + keycloakId);
+                response.setResponseCode(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", "Exception occurred while fetching student by ID: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 }
