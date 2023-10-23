@@ -9,13 +9,16 @@ import com.tarento.upsmf.examsAndAdmissions.model.dto.SearchExamCycleDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
+import org.codehaus.jettison.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.ConstraintViolationException;
 import java.sql.ResultSet;
@@ -34,6 +37,8 @@ public class ExamCycleService {
     @Autowired
     private ExamCycleRepository repository;
     @Autowired
+    ExamEntityRepository examEntityRepository;
+    @Autowired
     private ExamRepository examRepository;
     @Autowired
     private InstituteRepository instituteRepository;
@@ -41,9 +46,18 @@ public class ExamCycleService {
     private ExamCenterRepository examCenterRepository;
     @Autowired
     private CourseRepository courseRepository;
-
+    @Autowired
+    private DataImporterService dataImporterService;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    Map<String, Class<?>> columnConfig = Map.of(
+            "Start Date", Date.class,
+            "End Date", Date.class,
+            "Start Time", Date.class,
+            "End Time", Date.class
+            // Add other columns and their data types as needed
+    );
 
     public ResponseDto createExamCycle(ExamCycle examCycle, String userId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_ADD);
@@ -391,4 +405,44 @@ public class ExamCycleService {
             throw new InvalidRequestException(Constants.MISSING_SEARCH_PARAM_START_ACADEMIC_YEAR);
         }
     }
+
+    public ResponseEntity<ResponseDto> processBulkUpload(MultipartFile file, String fileType) {
+        JSONArray jsonArray = null;
+        ResponseDto response = new ResponseDto(Constants.API_EXAMCYCLE_BULK_UPLOAD);
+        Class<ExamUploadData> dtoClass = ExamUploadData.class;
+        try {
+            switch (fileType.toLowerCase()) {
+                case Constants.CSV:
+                    jsonArray = dataImporterService.csvToJson(file, columnConfig);
+                    break;
+                case Constants.EXCEL:
+                    jsonArray = dataImporterService.excelToJson(file);
+                    break;
+                default:
+                    // Handle unsupported file type
+                    response.put("error", "Unsupported file type");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            List<ExamUploadData> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, ExamUploadData.class);
+            Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, examEntityRepository);
+
+            if (success) {
+                Map<String, Object> result = new HashMap<>();
+
+                response.setResult(result);
+                response.setResponseCode(HttpStatus.OK);
+
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "File processing failed.");
+                response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+        } catch (Exception e) {
+            response.put("error", "An error occurred while processing the file: " + e.getMessage());
+            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 }
