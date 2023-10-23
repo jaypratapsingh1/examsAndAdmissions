@@ -7,6 +7,7 @@ import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamFeeDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -166,15 +168,15 @@ public class FeeServiceImpl implements FeeService {
         if(examFee == null) {
             throw new InvalidRequestException("No Record found for Provided Reference No.");
         }
-        log.info("exam fee - {}", examFee);
+        log.info("exam fee - {}", examFee.getId());
         // get latest status from user management
-        ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
+        /*ResponseEntity<Transaction> paymentUpdateResponse = getPaymentUpdate(refNo);
         log.info("response - {}", paymentUpdateResponse);
         if(paymentUpdateResponse.getStatusCode() == HttpStatus.OK) {
             // update record in DB
             updateStudentFeeStatusByRefNo(refNo);
             log.info("response body - {}", paymentUpdateResponse.getBody());
-        }
+        }*/
         return examFee;
     }
 
@@ -193,6 +195,50 @@ public class FeeServiceImpl implements FeeService {
         // update record in DB
         updateStudentFeeStatusByRefNo(refNo);
         log.info("completed record for ref no - {}", refNo);
+    }
+
+    @Override
+    public List<StudentExamFeeDto> getStudentDetailsByRefNo(String refNo) {
+        log.info("ref no - {}", refNo);
+        if(refNo == null || refNo.isBlank()) {
+            throw new InvalidRequestException("Invalid Reference No.");
+        }
+        // get transaction details from local db
+        List<StudentExam> studentExams = studentExamFeeRepository.findByReferenceNo(refNo);
+        if(studentExams == null || studentExams.isEmpty()) {
+            throw new InvalidRequestException("No Record found for Provided Reference No.");
+        }
+        log.info("student list - {}", studentExams.size());
+        Map<Long, StudentExamFeeDto> studentExamFeeDtoMap = new HashMap<>();
+        studentExams.stream().forEach(student -> {
+            if(studentExamFeeDtoMap.containsKey(student.getStudent().getId())) {
+                StudentExamFeeDto studentExamFeeDto = studentExamFeeDtoMap.get(student.getStudent().getId());
+                if(studentExamFeeDto.getExam() != null) {
+                    studentExamFeeDto.getExam().add(student.getExam());
+                } else {
+                    List<Exam> examList = new ArrayList<>();
+                    examList.add(student.getExam());
+                    studentExamFeeDto.setExam(examList);
+                }
+                if(studentExamFeeDto.getAmount() != null) {
+                    double total = studentExamFeeDto.getAmount() + student.getAmount();
+                    studentExamFeeDto.setAmount(total);
+                } else {
+                    studentExamFeeDto.setAmount(student.getAmount());
+                }
+            } else {
+                List<Exam> examList = new ArrayList<>();
+                examList.add(student.getExam());
+                StudentExamFeeDto examFeeDto = StudentExamFeeDto.builder().exam(examList)
+                        .student(student.getStudent())
+                        .amount(student.getAmount())
+                        .status(student.getStatus())
+                        .referenceNo(student.getReferenceNo())
+                        .build();
+                studentExamFeeDtoMap.put(student.getStudent().getId(), examFeeDto);
+            }
+        });
+        return studentExamFeeDtoMap.values().stream().collect(Collectors.toList());
     }
 
     private void updateStudentFeeStatusByRefNo(String refNo) {
