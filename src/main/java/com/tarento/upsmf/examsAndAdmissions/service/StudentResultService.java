@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.tarento.upsmf.examsAndAdmissions.enums.ResultStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.RetotallingStatus;
+import com.tarento.upsmf.examsAndAdmissions.exceptions.CustomException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
@@ -78,11 +79,10 @@ public class StudentResultService {
             response.put(Constants.MESSAGE, "Internal marks imported successfully.");
             response.put(Constants.RESPONSE, "Internal marks for " + results.size() + " students have been imported or updated.");
             response.setResponseCode(HttpStatus.OK);
-        } catch (IOException e) {
+        }catch (IOException | CustomException e) {
             log.error("Failed to import internal marks from Excel", e);
-            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", "Failed to import internal marks from Excel.", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", e.getMessage(), HttpStatus.NOT_FOUND);
         }
-
         return response;
     }
 
@@ -114,7 +114,7 @@ public class StudentResultService {
             response.put(Constants.MESSAGE, "External marks imported successfully.");
             response.put(Constants.RESPONSE, "External marks for " + results.size() + " students have been imported or updated.");
             response.setResponseCode(HttpStatus.OK);
-        } catch (IOException e) {
+        } catch (IOException | CustomException e) {
             log.error("Failed to import external marks from Excel", e);
             ResponseDto.setErrorResponse(response, "IMPORT_FAILED", "Failed to import external marks from Excel.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -122,7 +122,7 @@ public class StudentResultService {
         return response;
     }
 
-    private List<StudentResult> parseExcel(MultipartFile file) throws IOException {
+    private List<StudentResult> parseExcel(MultipartFile file) throws IOException, CustomException {
         List<StudentResult> resultList = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
@@ -142,25 +142,33 @@ public class StudentResultService {
                 try {
                     ResponseDto studentResponse = fetchStudentByEnrollmentNumber(getStringValue(row.getCell(2)));
                     if (studentResponse.getResponseCode() != HttpStatus.OK) {
-                        throw new RuntimeException("Failed to fetch student details");
+                        String errorMessage = String.format("Failed to fetch student details for enrollment number: %s. Server responded with status: %s",
+                                getStringValue(row.getCell(2)), studentResponse.getResponseCode());
+                        throw new CustomException(errorMessage);
                     }
                     Student studentEntity = (Student) studentResponse.get(Constants.RESPONSE);
 
                     ResponseDto courseResponse = fetchCourseByName(getStringValue(row.getCell(5)));
                     if (courseResponse.getResponseCode() != HttpStatus.OK) {
-                        throw new RuntimeException("Failed to fetch course details");
+                        String errorMessage = String.format("Failed to fetch course details for course name: %s. Server responded with status: %s",
+                                getStringValue(row.getCell(5)), courseResponse.getResponseCode());
+                        throw new CustomException(errorMessage);
                     }
                     Course courseEntity = (Course) courseResponse.get(Constants.RESPONSE);
 
-                    ResponseDto examCycleResponse = fetchExamCycleByName(getStringValue(row.getCell(6))); // Assuming Exam Cycle is in the 6th cell
+                    ResponseDto examCycleResponse = fetchExamCycleByName(getStringValue(row.getCell(6)));
                     if (examCycleResponse.getResponseCode() != HttpStatus.OK) {
-                        throw new RuntimeException("Failed to fetch exam cycle details");
+                        String errorMessage = String.format("Failed to fetch exam cycle details for cycle name: %s. Server responded with status: %s",
+                                getStringValue(row.getCell(6)), examCycleResponse.getResponseCode());
+                        throw new CustomException(errorMessage);
                     }
                     ExamCycle examCycleEntity = (ExamCycle) examCycleResponse.get(Constants.RESPONSE);
 
                     ResponseDto examResponse = fetchExamByName(getStringValue(row.getCell(7)));
                     if (examResponse.getResponseCode() != HttpStatus.OK) {
-                        throw new RuntimeException("Failed to fetch exam details");
+                        String errorMessage = String.format("Failed to fetch exam details for exam name: %s. Server responded with status: %s",
+                                getStringValue(row.getCell(7)), examResponse.getResponseCode());
+                        throw new CustomException(errorMessage);
                     }
                     Exam examEntity = (Exam) examResponse.get(Constants.RESPONSE);
 
@@ -197,21 +205,20 @@ public class StudentResultService {
                     } else {
                         errors.add("Validation failed for enrolment number: " + studentEntity.getEnrollmentNumber());
                     }
-                } catch (Exception e) {
-                    log.error("Error processing row in Excel file", e);
-                    errors.add("Error processing row for enrolment number: " + getStringValue(row.getCell(0)));
+                } catch (CustomException ce) {
+                    log.error("Custom Exception encountered", ce);
+                    errors.add(ce.getMessage()); // This will add your custom error message to the errors list
                 }
             }
-        } catch (Exception e) {
-            log.error("Error parsing Excel file", e);
-            throw new RuntimeException("Failed to parse the Excel file", e);
+        } catch (IOException e) {
+            log.error("Error reading the Excel file", e);
+            throw new CustomException("Failed to read the Excel file", e);
         }
 
         if (!errors.isEmpty()) {
-            errors.forEach(log::warn);
-            throw new RuntimeException("Failed to process some rows in the Excel file. Check logs for more details.");
+            String combinedErrorMessage = String.join(", ", errors);
+            throw new CustomException("Errors encountered while processing Excel file: " + combinedErrorMessage);
         }
-
         return resultList;
     }
     public static boolean isRowEmpty(Row row) {
