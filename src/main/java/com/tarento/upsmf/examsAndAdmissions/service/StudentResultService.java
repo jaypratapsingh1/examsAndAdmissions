@@ -116,7 +116,7 @@ public class StudentResultService {
             response.setResponseCode(HttpStatus.OK);
         } catch (IOException | CustomException e) {
             log.error("Failed to import external marks from Excel", e);
-            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", "Failed to import external marks from Excel.", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseDto.setErrorResponse(response, "IMPORT_FAILED", e.getMessage(), HttpStatus.NOT_FOUND);
         }
 
         return response;
