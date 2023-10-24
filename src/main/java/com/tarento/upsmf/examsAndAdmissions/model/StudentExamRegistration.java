@@ -49,4 +49,9 @@ public class StudentExamRegistration {
     @Enumerated(EnumType.STRING)
     private HallTicketStatus hallTicketStatus = HallTicketStatus.PENDING;
     private LocalDate hallTicketGenerationDate;
+    @Column(name = "alternate_exam_center_assigned", nullable = false, columnDefinition = "boolean default false")
+    private Boolean alternateExamCenterAssigned = false;
+    private boolean internalMarkFlag;
+    private boolean finalMarkFlag;
+    private boolean revisedFinalMarkFlag;
 }
