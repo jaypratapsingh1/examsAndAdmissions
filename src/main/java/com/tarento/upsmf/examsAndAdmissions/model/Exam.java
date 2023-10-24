@@ -65,4 +65,6 @@ public class Exam implements Serializable {
 
     @Column(name = "maximum_mark")
     private Integer maximumMark;
+    @Column(name ="lastDate_To_UploadMarks" )
+    private LocalDate lastDateToUploadMarks;
 }
