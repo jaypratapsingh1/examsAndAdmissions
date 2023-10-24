@@ -83,6 +83,7 @@ public class StudentService {
     public StudentService(StudentRepository studentRepository, CourseRepository courseRepository, InstituteRepository instituteRepository) {
         this.studentRepository = studentRepository;
         this.modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setAmbiguityIgnored(true);
         this.courseRepository = courseRepository;
         this.instituteRepository = instituteRepository;
         configureModelMapper();
