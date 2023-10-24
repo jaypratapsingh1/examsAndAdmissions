@@ -16,4 +16,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findByVerificationDateBeforeAndVerificationStatus(LocalDate date, VerificationStatus status);
 
     Optional<Student> findByEnrollmentNumber(String enrollmentNumber);
+
+    Optional<Student> findByKeycloakId(String keycloakId);
 }

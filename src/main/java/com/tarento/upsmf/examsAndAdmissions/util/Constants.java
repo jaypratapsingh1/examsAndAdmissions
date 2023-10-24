@@ -102,6 +102,7 @@ public class Constants {
     public static final String API_GET_STUDENTS_PENDING_FOR_21_DAYS = "api.student.getPendingFor21Days";
     public static final String API_VERIFY_STUDENT = "api.student.verify";
     public static final String API_FIND_BY_VERIFICATION_STATUS = "api.student.findByVerificationStatus";
+    public static final String API_FIND_BY_KEYCLOAK_ID = "api.student.findByKeycloakId";
     public static final String API_DELETE_STUDENT = "api.student.delete";
 
 

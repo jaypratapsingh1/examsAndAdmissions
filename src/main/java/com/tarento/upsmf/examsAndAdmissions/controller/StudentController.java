@@ -79,4 +79,10 @@ public class StudentController {
         ResponseDto response = studentService.findByVerificationStatus(VerificationStatus.PENDING);
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
+
+    @GetMapping("/{keycloakId}")
+    public ResponseEntity<ResponseDto> getStudentByKeycloak(@PathVariable String keycloakId) {
+        ResponseDto response = studentService.getStudentByKeycloakId(keycloakId);
+        return ResponseEntity.status(response.getResponseCode()).body(response);
+    }
 }
