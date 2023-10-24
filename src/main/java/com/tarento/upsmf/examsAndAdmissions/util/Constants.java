@@ -119,7 +119,7 @@ public class Constants {
     public static final String API_UPDATE_RESULT_AFTER_RETOTALLING = "api.studentResult.updateAfterRetotalling";
     public static final String API_GET_RESULTS_BY_EXAM_CYCLE_AND_EXAM_GROUPED_BY_INSTITUTE = "api.studentResult.getByExamCycleAndGroupedByInstitute";
     public static final String API_BULK_UPLOAD_RESULTS = "api.studentResult.bulkUpload";
-
+    public static final String API_PARSE_EXCEL="api.parse.excel";
 
     // API Identifiers for ExamCenterService
     public static final String API_GET_VERIFIED_EXAM_CENTERS = "api.examCenter.getVerifiedInDistrict";
