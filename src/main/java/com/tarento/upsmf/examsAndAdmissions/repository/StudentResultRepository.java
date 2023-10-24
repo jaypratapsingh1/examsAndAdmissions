@@ -47,5 +47,9 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
             @Param("lastName") String lastName,
             @Param("enrollmentNumber") String enrollmentNumber
     );
+
+    Optional<StudentResult> findByExamId(Long id);
+
+    List<StudentResult> findByExamIdAndInstituteId(Long id, Long instituteId);
 }
 

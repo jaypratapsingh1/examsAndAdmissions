@@ -44,6 +44,8 @@ public class StudentResultService {
     private RetotallingRequestRepository retotallingRequestRepository;
     @Autowired
     private DataImporterService dataImporterService;
+    @Autowired
+    private StudentExamRegistrationRepository studentExamRegistrationRepository;
 
     Map<String, Class<?>> columnConfig = Map.of(
             "Start Date", Date.class,
@@ -654,10 +656,10 @@ public class StudentResultService {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_MANAGE_RESULTS);
 
         // Fetching the results based on the examCycle
-        List<StudentResult> results = studentResultRepository.findByExamCycleId(examCycle);
+        List<StudentExamRegistration> results = studentExamRegistrationRepository.findByExamCycleId(examCycle);
 
         if (results == null || results.isEmpty()) {
-            ResponseDto.setErrorResponse(response, "RESULTS_NOT_FOUND", "No results found for the given exam cycle.", HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "No record found for the given exam cycle.", HttpStatus.NOT_FOUND);
             return response;
         }
 
@@ -670,7 +672,7 @@ public class StudentResultService {
 
             String instituteName = result.getStudent().getInstitute().getInstituteName();
             Long instituteId = result.getStudent().getInstitute().getId();
-            String course = result.getCourse().getCourseName();
+            String course = result.getStudent().getCourse().getCourseName();
 
             return new ProcessedResultDto(
                     hasInternalMarks,
@@ -718,31 +720,48 @@ public class StudentResultService {
         dto.setLastName(result.getEnrollmentNumber());
         return dto;
     }
-    public ResponseDto getExamsForExamCycleAndUploadStatus(Long examCycleId) {
+    public ResponseDto getExamsForExamCycleAndUploadStatusForInstitute(Long examCycleId, Long instituteId) {
         ResponseDto response = new ResponseDto(Constants.API_EXAMS_FOR_EXAM_CYCLE);
 
-        List<StudentResult> studentResults = studentResultRepository.findByExamCycleId(examCycleId);
+        try {
+            // Fetch all exams for the exam cycle
+            List<Exam> exams = examRepository.findByExamCycleId(examCycleId);
 
-        if(studentResults.isEmpty()) {
-            ResponseDto.setErrorResponse(response, "EXAMS_NOT_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
-            return response;
+            List<ExamDetailsDto> dtos = exams.stream().map(exam -> {
+                ExamDetailsDto dto = new ExamDetailsDto();
+                dto.setExamId(exam.getId());
+                dto.setExamName(exam.getExamName());
+
+                // Set the last date to upload marks directly from the exam
+                dto.setLastDateToUploadInternalMarks(exam.getLastDateToUploadMarks());
+
+                // Now check for student results for this exam and institute
+                List<StudentResult> resultsForExam = studentResultRepository.findByExamIdAndInstituteId(exam.getId(), instituteId);
+
+                if (!resultsForExam.isEmpty()) {
+                    // If we find any student result records, it means internal marks have been uploaded
+                    dto.setInternalMarksUploadStatus(true);
+                } else {
+                    // If no student results, then marks have not been uploaded
+                    dto.setInternalMarksUploadStatus(false);
+                }
+
+                return dto;
+            }).collect(Collectors.toList());
+
+            if (!dtos.isEmpty()) {
+                response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+                response.put(Constants.RESPONSE, dtos);
+                response.setResponseCode(HttpStatus.OK);
+            } else {
+                ResponseDto.setErrorResponse(response, "NO_EXAMS_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            // Handle any unexpected errors that might occur during the process.
+            ResponseDto.setErrorResponse(response, "INTERNAL_SERVER_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        List<ExamDetailsDto> dtos = studentResults.stream()
-                .map(result -> {
-                    ExamDetailsDto dto = new ExamDetailsDto();
-                    dto.setExamId(result.getExam().getId());
-                    dto.setExamName(result.getExam().getExamName());
-                    dto.setInternalMarksUploadStatus(result.isInternalMarkFlag());
-                    dto.setLastDateToUploadInternalMarks(result.getLastDateToUploadInternalMarks());
-                    return dto;
-                })
-                .distinct()
-                .collect(Collectors.toList());
-
-        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-        response.put(Constants.RESPONSE, dtos);
-        response.setResponseCode(HttpStatus.OK);
         return response;
     }
 

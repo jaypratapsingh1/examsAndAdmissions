@@ -106,9 +106,9 @@ public class StudentResultController {
         return new ResponseEntity<>(response, response.getResponseCode());
     }
 
-    @GetMapping("/examsForExamCycleAndUploadStatus")
-    public ResponseEntity<ResponseDto> getExamsForExamCycleAndUploadStatus(@RequestParam Long examCycleId) {
-        ResponseDto response = studentResultService.getExamsForExamCycleAndUploadStatus(examCycleId);
+    @GetMapping("/resultUploadStatusForInstitute")
+    public ResponseEntity<ResponseDto> getExamsForExamCycleAndUploadStatus(@RequestParam Long examCycleId, @RequestParam Long instituteId) {
+        ResponseDto response = studentResultService.getExamsForExamCycleAndUploadStatusForInstitute(examCycleId,instituteId);
         return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode().value()));
     }
     @DeleteMapping("/deleteFinalMarks")
