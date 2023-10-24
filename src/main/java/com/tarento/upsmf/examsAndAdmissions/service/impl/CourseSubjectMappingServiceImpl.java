@@ -168,25 +168,41 @@ public class CourseSubjectMappingServiceImpl implements CourseSubjectMappingServ
     }
 
     @Override
-    public ResponseDto getCourseSubjectMappingById(Long id) {
+    public ResponseDto getCourseSubjectMappingById(Long courseId) {
         ResponseDto response = new ResponseDto(Constants.API_COURSE_SUBJECT_MAPPING_GET_BY_ID);
-        Optional<CourseSubjectMapping> courseSubjectMappingOptional = courseSubjectMappingRepository.findById(id);
-        if (courseSubjectMappingOptional.isPresent()) {
-            CourseSubjectMapping courseSubjectMapping = courseSubjectMappingOptional.get();
-            if (courseSubjectMapping.getObsolete() == 0) {
-                response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
-                response.put(Constants.RESPONSE, courseSubjectMapping);
-                response.setResponseCode(HttpStatus.OK);
-            } else {
-                response.put(Constants.MESSAGE, "CourseSubjectMapping id is deleted(Obsolete is not equal to zero)");
-                response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-                response.setResponseCode(HttpStatus.NOT_FOUND);
-            }
-        } else {
-            response.put(Constants.MESSAGE, "Getting Error in fetching CourseSubjectMapping details by id");
-            response.put(Constants.RESPONSE, Constants.FAILUREMESSAGE);
-            response.setResponseCode(HttpStatus.NOT_FOUND);
+
+        Optional<Course> courseOptional = courseRepository.findById(courseId);
+        if (!courseOptional.isPresent()) {
+            setErrorResponse(response, "COURSE_NOT_FOUND", "Course not found for the provided ID", HttpStatus.NOT_FOUND);
+            return response;
         }
+
+        Course course = courseOptional.get();
+        List<Subject> subjects = course.getSubjects();
+
+        Map<String, Object> courseData = new HashMap<>();
+        courseData.put("courseId", course.getId());
+        courseData.put("courseCode", course.getCourseCode());
+        courseData.put("courseName", course.getCourseName());
+        courseData.put("description", course.getDescription());
+
+        if (subjects != null && !subjects.isEmpty()) {
+            List<Map<String, Object>> subjectsData = subjects.stream().map(subject -> {
+                Map<String, Object> subjectMap = new HashMap<>();
+                subjectMap.put("subjectId", subject.getId());
+                subjectMap.put("subjectCode", subject.getSubjectCode());
+                subjectMap.put("subjectName", subject.getSubjectName());
+                subjectMap.put("description", subject.getDescription());
+                return subjectMap;
+            }).collect(Collectors.toList());
+
+            courseData.put("subjects", subjectsData);
+        }
+
+        response.put(Constants.MESSAGE, Constants.SUCCESSFUL);
+        response.put(Constants.RESPONSE, courseData);
+        response.setResponseCode(HttpStatus.OK);
+
         return response;
     }
 
