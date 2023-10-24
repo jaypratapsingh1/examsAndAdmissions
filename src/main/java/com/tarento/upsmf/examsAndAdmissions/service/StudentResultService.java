@@ -652,10 +652,8 @@ public class StudentResultService {
         return response;
     }
     public ResponseDto getExamResultsByExamCycle(Long examCycle) {
-
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_MANAGE_RESULTS);
 
-        // Fetching the results based on the examCycle
         List<StudentExamRegistration> results = studentExamRegistrationRepository.findByExamCycleId(examCycle);
 
         if (results == null || results.isEmpty()) {
@@ -663,33 +661,30 @@ public class StudentResultService {
             return response;
         }
 
-        // Processing the results to get the desired format
-        List<ProcessedResultDto> processedResults = results.stream().map(result -> {
+        Map<Long, ProcessedResultDto> processedResults = new HashMap<>();
+        for (StudentExamRegistration result : results) {
+            Institute institute = result.getStudent().getInstitute();
+            Long instituteId = institute.getId();
 
-            boolean hasInternalMarks = result.isInternalMarkFlag();
-            boolean hasFinalMarks = result.isFinalMarkFlag();
-            boolean hasRevisedFinalMarks = result.isRevisedFinalMarkFlag();
+            ProcessedResultDto instituteResult = processedResults.computeIfAbsent(instituteId, id -> {
+                ProcessedResultDto dto = new ProcessedResultDto();
+                dto.setInstituteId(instituteId);
+                dto.setInstituteName(institute.getInstituteName());
+                dto.setCourse(result.getStudent().getCourse().getCourseName());
+                return dto;
+            });
+            instituteResult.setHasFinalMarks(result.isInternalMarkFlag());
+            instituteResult.setHasFinalMarks(result.isFinalMarkFlag());
+            instituteResult.setHasRevisedFinalMarks(result.isRevisedFinalMarkFlag());
 
-            String instituteName = result.getStudent().getInstitute().getInstituteName();
-            Long instituteId = result.getStudent().getInstitute().getId();
-            String course = result.getStudent().getCourse().getCourseName();
-
-            return new ProcessedResultDto(
-                    hasInternalMarks,
-                    hasFinalMarks,
-                    hasRevisedFinalMarks,
-                    instituteName,
-                    instituteId,
-                    course
-            );
-
-        }).collect(Collectors.toList());
+        }
 
         response.put(Constants.MESSAGE, "Results fetched successfully.");
-        response.put(Constants.RESPONSE, processedResults);
+        response.put(Constants.RESPONSE, new ArrayList<>(processedResults.values()));
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+
     public ResponseDto getMarksByInstituteAndExamCycle(Long examCycle, Long exam, Long institute) {
         ResponseDto response = new ResponseDto(Constants.API_SINGLE_EXAM_MARK);
         List<StudentResult> studentResults = studentResultRepository.findByExamCycleAndExamAndInstitute(examCycle, exam, institute);
