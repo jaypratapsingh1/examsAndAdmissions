@@ -423,7 +423,7 @@ public class ExamCycleService {
                     response.put("error", "Unsupported file type");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
-            List<ExamUploadData> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, ExamUploadData.class);
+            List<ExamUploadData> dtoList = dataImporterService.convertCSVJsonToDtoList(jsonArray, ExamUploadData.class);
             Boolean success = dataImporterService.saveDtoListToPostgres(dtoList, examEntityRepository);
 
             if (success) {

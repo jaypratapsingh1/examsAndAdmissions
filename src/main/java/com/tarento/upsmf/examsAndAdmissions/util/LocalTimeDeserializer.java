@@ -6,10 +6,15 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Locale;
 
 public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendOptional(DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH))
+            .appendOptional(DateTimeFormatter.ofPattern("h:mm a"))
+            .toFormatter();
 
     @Override
     public LocalTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
