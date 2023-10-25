@@ -540,7 +540,7 @@ public class StudentResultService {
 
         return dto;
     }
-    public ResponseDto processBulkResultUpload(MultipartFile file, String fileType) {
+    public ResponseDto processBulkResultUpload(MultipartFile file, String fileType, Long instituteId) {
         ResponseDto response = new ResponseDto(Constants.API_BULK_UPLOAD_RESULTS);
 
         try {
@@ -559,7 +559,7 @@ public class StudentResultService {
             }
 
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository);
+            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
 
             if (success) {
                 response.put(Constants.MESSAGE, "File processed successfully.");

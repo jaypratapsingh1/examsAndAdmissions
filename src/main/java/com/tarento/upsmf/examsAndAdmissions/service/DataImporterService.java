@@ -9,10 +9,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.exception.ValidationException;
-import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamUploadData;
-import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
-import com.tarento.upsmf.examsAndAdmissions.model.UploadStatusDetails;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.DataValidation;
 import org.apache.commons.csv.CSVFormat;
@@ -56,6 +53,8 @@ public class DataImporterService {
     private AttendanceRepository attendanceRepository;
     @Autowired
     private ExamEntityRepository examCycleRepository;
+    @Autowired
+    private InstituteRepository instituteRepository;
 
     public JSONArray excelToJson(MultipartFile excelFile) throws IOException, JSONException {
         try (InputStream inputStream = excelFile.getInputStream();
@@ -312,7 +311,7 @@ public class DataImporterService {
         return entity;
     }
 
-    public boolean convertResultDtoListToEntities(List<StudentResult> dtoList, StudentResultRepository repository) throws ValidationException {
+    public boolean convertResultDtoListToEntities(List<StudentResult> dtoList, StudentResultRepository repository, Long instituteId) throws ValidationException {
         List<StudentResult> entityList = new ArrayList<>();
         boolean isValid = true;
         List<String> validationErrors = new ArrayList<>();
@@ -382,7 +381,7 @@ public class DataImporterService {
                 if (!validationErrors.isEmpty()) {
                     isValid = false;
                 } else {
-                    StudentResult entity = getStudentResult(dto);
+                    StudentResult entity = getStudentResult(dto,instituteId);
                     entityList.add(entity);
                 }
             }
@@ -701,8 +700,9 @@ public class DataImporterService {
                         (dto.getAttendancePercentage() == 0.0);
     }
 
-    private static StudentResult getStudentResult(StudentResult dto) {
+    private StudentResult getStudentResult(StudentResult dto, Long instituteId) {
         StudentResult entity = new StudentResult();
+        Institute institute = instituteRepository.findById(instituteId).orElse(null);
 
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -723,6 +723,7 @@ public class DataImporterService {
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
         entity.setGrade(dto.getGrade());
         entity.setResult(dto.getResult());
+        entity.setInstitute(institute);
         return entity;
     }
 
