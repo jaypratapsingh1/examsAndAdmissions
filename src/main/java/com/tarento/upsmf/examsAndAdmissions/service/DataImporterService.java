@@ -1,6 +1,12 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.exception.ValidationException;
 import com.tarento.upsmf.examsAndAdmissions.model.AttendanceRecord;
@@ -31,6 +37,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -116,16 +126,16 @@ public class DataImporterService {
 
                             if (columnType == Date.class) {
                                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                                SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
 
                                 try {
                                     if (columnValue != null && !columnValue.isEmpty()) {
-                                        if (columnName.equals("Start Date") || columnName.equals("End Date")) {
-                                            Date date = dateFormat.parse(columnValue);
-                                            map.put(columnName, date);
-                                        } else if (columnName.equals("Start Time") || columnName.equals("End Time")) {
+                                        if (columnName.equals("Start Time") || columnName.equals("End Time")) {
                                             Date time = timeFormat.parse(columnValue);
-                                            map.put(columnName, time);
+                                            map.put(columnName, timeFormat.format(time)); // Format the time as a string
+                                        } else if (columnName.equals("Start Date") || columnName.equals("End Date")) {
+                                            Date date = dateFormat.parse(columnValue);
+                                            map.put(columnName, dateFormat.format(date)); // Format the date as a string
                                         } else {
                                             // Handle other date or time columns if needed
                                         }
@@ -153,6 +163,8 @@ public class DataImporterService {
             }
         }
     }
+
+
     public JSONArray filterColumns(JSONArray jsonArray, String... selectedColumns) throws JSONException {
         JSONArray filteredArray = new JSONArray();
 
@@ -187,6 +199,58 @@ public class DataImporterService {
             throw new RuntimeException("Failed to convert JSON to DTO list: " + e.getMessage(), e);
         }
     }
+
+    public <T> List<T> convertCSVJsonToDtoList(JSONArray jsonArray, Class<T> dtoClass) {
+        try {
+            System.out.println("JSON data before deserialization: " + jsonArray.toString());
+
+            ObjectMapper customMapper = new ObjectMapper();
+            customMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+
+
+            customMapper.registerModule(new JavaTimeModule()); // Optional if using Java 8 Date/Time API
+            customMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+            // Define a custom deserializer for time fields
+            customMapper.registerModule(new SimpleModule().addDeserializer(LocalTime.class, new StdDeserializer<>(LocalTime.class) {
+                @Override
+                public LocalTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                    try {
+                        String timeValue = p.getValueAsString();
+                        // Parse the time using the custom time format
+                        return LocalTime.parse(timeValue, DateTimeFormatter.ofPattern("h:mm a"));
+                    } catch (DateTimeParseException e) {
+                        throw new RuntimeException("Failed to parse time: " + e.getMessage(), e);
+                    }
+                }
+            }));
+
+
+            // Define a custom deserializer for date fields
+            customMapper.registerModule(new SimpleModule().addDeserializer(LocalDate.class, new StdDeserializer<>(LocalDate.class) {
+                @Override
+                public LocalDate deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                    try {
+                        String dateValue = p.getValueAsString();
+                        // Parse the date using the custom date format
+                        return LocalDate.parse(dateValue, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                    } catch (DateTimeParseException e) {
+                        throw new RuntimeException("Failed to parse date: " + e.getMessage(), e);
+                    }
+                }
+            }));
+
+
+            List<T> dtoList = customMapper.readValue(jsonArray.toString(), customMapper.getTypeFactory().constructCollectionType(List.class, dtoClass));
+            System.out.println("DTOs after deserialization: " + dtoList);
+            return dtoList;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert JSON to DTO list: " + e.getMessage(), e);
+        }
+    }
+
+
+
 
     public Boolean saveDtoListToPostgres(List<ExamUploadData> dtoList, ExamEntityRepository repository) {
         try {
@@ -671,8 +735,7 @@ public class DataImporterService {
     }
 
     private boolean checkIfDataExists(ExamUploadData dto) {
-        Boolean result = examCycleRepository.findByCourseAndExamcycleName(dto.getCourse(), dto.getExamcycleName());
-        return result != null && result; // Return true only if the result is not null and true.
+        ExamUploadData result = examCycleRepository.findByExamNameAndExamcycleName(dto.getExamName(), dto.getExamcycleName());
+        return result != null;
     }
-
 }
