@@ -526,7 +526,7 @@ public class StudentResultService {
                 .map(result -> {ResultDisplayDto dto = new ResultDisplayDto();
                     dto.setId(result.getId());
                     dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-                    dto.setInstituteId(result.getStudent().getInstitute().getId());
+                    dto.setInstitute_id(result.getStudent().getInstitute().getId());
                     dto.setFirstName(result.getFirstName());
                     dto.setLastName(result.getLastName());
                     dto.setEnrollmentNumber(result.getEnrollmentNumber());
@@ -576,7 +576,7 @@ public class StudentResultService {
         ExamResultDTO dto = new ExamResultDTO();
 
         dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-        dto.setInstituteId(result.getStudent().getInstitute().getId());
+        dto.setInstitute_id(result.getStudent().getInstitute().getId());
         dto.setStudentName(result.getFirstName() + " " + result.getLastName());
         dto.setCourseName(result.getCourse().getCourseName());
         dto.setExamName(result.getExam().getExamName());
@@ -584,7 +584,7 @@ public class StudentResultService {
 
         return dto;
     }
-    public ResponseDto processBulkResultUpload(MultipartFile file, String fileType) {
+    public ResponseDto processBulkResultUpload(MultipartFile file, String fileType, Long instituteId) {
         ResponseDto response = new ResponseDto(Constants.API_BULK_UPLOAD_RESULTS);
 
         try {
@@ -603,7 +603,7 @@ public class StudentResultService {
             }
 
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository);
+            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
 
             if (success) {
                 response.put(Constants.MESSAGE, "File processed successfully.");
@@ -668,7 +668,7 @@ public class StudentResultService {
                         ResultDisplayDto dto = new ResultDisplayDto();
                         dto.setId(result.getId());
                         dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-                        dto.setInstituteId(result.getStudent().getInstitute().getId());
+                        dto.setInstitute_id(result.getStudent().getInstitute().getId());
                         dto.setFirstName(result.getFirstName());
                         dto.setLastName(result.getLastName());
                         dto.setEnrollmentNumber(result.getEnrollmentNumber());

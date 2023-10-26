@@ -16,7 +16,7 @@ public class DataValidation {
     }
 
     public static boolean isEnrollmentNumberValid(String enrollmentNumber) {
-        return enrollmentNumber != null && enrollmentNumber.matches("^[0-9]+$");
+        return enrollmentNumber != null && enrollmentNumber.matches("^[a-zA-Z0-9 ]+$");
     }
 
     public static boolean isMotherNameValid(String motherName) {
