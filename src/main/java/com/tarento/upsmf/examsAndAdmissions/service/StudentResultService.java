@@ -285,7 +285,7 @@ public class StudentResultService {
 
     public ResponseDto fetchCourseByName(String courseName) {
         ResponseDto response = new ResponseDto(Constants.API_FETCH_COURSE_BY_NAME);
-        Optional<Course> courseOpt = courseRepository.findByCourseName(courseName);
+        Optional<Course> courseOpt = courseRepository.findByCourseNameIgnoreCase(courseName.trim());
 
         if (courseOpt.isPresent()) {
             response.put(Constants.MESSAGE, "Successful.");
@@ -404,13 +404,15 @@ public class StudentResultService {
         return response;
     }
 
-    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth) {
+    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB);
-        Optional<StudentResult> studentResultOpt = Optional.ofNullable(studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndPublished(enrollmentNumber, dateOfBirth, true));
+        List<StudentResult> studentResultList = studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(enrollmentNumber, dateOfBirth, examCycleId, true);
 
-        if (studentResultOpt.isPresent()) {
+        if (!studentResultList.isEmpty()) {
+            StudentResultDTO studentResultDTO = mapToDTO(studentResultList);
+
             response.put(Constants.MESSAGE, "Successful.");
-            response.put(Constants.RESPONSE, studentResultOpt.get());
+            response.put(Constants.RESPONSE, studentResultDTO);
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "RESULT_NOT_FOUND", "No result found for the given enrollment number and date of birth.", HttpStatus.NOT_FOUND);
@@ -418,6 +420,48 @@ public class StudentResultService {
 
         return response;
     }
+
+    private StudentResultDTO mapToDTO(List<StudentResult> studentResultList) {
+        StudentResultDTO dto = new StudentResultDTO();
+
+        if (studentResultList == null || studentResultList.isEmpty()) {
+            return dto; // return an empty DTO if the input list is null or empty
+        }
+
+        // Set common details using the first entry.
+        StudentResult firstResult = studentResultList.get(0);
+        dto.setFirstName(firstResult.getStudent().getFirstName());
+        dto.setLastName(firstResult.getStudent().getSurname());
+        dto.setEnrollmentNumber(firstResult.getStudent().getEnrollmentNumber());
+        dto.setDateOfBirth(firstResult.getStudent().getDateOfBirth());
+
+        if (firstResult.getExamCycle() != null) {
+            ExamCycle examCycle = firstResult.getExamCycle();
+            if (examCycle.getCourse() != null) {
+                dto.setCourseYear(examCycle.getCourse().getCourseYear());
+                dto.setCourseName(examCycle.getCourse().getCourseName());
+            }
+        }
+
+        List<ExamDetailsDTO> examsList = studentResultList.stream()
+                .map(studentResult -> {
+                    ExamDetailsDTO examDto = new ExamDetailsDTO();
+                    examDto.setExamName(studentResult.getExam().getExamName());
+                    examDto.setInternalMarks(studentResult.getInternalMarks());
+                    examDto.setExternalMarks(studentResult.getExternalMarks());
+                    examDto.setTotalMarks(studentResult.getTotalMarks());
+                    examDto.setGrade(studentResult.getGrade());
+                    examDto.setResult(studentResult.getResult());
+                    examDto.setStatus(studentResult.getStatus().name());
+                    return examDto;
+                })
+                .collect(Collectors.toList());
+
+        dto.setExamDetails(examsList);
+
+        return dto;
+    }
+
     public ResponseDto updateResultAfterRetotalling(StudentResult updatedResult) {
         ResponseDto response = new ResponseDto(Constants.API_UPDATE_RESULT_AFTER_RETOTALLING);
 
