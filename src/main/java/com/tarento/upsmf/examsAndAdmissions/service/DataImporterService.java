@@ -723,7 +723,7 @@ public class DataImporterService {
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
         entity.setGrade(dto.getGrade());
         entity.setResult(dto.getResult());
-        entity.setInstitute(institute);
+        entity.setInstituteId(dto.getInstituteId());
         return entity;
     }
 

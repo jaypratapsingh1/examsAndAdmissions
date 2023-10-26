@@ -24,11 +24,6 @@ public class StudentResult {
     @ManyToOne
     @JoinColumn(name = "student_id")
     private Student student;
-
-    @ManyToOne
-    @JoinColumn(name = "institute_id")
-    private Institute institute;
-
     @JsonProperty("First Name")
     private String firstName;
     @JsonProperty("Last Name")
@@ -103,7 +98,7 @@ public class StudentResult {
     private LocalDate lastDateToUploadInternalMarks;
     private long instituteId;
 
-    public StudentResult(Student student, String firstName, String lastName, String enrollmentNumber, Institute institute,
+    public StudentResult(Student student, String firstName, String lastName, String enrollmentNumber,
                            String motherName, String fatherName, Course course, String course_name,
                            ExamCycle examCycle, String examCycle_name, Exam exam, String exam_name,
                            Integer internalMarks, Integer passingInternalMarks, Integer internalMarksObtained,
@@ -121,7 +116,6 @@ public class StudentResult {
         this.fatherName = fatherName;
         this.course = course;
         this.course_name = course_name;
-        this.institute = institute;
         this.examCycle = examCycle;
         this.examCycle_name = examCycle_name;
         this.exam = exam;
