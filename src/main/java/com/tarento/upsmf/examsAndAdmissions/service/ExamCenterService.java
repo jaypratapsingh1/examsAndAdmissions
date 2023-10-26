@@ -70,7 +70,12 @@ public class ExamCenterService {
             // Update the exam center for these registrations
             for (StudentExamRegistration registration : affectedRegistrations) {
                 registration.setExamCenter(alternateExamCenter);
+                registration.setAlternateExamCenterAssigned(true);  // This is the new change
             }
+
+            // Set the alternate exam center for the unverified exam center
+            unverifiedExamCenter.setAlternateExamCenter(alternateExamCenter);
+            examCenterRepository.save(unverifiedExamCenter);
 
             // Save the updated registrations
             List<StudentExamRegistration> updatedRegistrations = studentExamRegistrationRepository.saveAll(affectedRegistrations);
