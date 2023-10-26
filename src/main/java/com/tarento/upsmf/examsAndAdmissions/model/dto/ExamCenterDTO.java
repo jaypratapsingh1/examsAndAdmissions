@@ -26,4 +26,5 @@ public class ExamCenterDTO {
     private String district;
     private boolean allowedForExamCentre;
     private String instituteCode;
+    private Boolean alternateExamCenterAssigned = false;
 }

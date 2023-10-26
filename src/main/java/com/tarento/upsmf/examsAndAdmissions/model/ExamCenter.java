@@ -39,5 +39,10 @@ public class ExamCenter {
     private boolean allowedForExamCentre;
     private String district;
     private String instituteCode;
+    @Column(name = "alternate_exam_center_assigned", nullable = false, columnDefinition = "boolean default false")
+    private Boolean alternateExamCenterAssigned = false;
+    @OneToOne
+    @JoinColumn(name = "alternate_exam_center_id")
+    private ExamCenter alternateExamCenter;
 
 }
