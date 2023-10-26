@@ -14,7 +14,7 @@ public class ResultDisplayDto {
     private Long id;
 
     private String instituteName;
-    private Long instituteId;
+    private Long institute_id;
 
     private String firstName;
     private String lastName;

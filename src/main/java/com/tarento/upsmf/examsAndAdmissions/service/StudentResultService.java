@@ -480,7 +480,7 @@ public class StudentResultService {
                 .map(result -> {ResultDisplayDto dto = new ResultDisplayDto();
                     dto.setId(result.getId());
                     dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-                    dto.setInstituteId(result.getStudent().getInstitute().getId());
+                    dto.setInstitute_id(result.getStudent().getInstitute().getId());
                     dto.setFirstName(result.getFirstName());
                     dto.setLastName(result.getLastName());
                     dto.setEnrollmentNumber(result.getEnrollmentNumber());
@@ -530,7 +530,7 @@ public class StudentResultService {
         ExamResultDTO dto = new ExamResultDTO();
 
         dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-        dto.setInstituteId(result.getStudent().getInstitute().getId());
+        dto.setInstitute_id(result.getStudent().getInstitute().getId());
         dto.setStudentName(result.getFirstName() + " " + result.getLastName());
         dto.setCourseName(result.getCourse().getCourseName());
         dto.setExamName(result.getExam().getExamName());
@@ -622,7 +622,7 @@ public class StudentResultService {
                         ResultDisplayDto dto = new ResultDisplayDto();
                         dto.setId(result.getId());
                         dto.setInstituteName(result.getStudent().getInstitute().getInstituteName());
-                        dto.setInstituteId(result.getStudent().getInstitute().getId());
+                        dto.setInstitute_id(result.getStudent().getInstitute().getId());
                         dto.setFirstName(result.getFirstName());
                         dto.setLastName(result.getLastName());
                         dto.setEnrollmentNumber(result.getEnrollmentNumber());

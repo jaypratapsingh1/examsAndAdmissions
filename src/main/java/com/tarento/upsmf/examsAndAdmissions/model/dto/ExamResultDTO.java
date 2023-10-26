@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class ExamResultDTO {
     private String instituteName;
-    private Long instituteId;
+    private Long institute_id;
     private String studentName;
     private String courseName;
     private String examName;
