@@ -53,7 +53,8 @@ public class ExamsAndAdmissionsApplication {
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedOriginPatterns("*")
                         .maxAge(3600)
-                        .allowedHeaders("*");
+                        .allowedHeaders("*")
+                        .exposedHeaders("Authorization");
             }
 
             @Autowired
