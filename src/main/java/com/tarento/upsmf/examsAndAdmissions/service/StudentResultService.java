@@ -705,6 +705,15 @@ public class StudentResultService {
             return response;
         }
 
+        Map<Long, ProcessedResultDto> processedResults = getProcessedResults(results);
+
+        response.put(Constants.MESSAGE, "Results fetched successfully.");
+        response.put(Constants.RESPONSE, new ArrayList<>(processedResults.values()));
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
+    private static Map<Long, ProcessedResultDto> getProcessedResults(List<StudentExamRegistration> results) {
         Map<Long, ProcessedResultDto> processedResults = new HashMap<>();
         for (StudentExamRegistration result : results) {
             Institute institute = result.getStudent().getInstitute();
@@ -722,11 +731,7 @@ public class StudentResultService {
             instituteResult.setHasRevisedFinalMarks(result.isRevisedFinalMarkFlag());
 
         }
-
-        response.put(Constants.MESSAGE, "Results fetched successfully.");
-        response.put(Constants.RESPONSE, new ArrayList<>(processedResults.values()));
-        response.setResponseCode(HttpStatus.OK);
-        return response;
+        return processedResults;
     }
 
     public ResponseDto getMarksByInstituteAndExamCycle(Long examCycle, Long exam, Long institute) {

@@ -55,6 +55,14 @@ public class DataImporterService {
     private ExamEntityRepository examCycleRepository;
     @Autowired
     private InstituteRepository instituteRepository;
+    @Autowired
+    private CourseRepository courseRepository;
+    @Autowired
+    private ExamCycleRepository cycleRepository;
+    @Autowired
+    private ExamRepository examRepository;
+    @Autowired
+    private StudentRepository studentRepository;
 
     public JSONArray excelToJson(MultipartFile excelFile) throws IOException, JSONException {
         try (InputStream inputStream = excelFile.getInputStream();
@@ -321,61 +329,55 @@ public class DataImporterService {
 
             if (!isDuplicate) {
                 if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
-                    validationErrors.add("- First Name is invalid: " + dto.getFirstName());
+                    validationErrors.add("- First Name is invalid: " + dto.getFirstName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isLastNameValid(dto.getLastName())) {
-                    validationErrors.add("- Last Name is invalid: " + dto.getLastName());
+                    validationErrors.add("- Last Name is invalid: " + dto.getLastName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isEnrollmentNumberValid(dto.getEnrollmentNumber())) {
-                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber());
+                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber()+" Enrollment number has to contain numerical values prefixed with EN");
                 }
                 if (!DataValidation.isMotherNameValid(dto.getMotherName())) {
-                    validationErrors.add("- Mother's Name is invalid: " + dto.getMotherName());
+                    validationErrors.add("- Mother's Name is invalid: " + dto.getMotherName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isFatherNameValid(dto.getFatherName())) {
-                    validationErrors.add("- Father's Name is invalid: " + dto.getFatherName());
+                    validationErrors.add("- Father's Name is invalid: " + dto.getFatherName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isCourseNameValid(dto.getCourse_name())) {
-                    validationErrors.add("- Course Name is invalid: " + dto.getCourse_name());
+                    validationErrors.add("- Course Name is invalid: " + dto.getCourse_name()+ " Course name has to contain alpha-numeric values, eg:ANM1\n");
                 }
                 if (!DataValidation.isExamCycleValid(dto.getExamCycle_name())) {
-                    validationErrors.add("- Exam Cycle is invalid: " + dto.getExamCycle_name());
+                    validationErrors.add("- Exam Cycle is invalid: " + dto.getExamCycle_name()+ " Exam cycle name has to contain alpha-numeric values, eg: Fall 2023\n");
                 }
                 if (!DataValidation.isExamValid(dto.getExam_name())) {
-                    validationErrors.add("- Exam is invalid: " + dto.getExam_name());
+                    validationErrors.add("- Exam is invalid: " + dto.getExam_name()+ " Exam name has to contain alpha-numeric values, eg:Microbiology_1\n");
                 }
                 if (!DataValidation.isMarksValid(dto.getInternalMarks())) {
-                    validationErrors.add("- Internal Marks is invalid: " + dto.getInternalMarks());
+                    validationErrors.add("- Internal Marks is invalid: " + dto.getInternalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingInternalMarks())) {
-                    validationErrors.add("- Passing Internal Marks is invalid: " + dto.getPassingInternalMarks());
+                    validationErrors.add("- Passing Internal Marks is invalid: " + dto.getPassingInternalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getInternalMarksObtained())) {
-                    validationErrors.add("- Internal Marks Obtained is invalid: " + dto.getInternalMarksObtained());
+                    validationErrors.add("- Internal Marks Obtained is invalid: " + dto.getInternalMarksObtained()+ " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getPracticalMarks())) {
-                    validationErrors.add("- Practical Marks is invalid: " + dto.getPracticalMarks());
+                    validationErrors.add("- Practical Marks is invalid: " + dto.getPracticalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingPracticalMarks())) {
-                    validationErrors.add("- Passing Practical Marks is invalid: " + dto.getPassingPracticalMarks());
+                    validationErrors.add("- Passing Practical Marks is invalid: " + dto.getPassingPracticalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPracticalMarksObtained())) {
-                    validationErrors.add("- Practical Marks Obtained is invalid: " + dto.getPracticalMarksObtained());
+                    validationErrors.add("- Practical Marks Obtained is invalid: " + dto.getPracticalMarksObtained() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarks())) {
-                    validationErrors.add("- Other Marks is invalid: " + dto.getOtherMarks());
+                    validationErrors.add("- Other Marks is invalid: " + dto.getOtherMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingOtherMarks())) {
-                    validationErrors.add("- Passing Other Marks is invalid: " + dto.getPassingOtherMarks());
+                    validationErrors.add("- Passing Other Marks is invalid: " + dto.getPassingOtherMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
-                    validationErrors.add("- Other Marks Obtained is invalid: " + dto.getOtherMarksObtained());
-                }
-                if (!DataValidation.isGradeValid(dto.getGrade())) {
-                    validationErrors.add("- Grade is invalid: " + dto.getGrade());
-                }
-                if (!DataValidation.isResultValid(dto.getResult())) {
-                    validationErrors.add("- Result is invalid: " + dto.getResult());
+                    validationErrors.add("- Other Marks Obtained is invalid: " + dto.getOtherMarksObtained() + " Marks has to be with in 0 and 100");
                 }
 
                 if (!validationErrors.isEmpty()) {
@@ -409,43 +411,41 @@ public class DataImporterService {
 
             if (isDuplicate) {
                 if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
-                    validationErrors.add("- First Name is invalid: " + dto.getFirstName());
+                    validationErrors.add("- First Name is invalid: " + dto.getFirstName() + " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isLastNameValid(dto.getLastName())) {
-                    validationErrors.add("- Last Name is invalid: " + dto.getLastName());
+                    validationErrors.add("- Last Name is invalid: " + dto.getLastName() + " Last name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isEnrollmentNumberValid(dto.getEnrollmentNumber())) {
-                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber());
+                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber()+" Enrollment number has to contain numerical values prefixed with EN");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarks())) {
-                    validationErrors.add("- External marks is invalid: " + dto.getOtherMarks());
+                    validationErrors.add("- External marks is invalid: " + dto.getOtherMarks()+ " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingOtherMarks())) {
-                    validationErrors.add("- Passing External Marks is invalid: " + dto.getPassingOtherMarks());
+                    validationErrors.add("- Passing External Marks is invalid: " + dto.getPassingOtherMarks()+ " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
-                    validationErrors.add("- External Marks Obtained is invalid: " + dto.getOtherMarksObtained());
+                    validationErrors.add("- External Marks Obtained is invalid: " + dto.getOtherMarksObtained()+ " Marks has to be with in 0 and 100");
                 }
-
 
                 if (!validationErrors.isEmpty()) {
                     isValid = false;
                 } else {
                     // Search for an existing entity based on first name, last name, and enrollment number
                     StudentResult existingEntity = repository.findByFirstNameAndLastNameAndEnrollmentNumber(dto.getFirstName(), dto.getLastName(), dto.getEnrollmentNumber());
-//                    List<StudentResult> marks = calculateResult(dto.getInternalMarks(),dto.getPassingInternalMarks(),dto.getInternalMarksObtained(),dto.getPracticalMarks(),
-//                            dto.getPassingPracticalMarks(),dto.getPracticalMarksObtained(),dto.getExternalMarks(),dto.getPassingExternalMarks(),dto.getExternalMarksObtained());
-                    if (existingEntity != null) {
-                        // Update the specific columns
-                        existingEntity.setExternalMarks(dto.getExternalMarks());
-                        existingEntity.setPassingExternalMarks(dto.getPassingExternalMarks());
-                        existingEntity.setExternalMarksObtained(dto.getExternalMarksObtained());
-//                        existingEntity.setTotalMarks(marks.get(0).getTotalMarks());
-//                        existingEntity.setPassingTotalMarks(marks.get(0).getPassingTotalMarks());
-//                        existingEntity.setTotalMarksObtained(marks.get(0).getTotalMarksObtained());
-                    } else {
-                        throw new ValidationException(false, "Record not found for: " + dto.getFirstName() + " " + dto.getLastName() + " Enrollment Number: " + dto.getEnrollmentNumber());
-                    }
+                    List<StudentResult> marks = calculateResult(existingEntity.getInternalMarks(), existingEntity.getPassingInternalMarks(), existingEntity.getInternalMarksObtained(), existingEntity.getPracticalMarks(),
+                            existingEntity.getPassingPracticalMarks(), existingEntity.getPracticalMarksObtained(), dto.getExternalMarks(), dto.getPassingExternalMarks(), dto.getExternalMarksObtained());
+                    // Update the specific columns
+                    existingEntity.setExternalMarks(dto.getExternalMarks());
+                    existingEntity.setPassingExternalMarks(dto.getPassingExternalMarks());
+                    existingEntity.setExternalMarksObtained(dto.getExternalMarksObtained());
+                    existingEntity.setFinalMarkFlag(true);
+                    existingEntity.setTotalMarks(marks.get(0).getTotalMarks());
+                    existingEntity.setPassingTotalMarks(marks.get(0).getPassingTotalMarks());
+                    existingEntity.setTotalMarksObtained(marks.get(0).getTotalMarksObtained());
+                    existingEntity.setResult(marks.get(0).getResult());
+                    existingEntity.setGrade(marks.get(0).getGrade());
                 }
             }
         }
@@ -702,7 +702,11 @@ public class DataImporterService {
 
     private StudentResult getStudentResult(StudentResult dto, Long instituteId) {
         StudentResult entity = new StudentResult();
-        Institute institute = instituteRepository.findById(instituteId).orElse(null);
+
+        Course course = courseRepository.findByCourseNameIgnoreCase(dto.getCourse_name()).orElseThrow();
+        Exam exam = examRepository.findByExamName(dto.getExam_name()).orElseThrow();
+        ExamCycle examCycle = cycleRepository.findByExamCycleName(dto.getExamCycle_name());
+        Student student = studentRepository.findByEnrollmentNumber(dto.getEnrollmentNumber()).orElseThrow();
 
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -721,9 +725,12 @@ public class DataImporterService {
         entity.setOtherMarks(dto.getOtherMarks());
         entity.setPassingOtherMarks(dto.getPassingOtherMarks());
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
-        entity.setGrade(dto.getGrade());
-        entity.setResult(dto.getResult());
-        entity.setInstituteId(dto.getInstituteId());
+        entity.setInternalMarkFlag(true);
+        entity.setInstituteId(instituteId);
+        entity.setCourse(course);
+        entity.setExam(exam);
+        entity.setExamCycle(examCycle);
+        entity.setStudent(student);
         return entity;
     }
 
