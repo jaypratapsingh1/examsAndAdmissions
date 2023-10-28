@@ -16,11 +16,4 @@ public interface ExamFeeRepository extends PagingAndSortingRepository<ExamFee, L
     ExamFee findByReferenceNo(String referenceNo);
 
     Boolean existsByReferenceNo(String referenceNo);
-
-    @Query("SELECT ef FROM ExamFee ef WHERE ef.institute.id = :instituteId AND ef.examCycle.course IN :courses AND ef.examCycle.startDate > :currentDate")
-    List<ExamFee> findExamFeesByInstituteAndCoursesAndFutureExamCycle(
-            @Param("instituteId") Long instituteId,
-            @Param("courses") List<Course> courses,
-            @Param("currentDate") LocalDate currentDate
-    );
 }
