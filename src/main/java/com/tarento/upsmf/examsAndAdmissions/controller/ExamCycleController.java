@@ -2,12 +2,10 @@ package com.tarento.upsmf.examsAndAdmissions.controller;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
-import com.tarento.upsmf.examsAndAdmissions.model.ExamFee;
 import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleWithExamsDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.SearchExamCycleDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;

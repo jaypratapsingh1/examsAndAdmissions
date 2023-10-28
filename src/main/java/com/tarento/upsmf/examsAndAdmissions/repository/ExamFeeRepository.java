@@ -1,14 +1,8 @@
 package com.tarento.upsmf.examsAndAdmissions.repository;
 
-import com.tarento.upsmf.examsAndAdmissions.model.Course;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamFee;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Repository
 public interface ExamFeeRepository extends PagingAndSortingRepository<ExamFee, Long> {
