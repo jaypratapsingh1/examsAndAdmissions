@@ -6,7 +6,6 @@ import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamCycleWithExamsDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.SearchExamCycleDTO;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
-import com.tarento.upsmf.examsAndAdmissions.repository.ExamEntityRepository;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,6 +103,16 @@ public class ExamCycleController {
     public ResponseEntity<ResponseDto> searchExamCycleByCourseIdAndYear(@RequestBody SearchExamCycleDTO searchExamCycleDTO) {
         ResponseDto response = service.searchExamCycle(searchExamCycleDTO);
         return new ResponseEntity<>(response, response.getResponseCode());
+    }
+
+    @GetMapping("/examCyclesByCouses")
+    public ResponseEntity<ResponseDto> getExamCycleDetailsByInstitute(@RequestParam Long instituteId){
+        try {
+            List<ExamCycle> examDetails = service.getExamCyclesByExamCycleAndCourse(instituteId);
+            return FeeController.handleSuccessResponse(examDetails);
+        }catch (Exception e){
+            return FeeController.handleErrorResponse(e);
+        }
     }
 
 

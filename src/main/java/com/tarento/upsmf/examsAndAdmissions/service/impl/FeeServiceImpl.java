@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,9 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     private StudentExamRegistrationRepository studentExamRegistrationRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     /**
      * API to save and return payment redirect URL

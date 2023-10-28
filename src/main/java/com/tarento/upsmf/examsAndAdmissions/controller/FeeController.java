@@ -71,7 +71,6 @@ public class FeeController {
             return handleErrorResponse(e);
         }
     }
-
     public static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
         ResponseParams params = new ResponseParams();
         params.setStatus(HttpStatus.OK.getReasonPhrase());
