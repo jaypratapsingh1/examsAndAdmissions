@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,9 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     private StudentExamRegistrationRepository studentExamRegistrationRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     /**
      * API to save and return payment redirect URL
@@ -240,6 +244,14 @@ public class FeeServiceImpl implements FeeService {
         });
         return studentExamFeeDtoMap.values().stream().collect(Collectors.toList());
     }
+
+    @Override
+    public List<ExamFee> getFeeDetailsByExamCycleAndCourse(Long instituteId) {
+        List<Course> courses = courseRepository.findAllByInstituteId(instituteId);
+        LocalDate currentDate = LocalDate.now();
+        return examFeeRepository.findExamFeesByInstituteAndCoursesAndFutureExamCycle(instituteId, courses, currentDate);
+    }
+
 
     private void updateStudentFeeStatusByRefNo(String refNo) {
         studentExamFeeRepository.updateStatusByRefNo(StudentExam.Status.PAID.name(), refNo);

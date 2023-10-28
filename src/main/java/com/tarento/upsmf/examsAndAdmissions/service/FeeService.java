@@ -20,4 +20,6 @@ public interface FeeService {
     void updateExamFeeStatusByRefNo(String refNo);
 
     List<StudentExamFeeDto> getStudentDetailsByRefNo(String refNo);
+
+    List<ExamFee> getFeeDetailsByExamCycleAndCourse(Long instituteId);
 }
