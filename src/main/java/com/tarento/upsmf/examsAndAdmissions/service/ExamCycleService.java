@@ -448,6 +448,6 @@ public class ExamCycleService {
     public List<ExamCycle> getExamCyclesByExamCycleAndCourse(Long instituteId) {
         List<Course> courses = courseRepository.findAllByInstituteId(instituteId);
         LocalDate currentDate = LocalDate.now();
-        return repository.findByCourseInAndStartDateAfter(courses, currentDate);
+        return repository.findByCourseInAndEndDateAfter(courses, currentDate);
     }
 }
