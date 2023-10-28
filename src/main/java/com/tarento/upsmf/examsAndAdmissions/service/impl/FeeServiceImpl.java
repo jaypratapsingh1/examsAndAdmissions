@@ -245,14 +245,6 @@ public class FeeServiceImpl implements FeeService {
         return studentExamFeeDtoMap.values().stream().collect(Collectors.toList());
     }
 
-    @Override
-    public List<ExamFee> getFeeDetailsByExamCycleAndCourse(Long instituteId) {
-        List<Course> courses = courseRepository.findAllByInstituteId(instituteId);
-        LocalDate currentDate = LocalDate.now();
-        return examFeeRepository.findExamFeesByInstituteAndCoursesAndFutureExamCycle(instituteId, courses, currentDate);
-    }
-
-
     private void updateStudentFeeStatusByRefNo(String refNo) {
         studentExamFeeRepository.updateStatusByRefNo(StudentExam.Status.PAID.name(), refNo);
         List<Long> studentIds = studentExamFeeRepository.getStudentIdsByRefNo(refNo);

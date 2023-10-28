@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.ConstraintViolationException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -444,5 +445,9 @@ public class ExamCycleService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
+    public List<ExamCycle> getExamCyclesByExamCycleAndCourse(Long instituteId) {
+        List<Course> courses = courseRepository.findAllByInstituteId(instituteId);
+        LocalDate currentDate = LocalDate.now();
+        return repository.findByCourseInAndStartDateAfter(courses, currentDate);
+    }
 }

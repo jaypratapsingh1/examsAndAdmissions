@@ -71,16 +71,6 @@ public class FeeController {
             return handleErrorResponse(e);
         }
     }
-    @GetMapping("/details")
-    public ResponseEntity<ResponseDto> getFeeDetails(@RequestParam Long instituteId){
-        try {
-            List<ExamFee> examDetails = feeService.getFeeDetailsByExamCycleAndCourse(instituteId);
-            return handleSuccessResponse(examDetails);
-        }catch (Exception e){
-            return handleSuccessResponse(e);
-        }
-    }
-
     public static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
         ResponseParams params = new ResponseParams();
         params.setStatus(HttpStatus.OK.getReasonPhrase());
