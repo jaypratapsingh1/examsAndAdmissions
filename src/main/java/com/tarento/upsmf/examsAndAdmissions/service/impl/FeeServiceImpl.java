@@ -128,8 +128,14 @@ public class FeeServiceImpl implements FeeService {
             order = Sort.Order.asc(sortKey);
         }
         PageRequest pageRequest = PageRequest.of(examFeeSearchDto.getPage(), examFeeSearchDto.getSize(), Sort.by(order));
-        Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
-        return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+        if(examFeeSearchDto.getFilter() == null || examFeeSearchDto.getFilter().isEmpty()) {
+            Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
+            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+        } else {
+            String examCycle = examFeeSearchDto.getFilter().get("examCycle");
+            Page<ExamFee> examFees = examFeeRepository.findAllByExamCycleId(Long.parseLong(examCycle), pageRequest);
+            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+        }
     }
 
     private void validateGetAllPayload(ExamFeeSearchDto examFeeSearchDto) {
@@ -142,6 +148,19 @@ public class FeeServiceImpl implements FeeService {
         }
         if(examFeeSearchDto.getSize() <= 0) {
             examFeeSearchDto.setSize(50);
+        }
+        if(examFeeSearchDto.getFilter() != null && !examFeeSearchDto.getFilter().isEmpty()) {
+            boolean isKeyMatched = examFeeSearchDto.getFilter().entrySet().stream().anyMatch(x -> x.getKey().equalsIgnoreCase("examCycle"));
+            if(!isKeyMatched) {
+                throw new ExamFeeException("Filter not supported for provided key.");
+            }
+            String examCycle = examFeeSearchDto.getFilter().get("examCycle");
+            if(examCycle.isBlank()) {
+                throw new ExamFeeException("Invalid value for Exam Cycle.");
+            }
+            if(Long.parseLong(examCycle) <= 0) {
+                throw new ExamFeeException("Invalid value for Exam Cycle.");
+            }
         }
         if(examFeeSearchDto.getSort() == null || examFeeSearchDto.getSort().isEmpty()) {
             Map<String, String> sortMap = new HashMap<>();
