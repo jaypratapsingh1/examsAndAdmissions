@@ -80,7 +80,7 @@ public class StudentController {
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
 
-    @GetMapping("/{keycloakId}")
+    @GetMapping("/keycloak/{keycloakId}")
     public ResponseEntity<ResponseDto> getStudentByKeycloak(@PathVariable String keycloakId) {
         ResponseDto response = studentService.getStudentByKeycloakId(keycloakId);
         return ResponseEntity.status(response.getResponseCode()).body(response);
