@@ -404,9 +404,9 @@ public class StudentResultService {
         return response;
     }
 
-    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId) {
+    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, Long examCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB);
-        List<StudentResult> studentResultList = studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(enrollmentNumber, dateOfBirth, examCycleId, true);
+        List<StudentResult> studentResultList = studentResultRepository.findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(enrollmentNumber, examCycleId, true);
 
         if (!studentResultList.isEmpty()) {
             StudentResultDTO studentResultDTO = mapToDTO(studentResultList);
