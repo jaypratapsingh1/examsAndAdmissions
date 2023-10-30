@@ -36,6 +36,10 @@ public class StudentExam implements Serializable {
     @Column(name = "status", nullable = false, columnDefinition = "varchar(50) default 'INITIATED'")
     private Status status;
 
+    @OneToOne
+    @JoinColumn(name = "exam_cycle_id")
+    private ExamCycle examCycle;
+
     public enum Status {
         INITIATED, PAID, FAILED, REFUND, ABANDONED
     }

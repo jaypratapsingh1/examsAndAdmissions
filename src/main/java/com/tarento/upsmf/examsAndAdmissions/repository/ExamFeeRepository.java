@@ -6,6 +6,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ExamFeeRepository extends PagingAndSortingRepository<ExamFee, Long> {
 
@@ -14,4 +16,6 @@ public interface ExamFeeRepository extends PagingAndSortingRepository<ExamFee, L
     Boolean existsByReferenceNo(String referenceNo);
 
     Page<ExamFee> findAllByExamCycleId(Long examCycleId, PageRequest pageRequest);
+
+    List<ExamFee> findAllByInstituteIdAndExamCycleId(Long instituteId, Long examCycleId);
 }

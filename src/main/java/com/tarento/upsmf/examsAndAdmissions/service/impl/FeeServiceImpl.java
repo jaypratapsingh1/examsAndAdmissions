@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarento.upsmf.examsAndAdmissions.exception.ExamFeeException;
 import com.tarento.upsmf.examsAndAdmissions.exception.InvalidRequestException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamFeeSearchDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.ExamSearchResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentExamFeeDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.service.ExamCycleService;
 import com.tarento.upsmf.examsAndAdmissions.service.FeeService;
@@ -28,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Service
@@ -130,12 +128,49 @@ public class FeeServiceImpl implements FeeService {
         PageRequest pageRequest = PageRequest.of(examFeeSearchDto.getPage(), examFeeSearchDto.getSize(), Sort.by(order));
         if(examFeeSearchDto.getFilter() == null || examFeeSearchDto.getFilter().isEmpty()) {
             Page<ExamFee> examFees = examFeeRepository.findAll(pageRequest);
-            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+            // get total student count and total paid student count for this exam cycle and institute
+            List<InstituteExamFeeResponse> allFeeTransactionResponse = createAllFeeTransactionResponse(examFees.getContent());
+            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(allFeeTransactionResponse).build();
         } else {
             String examCycle = examFeeSearchDto.getFilter().get("examCycle");
             Page<ExamFee> examFees = examFeeRepository.findAllByExamCycleId(Long.parseLong(examCycle), pageRequest);
-            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(examFees.getContent()).build();
+            // get total student count and total paid student count for this exam cycle and institute
+            List<InstituteExamFeeResponse> allFeeTransactionResponse = createAllFeeTransactionResponse(examFees.getContent());
+            return ExamSearchResponseDto.builder().count(examFees.getTotalElements()).examFees(allFeeTransactionResponse).build();
         }
+    }
+
+    private List<InstituteExamFeeResponse> createAllFeeTransactionResponse(List<ExamFee> content) {
+        Map<Long, InstituteExamFeeResponse> instituteExamFeeResponseMap = new HashMap<>();
+        content.stream().forEach(examFee -> {
+            if(instituteExamFeeResponseMap.containsKey(examFee.getInstitute().getId())) {
+                InstituteExamFeeResponse instituteExamFeeResponse = instituteExamFeeResponseMap.get(examFee.getInstitute().getId());
+                updateInstituteFeeResponse(instituteExamFeeResponse, examFee);
+            } else {
+                InstituteExamFeeResponse instituteExamFeeResponse = InstituteExamFeeResponse
+                        .builder().institute(examFee.getInstitute()).examCycle(examFee.getExamCycle()).build();
+                updateInstituteFeeResponse(instituteExamFeeResponse, examFee);
+                instituteExamFeeResponseMap.put(examFee.getInstitute().getId(), instituteExamFeeResponse);
+            }
+        });
+        return instituteExamFeeResponseMap.entrySet().stream().map(x -> x.getValue()).collect(Collectors.toList());
+    }
+
+    private void updateInstituteFeeResponse(InstituteExamFeeResponse instituteExamFeeResponse, ExamFee examFee) {
+        // get all students for provided reference no
+        List<StudentExam> allByReferenceNoAndExamCycleId = studentExamFeeRepository.findAllByReferenceNoAndExamCycleId(examFee.getReferenceNo(), examFee.getExamCycle().getId());
+        if(allByReferenceNoAndExamCycleId == null || allByReferenceNoAndExamCycleId.isEmpty()) {
+            return;
+        }
+        long totalStudentCount = allByReferenceNoAndExamCycleId.stream().count();
+        instituteExamFeeResponse.setTotalStudentsCount(instituteExamFeeResponse.getTotalStudentsCount()+totalStudentCount);
+        long totalPaidStudentCount = allByReferenceNoAndExamCycleId.stream().filter(student -> student.getStatus().name().equals(StudentExam.Status.PAID.name())).count();
+        instituteExamFeeResponse.setTotalPaidCount(instituteExamFeeResponse.getTotalPaidCount()+totalPaidStudentCount);
+        AtomicReference<Double> totalPaidAmount = new AtomicReference<>(0.0);
+        allByReferenceNoAndExamCycleId.stream().filter(student -> student.getStatus().name().equals(StudentExam.Status.PAID.name()))
+                .forEach(paidStudents -> totalPaidAmount.updateAndGet(v -> v + paidStudents.getAmount()));
+        instituteExamFeeResponse.setTotalPaidAmount(instituteExamFeeResponse.getTotalPaidAmount()+totalPaidAmount.get());
+
     }
 
     private void validateGetAllPayload(ExamFeeSearchDto examFeeSearchDto) {
@@ -224,6 +259,65 @@ public class FeeServiceImpl implements FeeService {
         }
         // get transaction details from local db
         List<StudentExam> studentExams = studentExamFeeRepository.findByReferenceNo(refNo);
+        if(studentExams == null || studentExams.isEmpty()) {
+            throw new InvalidRequestException("No Record found for Provided Reference No.");
+        }
+        log.info("student list - {}", studentExams.size());
+        Map<Long, StudentExamFeeDto> studentExamFeeDtoMap = new HashMap<>();
+        studentExams.stream().forEach(student -> {
+            if(studentExamFeeDtoMap.containsKey(student.getStudent().getId())) {
+                StudentExamFeeDto studentExamFeeDto = studentExamFeeDtoMap.get(student.getStudent().getId());
+                if(studentExamFeeDto.getExam() != null) {
+                    studentExamFeeDto.getExam().add(student.getExam());
+                } else {
+                    List<Exam> examList = new ArrayList<>();
+                    examList.add(student.getExam());
+                    studentExamFeeDto.setExam(examList);
+                }
+                if(studentExamFeeDto.getAmount() != null) {
+                    double total = studentExamFeeDto.getAmount() + student.getAmount();
+                    studentExamFeeDto.setAmount(total);
+                } else {
+                    studentExamFeeDto.setAmount(student.getAmount());
+                }
+            } else {
+                List<Exam> examList = new ArrayList<>();
+                examList.add(student.getExam());
+                StudentExamFeeDto examFeeDto = StudentExamFeeDto.builder().exam(examList)
+                        .student(student.getStudent())
+                        .amount(student.getAmount())
+                        .status(student.getStatus())
+                        .referenceNo(student.getReferenceNo())
+                        .build();
+                studentExamFeeDtoMap.put(student.getStudent().getId(), examFeeDto);
+            }
+        });
+        return studentExamFeeDtoMap.values().stream().collect(Collectors.toList());
+    }
+    @Override
+    public List<StudentExamFeeDto> getStudentDetailsByExamCycleIdAndInstituteId(Long examCycleId, Long instituteId) {
+        log.info("getStudentDetailsByExamCycleIdAndInstituteId - {} | {}", examCycleId, instituteId);
+        if(examCycleId == null || examCycleId <= 0) {
+            throw new InvalidRequestException("Invalid Exam Cycle ID.");
+        }
+        if(instituteId == null || instituteId <= 0) {
+            throw new InvalidRequestException("Invalid Institute ID.");
+        }
+        // get transaction details from local db
+        List<ExamFee> examFees = examFeeRepository.findAllByInstituteIdAndExamCycleId(instituteId, examCycleId);
+        log.info("Exam fee list - {}", examFees);
+        if(examFees == null || examFees.isEmpty()) {
+            throw new InvalidRequestException("Error in fetching exam list for provided exam cycle and institute");
+        }
+        // get ref nos list
+        List<String> refNos = new ArrayList<>();
+        examFees.stream().forEach(examFee -> refNos.add(examFee.getReferenceNo()));
+        log.info("Exam reference no - {}", refNos);
+        if(refNos == null || refNos.isEmpty()) {
+            throw new InvalidRequestException("Error in fetching student list");
+        }
+        // get student exams
+        List<StudentExam> studentExams = studentExamFeeRepository.findAllByExamCycleIdAndStatusAndReferenceNoIn(examCycleId, refNos, StudentExam.Status.PAID.name());
         if(studentExams == null || studentExams.isEmpty()) {
             throw new InvalidRequestException("No Record found for Provided Reference No.");
         }
