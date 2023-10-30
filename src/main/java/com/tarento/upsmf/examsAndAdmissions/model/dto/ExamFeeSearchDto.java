@@ -15,4 +15,5 @@ public class ExamFeeSearchDto {
         private int page;
         private int size;
         private Map<String, String> sort;
+        private Map<String, String> filter;
 }
