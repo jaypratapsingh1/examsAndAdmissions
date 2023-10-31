@@ -424,9 +424,10 @@ public class StudentService {
                 .build();
 
         ResponseEntity response = userController.createUser(createUserDto);
-        log.info("Create user Response - {}", response);
+        log.info("Create user Response during verify - {}", response);
         if (response.getStatusCode() == HttpStatus.OK) {
             String userContent = response.getBody().toString();
+            log.info("userContent Response - {}", userContent);
             JsonNode responseNode = null;
             try {
                 responseNode = mapper.readTree(userContent);
