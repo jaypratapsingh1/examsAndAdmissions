@@ -1,12 +1,20 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
-import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
+import com.tarento.upsmf.examsAndAdmissions.controller.UserController;
 import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
-import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.Course;
+import com.tarento.upsmf.examsAndAdmissions.model.Institute;
+import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
+import com.tarento.upsmf.examsAndAdmissions.model.Student;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.CreateUserDto;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDTO;
 import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.UserCredentials;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
@@ -18,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +54,12 @@ public class StudentService {
     private final ModelMapper modelMapper;
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private UserController userController;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Value("${gcp.config.file.path}")
     private String gcpConfigFilePath;
@@ -383,6 +398,51 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
+    private String createStudentLoginInKeycloak(Student student) {
+        if (student.getEmailId() == null || student.getEmailId().isEmpty()) {
+            throw new RuntimeException("Email id is mandatory");
+        }
+        UserCredentials userCredentials = UserCredentials.builder()
+                .type("password")
+                .value("Admin@123")
+                .temporary(false)
+                .build();
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("module", "exam");
+        attributes.put("departmentName", String.valueOf(-1));
+        attributes.put("phoneNumber", student.getMobileNo());
+        attributes.put("Role", "exams_student");
+        attributes.put("studentId", String.valueOf(student.getId()));
+
+        CreateUserDto createUserDto = CreateUserDto.builder()
+                .firstName(student.getFirstName())
+                .lastName(student.getSurname())
+                .email(student.getEmailId())
+                .username(student.getEmailId())
+                .credentials(Collections.singletonList(userCredentials))
+                .attributes(attributes)
+                .build();
+
+        ResponseEntity response = userController.createUser(createUserDto);
+        log.info("Create user Response - {}", response);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            String userContent = response.getBody().toString();
+            JsonNode responseNode = null;
+            try {
+                responseNode = mapper.readTree(userContent);
+            } catch (JsonProcessingException jp) {
+                log.error("Error while parsing success response", jp);
+            }
+            if (responseNode != null) {
+                if (responseNode.has("errorMessage")) {
+                    throw new RuntimeException(responseNode.get("errorMessage").textValue());
+                }
+            }
+            return responseNode.path("keycloakId").asText();
+        }
+        throw new RuntimeException("Exception occurred during creating user in keycloak");
+    }
+
     public ResponseDto verifyStudent(Long studentId, VerificationStatus status, String remarks, String verifierUserId) {
         ResponseDto response = new ResponseDto(Constants.API_VERIFY_STUDENT);
 
@@ -402,6 +462,8 @@ public class StudentService {
             if (status == VerificationStatus.VERIFIED) {
                 String enrollmentNumber = "EN" + LocalDate.now().getYear() + student.getInstitute().getId() + student.getId();
                 student.setEnrollmentNumber(enrollmentNumber);
+                String keycloakId = createStudentLoginInKeycloak(student);
+                student.setKeycloakId(keycloakId);
             } else if (status == VerificationStatus.REJECTED) {
                 student.setRequiresRevision(true);
             }
@@ -456,6 +518,7 @@ public class StudentService {
         }
         throw new RuntimeException("Invalid file type. Supported files are PDF and Images.");
     }
+
     public ResponseDto deleteStudent(Long id) {
         ResponseDto response = new ResponseDto(Constants.API_DELETE_STUDENT);
 
