@@ -189,8 +189,20 @@ public class DispatchTrackerService {
             ExamDispatchStatusDto statusDto = new ExamDispatchStatusDto();
             statusDto.setExamId(exam.getId());
             statusDto.setExamName(exam.getExamName());
-            statusDto.setProofUploaded(false);
 
+            DispatchTracker matchedDispatch = uploadedProofs.stream()
+                    .filter(dispatch -> dispatch.getExam().getId().equals(exam.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (matchedDispatch != null) {
+                statusDto.setProofUploaded(true);
+                statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
+                statusDto.setLastDateToUpload(matchedDispatch.getDispatchLastDate()); // Assuming DispatchLastDate is of type Date
+            } else {
+                statusDto.setProofUploaded(false);
+            }
 
             result.add(statusDto);
         }
@@ -211,7 +223,7 @@ public class DispatchTrackerService {
 
         List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
         List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
-        Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
+        /*Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
 
         List<InstituteDispatchStatusDto> result = new ArrayList<>();
 
@@ -235,11 +247,11 @@ public class DispatchTrackerService {
             }
 
             result.add(statusDto);
-        }
+        }*/
 
-        if (!result.isEmpty()) {
+        if (!uploadedProofsForExam.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-            response.put(Constants.RESPONSE, result);
+            response.put(Constants.RESPONSE, uploadedProofsForExam);
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for the given exam and exam cycle across all institutes.", HttpStatus.NOT_FOUND);
