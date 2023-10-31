@@ -592,32 +592,35 @@ public class StudentResultService {
 
             switch (fileType.toLowerCase()) {
                 case Constants.CSV:
-                    jsonArray = dataImporterService.csvToJson(file,columnConfig);
+                    jsonArray = dataImporterService.csvToJson(file, columnConfig);
                     break;
                 case Constants.EXCEL:
                     jsonArray = dataImporterService.excelToJson(file);
                     break;
                 default:
-                    // Handle unsupported file type
                     return ResponseDto.setErrorResponse(response, "UNSUPPORTED_FILE_TYPE", "Unsupported file type", HttpStatus.BAD_REQUEST);
             }
 
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
+            ValidationResultDto validationResult = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
 
-            if (success) {
-                response.put(Constants.MESSAGE, "File processed successfully.");
+            if (validationResult.isValid()) {
+                response.put(Constants.MESSAGE, "Bulk upload success");
+                response.put("Data",validationResult.getSavedEntities());
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+                if (!validationResult.getValidationErrors().isEmpty()) {
+                    response.put("validationErrors", validationResult.getValidationErrors());
+                    response.setResponseCode(HttpStatus.BAD_REQUEST);
+                } else {
+                    return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
 
+            return response; // Return the ResponseDto without using ResponseEntity
         } catch (Exception e) {
-            log.error("Error processing bulk result upload", e);
-            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     }
 
     public ResponseDto processBulkResultUploadWithExternals(MultipartFile file, String fileType) {
@@ -640,21 +643,24 @@ public class StudentResultService {
             String[] selectedColumns = { "First Name", "Last Name", "Enrolment Number","External Marks", "Passing External Marks", "External Marks Obtained" };
             JSONArray filteredJsonArray = dataImporterService.filterColumns(jsonArray, selectedColumns);
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(filteredJsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntitiesExternalMarks(dtoList, studentResultRepository);
+            ValidationResultDto validationResult = dataImporterService.convertResultDtoListToEntitiesExternalMarks(dtoList, studentResultRepository);
 
-            if (success) {
-                response.put(Constants.MESSAGE, "File processed successfully.");
+            if (validationResult.isValid()) {
+                response.put(Constants.MESSAGE, "Bulk upload success");
+                response.put("Data",validationResult.getSavedEntities());
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+                if (!validationResult.getValidationErrors().isEmpty()) {
+                    response.put("validationErrors", validationResult.getValidationErrors());
+                    response.setResponseCode(HttpStatus.BAD_REQUEST);
+                } else {
+                    return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
-
+            return response;
         } catch (Exception e) {
-            log.error("Error processing bulk result upload", e);
-            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     }
 
 
