@@ -26,4 +26,6 @@ public interface ExamCycleRepository extends JpaRepository<ExamCycle, Long> {
 
     @Query(value = "select * from exam_cycle ec  where ec.course_id =:courseId and date_part('year', ec.start_date) = :startYear and date_part('year', ec.end_date) <= :endYear", nativeQuery = true)
     List<ExamCycle> searchExamCycleByCourseIdAndStartYearAndEndYear(@Param("courseId") String courseId, @Param("startYear") Integer startYear, @Param("endYear") Integer endYear);
+
+    List<ExamCycle> findByCourseInAndEndDateAfter(List<Course> courses, LocalDate currentDate);
 }

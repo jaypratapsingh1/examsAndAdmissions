@@ -20,7 +20,7 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
 
     List<StudentResult> findByCourse_IdAndExam_ExamCycleIdAndPublished(Long courseId, Long examCycleId, boolean b);
 
-    List<StudentResult> findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId, boolean published);
+//    List<StudentResult> findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId, boolean published);
 
     boolean existsByEnrollmentNumber(String enrollmentNumber);
 
@@ -51,5 +51,7 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
     Optional<StudentResult> findByExamId(Long id);
 
     List<StudentResult> findByExamIdAndInstituteId(Long id, Long instituteId);
+
+    List<StudentResult> findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(String enrollmentNumber, Long examCycleId, boolean b);
 }
 
