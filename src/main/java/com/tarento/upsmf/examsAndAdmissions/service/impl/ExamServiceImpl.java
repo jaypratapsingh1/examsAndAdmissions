@@ -107,6 +107,7 @@ public class ExamServiceImpl implements ExamService {
             existingExam.setExamDate(exam.getExamDate());
             existingExam.setStartTime(exam.getStartTime());
             existingExam.setEndTime(exam.getEndTime());
+            existingExam.setAmount(exam.getAmount());
             // Update auditing metadata from the payload
             existingExam.setModifiedBy(userId);
             existingExam.setModifiedOn(LocalDateTime.now());

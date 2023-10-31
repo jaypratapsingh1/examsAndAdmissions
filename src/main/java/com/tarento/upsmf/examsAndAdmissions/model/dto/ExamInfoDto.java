@@ -12,4 +12,6 @@ import lombok.Setter;
 public class ExamInfoDto {
     private Long id;
     private String name;
+    private boolean isFeesPaid;
+    private double amount;
 }
