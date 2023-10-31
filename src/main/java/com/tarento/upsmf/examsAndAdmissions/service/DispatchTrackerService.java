@@ -223,7 +223,7 @@ public class DispatchTrackerService {
 
         List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
         List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
-        Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
+        /*Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
 
         List<InstituteDispatchStatusDto> result = new ArrayList<>();
 
@@ -247,11 +247,11 @@ public class DispatchTrackerService {
             }
 
             result.add(statusDto);
-        }
+        }*/
 
-        if (!result.isEmpty()) {
+        if (!uploadedProofsForExam.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-            response.put(Constants.RESPONSE, result);
+            response.put(Constants.RESPONSE, uploadedProofsForExam);
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for the given exam and exam cycle across all institutes.", HttpStatus.NOT_FOUND);
