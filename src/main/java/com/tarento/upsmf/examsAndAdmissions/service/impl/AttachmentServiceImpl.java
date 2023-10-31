@@ -91,13 +91,13 @@ public class AttachmentServiceImpl implements AttachmentService {
         LocalTime examTime = questionPaperDetails.getExamStartTime();
         String fileName = questionPaperDetails.getGcpFileName();
         try {
-            LocalDate currentDate = LocalDate.now();
+            LocalDate currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
             // Check if the current date is the same as the exam date
             if (currentDate.getYear() == examDate.getYear() &&
                     currentDate.getMonthValue() == examDate.getMonthValue() &&
                     currentDate.getDayOfMonth() == examDate.getDayOfMonth()) {
-                ZoneId zoneId = ZoneId.systemDefault();
+                ZoneId zoneId = ZoneId.of("Asia/Kolkata");
                 ZonedDateTime currentTime = ZonedDateTime.now(zoneId);
                 LocalTime currentLocalTime = currentTime.toLocalTime();
                 // Calculate the time difference
