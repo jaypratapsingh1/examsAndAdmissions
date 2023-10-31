@@ -7,14 +7,8 @@ import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
 import com.tarento.upsmf.examsAndAdmissions.controller.UserController;
 import com.tarento.upsmf.examsAndAdmissions.enums.VerificationStatus;
-import com.tarento.upsmf.examsAndAdmissions.model.Course;
-import com.tarento.upsmf.examsAndAdmissions.model.Institute;
-import com.tarento.upsmf.examsAndAdmissions.model.ResponseDto;
-import com.tarento.upsmf.examsAndAdmissions.model.Student;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.CreateUserDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.InstituteDTO;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.StudentDto;
-import com.tarento.upsmf.examsAndAdmissions.model.dto.UserCredentials;
+import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.*;
 import com.tarento.upsmf.examsAndAdmissions.repository.CourseRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.InstituteRepository;
 import com.tarento.upsmf.examsAndAdmissions.repository.StudentRepository;
@@ -56,7 +50,7 @@ public class StudentService {
     private EntityManager entityManager;
 
     @Autowired
-    private UserController userController;
+    private IntegrationService integrationService;
 
     @Autowired
     private ObjectMapper mapper;
@@ -398,15 +392,10 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
-    private String createStudentLoginInKeycloak(Student student) {
+    private String createStudentLoginInKeycloak(Student student) throws Exception {
         if (student.getEmailId() == null || student.getEmailId().isEmpty()) {
             throw new RuntimeException("Email id is mandatory");
         }
-        UserCredentials userCredentials = UserCredentials.builder()
-                .type("password")
-                .value("Admin@123")
-                .temporary(false)
-                .build();
         Map<String, String> attributes = new HashMap<>();
         attributes.put("module", "exam");
         attributes.put("departmentName", String.valueOf(-1));
@@ -419,27 +408,14 @@ public class StudentService {
                 .lastName(student.getSurname())
                 .email(student.getEmailId())
                 .username(student.getEmailId())
-                .credentials(Collections.singletonList(userCredentials))
                 .attributes(attributes)
                 .build();
 
-        ResponseEntity response = userController.createUser(createUserDto);
+        ResponseEntity<User> response = integrationService.createUser(createUserDto);
         log.info("Create user Response during verify - {}", response);
         if (response.getStatusCode() == HttpStatus.OK) {
-            String userContent = response.getBody().toString();
-            log.info("userContent Response - {}", userContent);
-            JsonNode responseNode = null;
-            try {
-                responseNode = mapper.readTree(userContent);
-            } catch (JsonProcessingException jp) {
-                log.error("Error while parsing success response", jp);
-            }
-            if (responseNode != null) {
-                if (responseNode.has("errorMessage")) {
-                    throw new RuntimeException(responseNode.get("errorMessage").textValue());
-                }
-            }
-            return responseNode.path("keycloakId").asText();
+            User userContent = response.getBody();
+            return userContent.getId();
         }
         throw new RuntimeException("Exception occurred during creating user in keycloak");
     }
