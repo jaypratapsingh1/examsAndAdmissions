@@ -30,6 +30,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -223,7 +225,11 @@ public class DispatchTrackerService {
 
         List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
         List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
-        /*Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
+        Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
+
+        // Creating a map of Institute ID to DispatchTracker for quick lookup
+        Map<Long, DispatchTracker> dispatchTrackerMap = uploadedProofsForExam.stream()
+                .collect(Collectors.toMap(dispatch -> dispatch.getExamCenter().getId(), Function.identity()));
 
         List<InstituteDispatchStatusDto> result = new ArrayList<>();
 
@@ -231,27 +237,25 @@ public class DispatchTrackerService {
             InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
             statusDto.setInstituteId(institute.getId());
             statusDto.setInstituteName(institute.getName());
-            statusDto.setExamName(exam != null ? exam.getExamName() : null);  // Set exam name
+            statusDto.setExamName(exam != null ? exam.getExamName() : null);
 
-            DispatchTracker matchedDispatch = uploadedProofsForExam.stream()
-                    .filter(dispatch -> dispatch.getExamCenter().getId().equals(institute.getId()))
-                    .findFirst()
-                    .orElse(null);
+            DispatchTracker matchedDispatch = dispatchTrackerMap.get(institute.getId());
 
             if (matchedDispatch != null) {
                 statusDto.setProofUploaded(true);
                 statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
-                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));
             } else {
                 statusDto.setProofUploaded(false);
+                // Here you can set default values or placeholders for other fields if needed
             }
 
             result.add(statusDto);
-        }*/
+        }
 
-        if (!uploadedProofsForExam.isEmpty()) {
+        if (!result.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
-            response.put(Constants.RESPONSE, uploadedProofsForExam);
+            response.put(Constants.RESPONSE, result);
             response.setResponseCode(HttpStatus.OK);
         } else {
             ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for the given exam and exam cycle across all institutes.", HttpStatus.NOT_FOUND);
@@ -259,6 +263,8 @@ public class DispatchTrackerService {
 
         return response;
     }
+
+
     private String generateSignedUrl(String blobName) {
         try {
             // Define resource
