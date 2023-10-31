@@ -242,9 +242,10 @@ public class StudentExamRegistrationService {
                     dto.setEnrollmentNumber(registration.getStudent().getEnrollmentNumber());
                     dto.setCourseName(registration.getStudent().getCourse().getCourseName());
                     dto.setSession(registration.getStudent().getSession());
+                    dto.setId(registration.getStudent().getId());
 
                     Exam examForRegistration = registration.getExam();
-                    List<ExamInfoDto> exams = Collections.singletonList(new ExamInfoDto(examForRegistration.getId(), examForRegistration.getExamName()));
+                    List<ExamInfoDto> exams = Collections.singletonList(new ExamInfoDto(examForRegistration.getId(), examForRegistration.getExamName(), registration.isFeesPaid(), examForRegistration.getAmount()));
                     dto.setExams(exams);
                     dto.setNumberOfExams(1);
 
@@ -281,10 +282,10 @@ public class StudentExamRegistrationService {
             dto.setNumberOfExams(unregisteredExams.size());
             dto.setId(student.getId());
             List<ExamInfoDto> exams = Optional.of(unregisteredExams.stream()
-                            .map(exam -> new ExamInfoDto(exam.getId(), exam.getExamName()))
+                            .map(exam -> new ExamInfoDto(exam.getId(), exam.getExamName(),false, exam.getAmount()))
                             .collect(Collectors.toList()))
                     .filter(list -> !list.isEmpty())
-                    .orElseGet(() -> Collections.singletonList(new ExamInfoDto(0L, null)));
+                    .orElseGet(() -> Collections.singletonList(new ExamInfoDto(0L, null, false, 0.00)));
 
             dto.setExams(exams);
             resultDTOs.add(dto);
