@@ -361,11 +361,19 @@ public class FeeServiceImpl implements FeeService {
     private void updateStudentFeeStatusByRefNo(String refNo) {
         studentExamFeeRepository.updateStatusByRefNo(StudentExam.Status.PAID.name(), refNo);
         List<Long> studentIds = studentExamFeeRepository.getStudentIdsByRefNo(refNo);
-        if(studentIds!=null && !studentIds.isEmpty()) {
-            studentIds.stream().forEach(id -> {
-                studentExamRegistrationRepository.updateExamFeeByStudentId(true, id);
-            });
+        List<StudentExam> studentExams = studentExamFeeRepository.findByReferenceNo(refNo);
+        if(studentExams == null || studentExams.isEmpty()) {
+            return;
         }
+        ExamFee byReferenceNo = examFeeRepository.findByReferenceNo(refNo);
+        if(byReferenceNo == null) {
+            return;
+        }
+        studentExams.stream().forEach(studentExam -> {
+            studentExamRegistrationRepository.updateExamFeeByStudentId(true, "PAYMENT DONE", "Payment Done",
+                    studentExam.getStudent().getId(), byReferenceNo.getInstitute().getId(),
+                    studentExam.getExamCycle().getId(), studentExam.getExam().getId());
+        });
     }
 
     private ResponseEntity<Transaction> getPaymentUpdate(String refNo) {
@@ -387,30 +395,31 @@ public class FeeServiceImpl implements FeeService {
                 .build();
         examFee = examFeeRepository.save(examFee);
         // save student to exam mapping
-        saveStudentExamFeeMapping(referenceNumber, examFeeDto);
+        saveStudentExamFeeMapping(referenceNumber, examFeeDto, (ExamCycle) examCycleById.get(Constants.RESPONSE));
     }
 
-    private void saveStudentExamFeeMapping(String referenceNumber, ExamFeeDto examFeeDto) {
+    private void saveStudentExamFeeMapping(String referenceNumber, ExamFeeDto examFeeDto, ExamCycle examCycle) {
         List<StudentExam> studentExams = new ArrayList<>();
         // iterate through student and exam map
-        examFeeDto.getStudentExam().entrySet().stream().forEach(entry -> {
-            String studentId = entry.getKey();
-            Map<Long, Double> exams = entry.getValue();
-            Optional<Student> student = studentRepository.findById(Long.parseLong(studentId));
+        examFeeDto.getStudentExam().stream().forEach(studentExamDto -> {
+            Long studentId = studentExamDto.getStudentId();
+            List<ExamFeeRequestDto> exams = studentExamDto.getExam();
+            Optional<Student> student = studentRepository.findById(studentId);
             if(student.isPresent() && exams!=null && !exams.isEmpty()) {
                 // iterate through inner map to get exam id and corresponding fee
-                exams.entrySet().stream().forEach(examEntry -> {
+                exams.stream().forEach(examEntry -> {
                     // get exam by id
-                    Optional<Exam> examDetails = examRepository.findById(examEntry.getKey());
+                    Optional<Exam> examDetails = examRepository.findById(examEntry.getId());
                     //validate
-                    if(examDetails.isPresent() && examEntry.getValue() != null && examEntry.getValue() > 0) {
+                    if(examDetails.isPresent() && examEntry.getFee() != null && examEntry.getFee() > 0) {
                         // create student exam object
                         StudentExam studentExam = StudentExam.builder()
                                 .referenceNo(referenceNumber)
                                 .exam(examDetails.get())
                                 .student(student.get())
-                                .amount(examEntry.getValue())
+                                .amount(examEntry.getFee())
                                 .status(StudentExam.Status.INITIATED)
+                                .examCycle(examCycle)
                                 .build();
                         // add to the list
                         studentExams.add(studentExam);
