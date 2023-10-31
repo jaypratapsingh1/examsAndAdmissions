@@ -50,7 +50,10 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
 
     Optional<StudentResult> findByExamId(Long id);
 
-    List<StudentResult> findByExamIdAndInstituteId(Long id, Long instituteId);
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.exam_name = :examName AND sr.instituteId = :instituteId")
+    List<StudentResult> findByExamNameAndInstituteId(@Param("examName") String examName, @Param("instituteId") Long instituteId);
+
+    List<StudentResult> findByExamExamNameAndInstituteId(String examName, Long instituteId);
 
     List<StudentResult> findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(String enrollmentNumber, Long examCycleId, boolean b);
 }
