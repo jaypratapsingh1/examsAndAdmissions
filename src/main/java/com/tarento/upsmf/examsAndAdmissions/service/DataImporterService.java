@@ -414,7 +414,8 @@ public class DataImporterService {
                 if (!DataValidation.isMarksValid(dto.getExternalMarksObtained())) {
                     validationErrors.add("- External Marks Obtained is invalid: " + dto.getExternalMarksObtained() + " Marks have to be within 0 and 100");
                 }
-            } else {
+            }
+            if (validationErrors.isEmpty()) {
                 StudentResult existingEntity = repository.findByFirstNameAndLastNameAndEnrollmentNumber(dto.getFirstName(), dto.getLastName(), dto.getEnrollmentNumber());
                 List<StudentResult> marks = calculateResult(existingEntity.getInternalMarks(), existingEntity.getPassingInternalMarks(), existingEntity.getInternalMarksObtained(), existingEntity.getPracticalMarks(),
                         existingEntity.getPassingPracticalMarks(), existingEntity.getPracticalMarksObtained(), dto.getExternalMarks(), dto.getPassingExternalMarks(), dto.getExternalMarksObtained());
@@ -432,6 +433,7 @@ public class DataImporterService {
                 entityList.add(existingEntity);
             }
         }
+
         ValidationResultDto resultDto = new ValidationResultDto();
         if (!validationErrors.isEmpty()) {
             resultDto.setValid(false);
