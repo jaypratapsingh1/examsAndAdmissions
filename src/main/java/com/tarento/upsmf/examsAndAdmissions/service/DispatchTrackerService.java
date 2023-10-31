@@ -189,20 +189,8 @@ public class DispatchTrackerService {
             ExamDispatchStatusDto statusDto = new ExamDispatchStatusDto();
             statusDto.setExamId(exam.getId());
             statusDto.setExamName(exam.getExamName());
+            statusDto.setProofUploaded(false);
 
-            DispatchTracker matchedDispatch = uploadedProofs.stream()
-                    .filter(dispatch -> dispatch.getExam().getId().equals(exam.getId()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (matchedDispatch != null) {
-                statusDto.setProofUploaded(true);
-                statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
-                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
-                statusDto.setLastDateToUpload(matchedDispatch.getDispatchLastDate()); // Assuming DispatchLastDate is of type Date
-            } else {
-                statusDto.setProofUploaded(false);
-            }
 
             result.add(statusDto);
         }
