@@ -295,15 +295,19 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     private void sendMail(User newUser, String generatePassword) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Dear ").append(newUser.getFirstName()).append(", We are writing to inform you that your account has been created by the administrator. Please use following email and Password to login. \\n Email:")
-                .append(newUser.getEmail()).append("  Password: ").append(generatePassword).append(" Kindly do not share the credentials with anyone. Regards UPSMF Team");
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setText(stringBuilder.toString());
-        message.setSubject("Account Login Credentials");
-        message.setTo(newUser.getEmail());
-        message.setFrom("upsmf.otp@upsmfac.org");
-        javaMailSender.send(message);
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("Dear ").append(newUser.getFirstName()).append(", We are writing to inform you that your account has been created by the administrator. Please use following email and Password to login. \\n Email:")
+                    .append(newUser.getEmail()).append("  Password: ").append(generatePassword).append(" Kindly do not share the credentials with anyone. Regards UPSMF Team");
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setText(stringBuilder.toString());
+            message.setSubject("Account Login Credentials");
+            message.setTo(newUser.getEmail());
+            message.setFrom("upsmf.otp@upsmfac.org");
+            javaMailSender.send(message);
+        } catch (Exception e) {
+            log.info("Error in send email");
+        }
     }
 
     private String validateAndCreateDefaultPassword(CreateUserDto user) {
