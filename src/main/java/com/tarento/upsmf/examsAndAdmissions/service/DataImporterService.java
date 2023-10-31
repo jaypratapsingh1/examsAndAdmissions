@@ -688,10 +688,10 @@ public class DataImporterService {
     private StudentResult getStudentResult(StudentResult dto, Long instituteId) {
         StudentResult entity = new StudentResult();
 
-        Course course = courseRepository.findByCourseNameIgnoreCase(dto.getCourse_name()).orElseThrow();
-        Exam exam = examRepository.findByExamName(dto.getExam_name()).orElseThrow();
-        ExamCycle examCycle = cycleRepository.findByExamCycleName(dto.getExamCycle_name());
-        Student student = studentRepository.findByEnrollmentNumber(dto.getEnrollmentNumber()).orElseThrow();
+//        Course course = courseRepository.findByCourseNameIgnoreCase(dto.getCourse_name()).orElseThrow();
+//        Exam exam = examRepository.findByExamName(dto.getExam_name()).orElseThrow();
+//        ExamCycle examCycle = cycleRepository.findByExamCycleName(dto.getExamCycle_name());
+//        Student student = studentRepository.findByEnrollmentNumber(dto.getEnrollmentNumber()).orElseThrow();
 
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -712,10 +712,10 @@ public class DataImporterService {
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
         entity.setInternalMarkFlag(true);
         entity.setInstituteId(instituteId);
-        entity.setCourse(course);
-        entity.setExam(exam);
-        entity.setExamCycle(examCycle);
-        entity.setStudent(student);
+//        entity.setCourse(course);
+//        entity.setExam(exam);
+//        entity.setExamCycle(examCycle);
+//        entity.setStudent(student);
         return entity;
     }
 
