@@ -59,6 +59,19 @@ public class HallTicketController {
         return ResponseEntity.status(response.getResponseCode()).body(response);
     }
 
+    @GetMapping("/examCycle")
+    public ResponseEntity<ResponseDto> downloadStudentHallTicketByStudentId(@RequestParam Long id, @RequestParam Long examCycleId) {
+        ResponseDto response;
+        try {
+            response = hallTicketService.getHallTicketBlobResourcePathByStudentId(id, examCycleId);
+        } catch (Exception e) {
+            log.error("Error fetching hall ticket for student ID: {}", id, e);
+            response = new ResponseDto(Constants.API_HALLTICKET_GET);
+            ResponseDto.setErrorResponse(response, "GENERAL_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.status(response.getResponseCode()).body(response);
+    }
+
     private Resource extractResourceFromResponseDto(ResponseDto responseDto) {
         String base64EncodedData = (String) responseDto.get(Constants.RESPONSE);
 

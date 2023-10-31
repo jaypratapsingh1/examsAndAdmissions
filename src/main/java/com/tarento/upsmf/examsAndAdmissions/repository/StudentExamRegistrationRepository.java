@@ -24,6 +24,9 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
 
     Optional<StudentExamRegistration> findByIdAndStudent_DateOfBirth(Long id, LocalDate localDate);
 
+    @Query(value = "SELECT * from student_exam_registration where student_id=:id and exam_cycle_id=:examCycleId", nativeQuery = true)
+    List<StudentExamRegistration> findAllByStudent_IdAndExam_Id(Long id, Long examCycleId);
+
     List<StudentExamRegistration> findByExamCenter(ExamCenter originalExamCenter);
 
     List<StudentExamRegistration> findByInstituteIdAndExamCenterIsNull(Long instituteId);

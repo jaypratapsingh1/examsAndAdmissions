@@ -1,8 +1,6 @@
 package com.tarento.upsmf.examsAndAdmissions.service;
 
 import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.enums.DocumentType;
 import com.tarento.upsmf.examsAndAdmissions.enums.HallTicketStatus;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
@@ -19,11 +17,11 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
@@ -32,13 +30,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -172,6 +166,29 @@ public class HallTicketService {
         response.setResponseCode(HttpStatus.OK);
         return response;
     }
+
+    public ResponseDto getHallTicketForStudentByStudentIdAndExamCycleId(Long id, Long examCycleId) {
+        ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_BY_ID);
+
+        List<StudentExamRegistration> registrationOptional = studentExamRegistrationRepository.findAllByStudent_IdAndExam_Id(id, examCycleId);
+        if (registrationOptional.isEmpty()) {
+            setErrorResponse(response, "STUDENT_NOT_FOUND", "No student record found for the provided details.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        List<String> hallTickets = new ArrayList<>();
+        registrationOptional.stream().filter(path -> !path.getHallTicketPath().isBlank()).forEach(ticket -> hallTickets.add(ticket.getHallTicketPath()));
+        if (hallTickets == null || hallTickets.isEmpty()) {
+            setErrorResponse(response, "HALL_TICKET_NOT_GENERATED", "Hall ticket not generated for this student.", HttpStatus.NOT_FOUND);
+            return response;
+        }
+
+        response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
+        response.put(Constants.RESPONSE, hallTickets);  // Sending the hall ticket as a resource
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
     public ResponseDto getHallTicketBlobResourcePath(Long id, String dateOfBirth) throws Exception {
         ResponseDto hallTicketResponse = getHallTicketForStudent(id, dateOfBirth);
 
@@ -195,6 +212,41 @@ public class HallTicketService {
             return hallTicketResponse;  // Directly return the 404 response if the record isn't found
         } else {
             ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET);
+            ResponseDto.setErrorResponse(response, "REQUEST_ERROR", "Error processing request: " + hallTicketResponse.getError().getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return response;
+        }
+    }
+
+    public ResponseDto getHallTicketBlobResourcePathByStudentId(Long studentId, Long examCycleId) throws Exception {
+        ResponseDto hallTicketResponse = getHallTicketForStudentByStudentIdAndExamCycleId(studentId, examCycleId);
+
+        if (hallTicketResponse.getResponseCode().is2xxSuccessful()) {
+            List<String> hallTicketPaths = (List) hallTicketResponse.getResult().get(Constants.RESPONSE);
+            List<URL> signedUrls = new ArrayList<>();
+            hallTicketPaths.stream().forEach(ticket -> {
+                try {
+                    Blob blob = fileStorageService.getBlobFromGCP(ticket);
+                    if (blob != null && blob.exists()) {
+                        // Generate a signed URL for direct download
+                        URL signedUrl = blob.signUrl(15, TimeUnit.MINUTES);
+                        signedUrls.add(signedUrl);
+                    }
+                } catch (IOException | URISyntaxException e) {
+                    log.error("Error in converting to blob");
+                }
+            });
+            if (signedUrls.isEmpty()) {
+                ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_BY_ID);
+                ResponseDto.setErrorResponse(response, "BLOB_NOT_FOUND", "Error fetching hall ticket from storage.", HttpStatus.INTERNAL_SERVER_ERROR);
+                return response;
+            }
+            hallTicketResponse.getResult().put(Constants.RESPONSE, signedUrls);  // use the signed URL
+            return hallTicketResponse;
+
+        } else if (hallTicketResponse.getResponseCode() == HttpStatus.NOT_FOUND) {
+            return hallTicketResponse;  // Directly return the 404 response if the record isn't found
+        } else {
+            ResponseDto response = new ResponseDto(Constants.API_HALLTICKET_GET_BY_ID);
             ResponseDto.setErrorResponse(response, "REQUEST_ERROR", "Error processing request: " + hallTicketResponse.getError().getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             return response;
         }
