@@ -30,8 +30,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -219,50 +217,70 @@ public class DispatchTrackerService {
 
         return response;
     }
+
     public ResponseDto getDispatchStatusForAllInstitutes(Long examCycleId, Long examId) {
         ResponseDto response = new ResponseDto(Constants.API_DISPATCH_STATUS_FOR_ALL_INSTITUTES);
 
         List<ExamCenter> allInstitutes = examCenterRepository.findByExamCycle_Id(examCycleId);
         List<DispatchTracker> uploadedProofsForExam = dispatchTrackerRepository.findByExamIdAndExamCycleId(examId, examCycleId);
-        Exam exam = examRepository.findById(examId).orElse(null);
+        Exam exam = examRepository.findById(examId).orElse(null);  // Fetch the exam details
 
-        if (exam == null) {
-            return ResponseDto.setErrorResponse(response, "EXAM_NOT_FOUND", "Exam not found.", HttpStatus.NOT_FOUND);
+        List<InstituteDispatchStatusDto> result = new ArrayList<>();
+
+        for (DispatchTracker tracker:uploadedProofsForExam)
+        {
+            InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
+            statusDto.setInstituteId(tracker.getExamCenter().getId());
+            statusDto.setInstituteName(tracker.getExamCenter().getName());
+            statusDto.setExamName(exam != null ? exam.getExamName() : null);  // Set exam name
+
+            if (!tracker.getDispatchProofFileLocation().isEmpty()) {
+                statusDto.setProofUploaded(true);
+                statusDto.setUpdatedDate(tracker.getDispatchDate());
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(tracker.getDispatchProofFileLocation()));
+            }
+            else
+            {
+                statusDto.setProofUploaded(false);
+                statusDto.setUpdatedDate(null);
+                statusDto.setDispatchProofFileLocation(null);
+            }
+            result.add(statusDto);
         }
+/*
+        for (ExamCenter institute : allInstitutes) {
+            InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
+            statusDto.setInstituteId(institute.getId());
+            statusDto.setInstituteName(institute.getName());
+            statusDto.setExamName(exam != null ? exam.getExamName() : null);  // Set exam name
 
-        Map<Long, DispatchTracker> dispatchTrackerMap = uploadedProofsForExam.stream()
-                .collect(Collectors.toMap(dispatch -> dispatch.getExamCenter().getId(), Function.identity()));
+            DispatchTracker matchedDispatch = uploadedProofsForExam.stream()
+                    .filter(dispatch -> dispatch.getExamCenter().getId().equals(institute.getId()))
+                    .findFirst()
+                    .orElse(null);
 
-        List<InstituteDispatchStatusDto> result = allInstitutes.stream()
-                .map(institute -> {
-                    DispatchTracker dispatchTracker = dispatchTrackerMap.get(institute.getId());
-                    InstituteDispatchStatusDto statusDto = new InstituteDispatchStatusDto();
-                    statusDto.setInstituteId(institute.getId());
-                    statusDto.setInstituteName(institute.getName());
-                    statusDto.setExamName(exam.getExamName());
-                    if (dispatchTracker != null) {
-                        statusDto.setProofUploaded(true);
-                        statusDto.setUpdatedDate(dispatchTracker.getDispatchDate());
-                        statusDto.setDispatchProofFileLocation(generateSignedUrl(dispatchTracker.getDispatchProofFileLocation()));
-                    } else {
-                        statusDto.setProofUploaded(false);
-                        // Set default values or placeholders for other fields if needed
-                    }
-                    return statusDto;
-                })
-                .collect(Collectors.toList());
+            if (matchedDispatch != null) {
+                statusDto.setProofUploaded(true);
+                statusDto.setUpdatedDate(matchedDispatch.getDispatchDate());
+                statusDto.setDispatchProofFileLocation(generateSignedUrl(matchedDispatch.getDispatchProofFileLocation()));  // Use the method here
+            } else {
+                statusDto.setProofUploaded(false);
+            }
+
+            result.add(statusDto);
+        }
+*/
 
         if (!result.isEmpty()) {
             response.put(Constants.MESSAGE, Constants.SUCCESSMESSAGE);
             response.put(Constants.RESPONSE, result);
             response.setResponseCode(HttpStatus.OK);
         } else {
-            ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No institutes found for the given exam cycle.", HttpStatus.NOT_FOUND);
+            ResponseDto.setErrorResponse(response, "NO_DATA_FOUND", "No dispatch data found for the given exam and exam cycle across all institutes.", HttpStatus.NOT_FOUND);
         }
 
         return response;
     }
-
     private String generateSignedUrl(String blobName) {
         try {
             // Define resource
