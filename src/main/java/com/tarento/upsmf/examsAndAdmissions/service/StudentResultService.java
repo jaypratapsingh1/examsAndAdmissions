@@ -786,7 +786,7 @@ public class StudentResultService {
                 dto.setLastDateToUploadInternalMarks(exam.getLastDateToUploadMarks());
 
                 // Now check for student results for this exam and institute
-                List<StudentResult> resultsForExam = studentResultRepository.findByExamIdAndInstituteId(exam.getId(), instituteId);
+                List<StudentResult> resultsForExam = studentResultRepository.findByExamNameAndInstituteId(exam.getExamName(), instituteId);
 
                 if (!resultsForExam.isEmpty()) {
                     // If we find any student result records, it means internal marks have been uploaded
@@ -804,12 +804,12 @@ public class StudentResultService {
                 response.put(Constants.RESPONSE, dtos);
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                ResponseDto.setErrorResponse(response, "NO_EXAMS_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
+                return ResponseDto.setErrorResponse(response, "NO_EXAMS_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
             }
 
         } catch (Exception e) {
             // Handle any unexpected errors that might occur during the process.
-            ResponseDto.setErrorResponse(response, "INTERNAL_SERVER_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_SERVER_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return response;
