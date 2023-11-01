@@ -77,91 +77,100 @@ public class DataImporterService {
             JSONArray jsonArray = StreamSupport.stream(sheet.spliterator(), false)
                     .skip(1) // Skip the header row
                     .map(row -> {
-                        JSONObject jsonObject = new JSONObject();
-                        IntStream.range(0, columnNames.size())
-                                .forEach(columnIndex -> {
-                                    Cell currentCell = row.getCell(columnIndex);
-                                    String columnName = columnNames.get(columnIndex);
+                        if (StreamSupport.stream(row.spliterator(), false).noneMatch(Objects::isNull)) {
+                            // Process the row
+                            JSONObject jsonObject = new JSONObject();
+                            IntStream.range(0, columnNames.size())
+                                    .forEach(columnIndex -> {
+                                        Cell currentCell = row.getCell(columnIndex);
+                                        String columnName = columnNames.get(columnIndex);
 
-                                    try {
-                                        if (currentCell != null) { // Add this null check
-                                            switch (currentCell.getCellType()) {
-                                                case STRING:
-                                                    jsonObject.put(columnName, currentCell.getStringCellValue());
-                                                    break;
-                                                case NUMERIC:
-                                                    if (DateUtil.isCellDateFormatted(currentCell)) {
-                                                        jsonObject.put(columnName, currentCell.getDateCellValue());
-                                                    } else {
-                                                        jsonObject.put(columnName, currentCell.getNumericCellValue());
-                                                    }
-                                                    break;
-                                                case BOOLEAN:
-                                                    jsonObject.put(columnName, currentCell.getBooleanCellValue());
-                                                    break;
-                                                case BLANK:
-                                                    jsonObject.put(columnName, "");
-                                                    break;
-                                                default:
-                                                    jsonObject.put(columnName, "");
+                                        try {
+                                            if (currentCell != null) { // Add this null check
+                                                switch (currentCell.getCellType()) {
+                                                    case STRING:
+                                                        jsonObject.put(columnName, currentCell.getStringCellValue());
+                                                        break;
+                                                    case NUMERIC:
+                                                        if (DateUtil.isCellDateFormatted(currentCell)) {
+                                                            jsonObject.put(columnName, currentCell.getDateCellValue());
+                                                        } else {
+                                                            jsonObject.put(columnName, currentCell.getNumericCellValue());
+                                                        }
+                                                        break;
+                                                    case BOOLEAN:
+                                                        jsonObject.put(columnName, currentCell.getBooleanCellValue());
+                                                        break;
+                                                    case BLANK:
+                                                        jsonObject.put(columnName, "");
+                                                        break;
+                                                    default:
+                                                        jsonObject.put(columnName, "");
+                                                }
+                                            } else {
+                                                jsonObject.put(columnName, ""); // Handle null cells
                                             }
-                                        } else {
-                                            jsonObject.put(columnName, ""); // Handle null cells
+                                        } catch (JSONException e) {
+                                            System.out.println("JsonError");
+                                            // Handle JSONException if needed
                                         }
-                                    } catch (JSONException e) {
-                                        System.out.println("JsonError");
-                                        // Handle JSONException if needed
-                                    }
-                                });
-                        return jsonObject;
+                                    });
+                            return jsonObject;
+                        }
+                        return null;
                     })
+                    .filter(Objects::nonNull) // Filter out rows with null values
                     .collect(Collectors.collectingAndThen(Collectors.toList(), JSONArray::new));
 
             return jsonArray;
         }
     }
+
     public JSONArray csvToJson(MultipartFile csvFile, Map<String, Class<?>> columnConfig) throws IOException {
         try (Reader reader = new InputStreamReader(csvFile.getInputStream());
              CSVParser csvParser = CSVFormat.DEFAULT.withHeader().parse(reader)) {
 
             List<Map<String, Object>> records = csvParser.getRecords().stream()
                     .map(record -> {
-                        Map<String, Object> map = new HashMap<>();
-                        for (Map.Entry<String, String> entry : record.toMap().entrySet()) {
-                            String columnName = entry.getKey();
-                            String columnValue = entry.getValue();
-                            Class<?> columnType = columnConfig.get(columnName);
+                        if (record.toMap().values().stream().noneMatch(Objects::isNull)) {
+                            // Process the row
+                            Map<String, Object> map = new HashMap<>();
+                            for (Map.Entry<String, String> entry : record.toMap().entrySet()) {
+                                String columnName = entry.getKey();
+                                String columnValue = entry.getValue();
+                                Class<?> columnType = columnConfig.get(columnName);
 
-                            if (columnType == Date.class) {
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                                SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
+                                if (columnValue != null && !columnValue.isEmpty()) {
+                                    if (columnType == Date.class) {
+                                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                                        SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
 
-                                try {
-                                    if (columnValue != null && !columnValue.isEmpty()) {
-                                        if (columnName.equals("Start Time") || columnName.equals("End Time")) {
-                                            Date time = timeFormat.parse(columnValue);
-                                            map.put(columnName, timeFormat.format(time)); // Format the time as a string
-                                        } else if (columnName.equals("Start Date") || columnName.equals("End Date")) {
-                                            Date date = dateFormat.parse(columnValue);
-                                            map.put(columnName, dateFormat.format(date)); // Format the date as a string
-                                        } else {
-                                            // Handle other date or time columns if needed
+                                        try {
+                                            if (columnName.equals("Start Time") || columnName.equals("End Time")) {
+                                                Date time = timeFormat.parse(columnValue);
+                                                map.put(columnName, timeFormat.format(time)); // Format the time as a string
+                                            } else if (columnName.equals("Start Date") || columnName.equals("End Date")) {
+                                                Date date = dateFormat.parse(columnValue);
+                                                map.put(columnName, dateFormat.format(date)); // Format the date as a string
+                                            }
+                                        } catch (ParseException e) {
+                                            e.printStackTrace(); // Handle parsing exceptions
+                                            map.put(columnName, null);
                                         }
                                     } else {
-                                        // Handle cases where the columnValue is empty or null
-                                        map.put(columnName, null);
+                                        // Handle other columns as strings or based on their data types
+                                        map.put(columnName, columnValue);
                                     }
-                                } catch (ParseException e) {
-                                    e.printStackTrace(); // Handle parsing exceptions
+                                } else {
+                                    // Handle cases where the columnValue is empty or null
                                     map.put(columnName, null);
                                 }
-                            } else {
-                                // Handle other columns as strings or based on their data types
-                                map.put(columnName, columnValue);
                             }
+                            return map;
                         }
-                        return map;
+                        return null;
                     })
+                    .filter(Objects::nonNull) // Filter out rows with null values
                     .collect(Collectors.toList());
 
             try {
@@ -171,7 +180,6 @@ public class DataImporterService {
             }
         }
     }
-
 
     public JSONArray filterColumns(JSONArray jsonArray, String... selectedColumns) throws JSONException {
         JSONArray filteredArray = new JSONArray();
@@ -720,7 +728,7 @@ public class DataImporterService {
     }
 
     private boolean checkIfDataExists(StudentResult dto) {
-        return studentResultRepository.existsByEnrollmentNumber(dto.getEnrollmentNumber());
+        return studentResultRepository.existsByEnrollmentNumberAndFirstNameAndLastName(dto.getEnrollmentNumber(),dto.getFirstName(),dto.getLastName());
     }
 
     private boolean checkIfDataExists(AttendanceRecord dto) {
