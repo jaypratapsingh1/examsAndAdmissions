@@ -10,6 +10,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tarento.upsmf.examsAndAdmissions.enums.ApprovalStatus;
 import com.tarento.upsmf.examsAndAdmissions.exception.ValidationException;
 import com.tarento.upsmf.examsAndAdmissions.model.*;
+import com.tarento.upsmf.examsAndAdmissions.model.dto.ValidationResultDto;
 import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.DataValidation;
 import org.apache.commons.csv.CSVFormat;
@@ -55,6 +56,14 @@ public class DataImporterService {
     private ExamEntityRepository examCycleRepository;
     @Autowired
     private InstituteRepository instituteRepository;
+    @Autowired
+    private CourseRepository courseRepository;
+    @Autowired
+    private ExamCycleRepository cycleRepository;
+    @Autowired
+    private ExamRepository examRepository;
+    @Autowired
+    private StudentRepository studentRepository;
 
     public JSONArray excelToJson(MultipartFile excelFile) throws IOException, JSONException {
         try (InputStream inputStream = excelFile.getInputStream();
@@ -68,91 +77,100 @@ public class DataImporterService {
             JSONArray jsonArray = StreamSupport.stream(sheet.spliterator(), false)
                     .skip(1) // Skip the header row
                     .map(row -> {
-                        JSONObject jsonObject = new JSONObject();
-                        IntStream.range(0, columnNames.size())
-                                .forEach(columnIndex -> {
-                                    Cell currentCell = row.getCell(columnIndex);
-                                    String columnName = columnNames.get(columnIndex);
+                        if (StreamSupport.stream(row.spliterator(), false).noneMatch(Objects::isNull)) {
+                            // Process the row
+                            JSONObject jsonObject = new JSONObject();
+                            IntStream.range(0, columnNames.size())
+                                    .forEach(columnIndex -> {
+                                        Cell currentCell = row.getCell(columnIndex);
+                                        String columnName = columnNames.get(columnIndex);
 
-                                    try {
-                                        if (currentCell != null) { // Add this null check
-                                            switch (currentCell.getCellType()) {
-                                                case STRING:
-                                                    jsonObject.put(columnName, currentCell.getStringCellValue());
-                                                    break;
-                                                case NUMERIC:
-                                                    if (DateUtil.isCellDateFormatted(currentCell)) {
-                                                        jsonObject.put(columnName, currentCell.getDateCellValue());
-                                                    } else {
-                                                        jsonObject.put(columnName, currentCell.getNumericCellValue());
-                                                    }
-                                                    break;
-                                                case BOOLEAN:
-                                                    jsonObject.put(columnName, currentCell.getBooleanCellValue());
-                                                    break;
-                                                case BLANK:
-                                                    jsonObject.put(columnName, "");
-                                                    break;
-                                                default:
-                                                    jsonObject.put(columnName, "");
+                                        try {
+                                            if (currentCell != null) { // Add this null check
+                                                switch (currentCell.getCellType()) {
+                                                    case STRING:
+                                                        jsonObject.put(columnName, currentCell.getStringCellValue());
+                                                        break;
+                                                    case NUMERIC:
+                                                        if (DateUtil.isCellDateFormatted(currentCell)) {
+                                                            jsonObject.put(columnName, currentCell.getDateCellValue());
+                                                        } else {
+                                                            jsonObject.put(columnName, currentCell.getNumericCellValue());
+                                                        }
+                                                        break;
+                                                    case BOOLEAN:
+                                                        jsonObject.put(columnName, currentCell.getBooleanCellValue());
+                                                        break;
+                                                    case BLANK:
+                                                        jsonObject.put(columnName, "");
+                                                        break;
+                                                    default:
+                                                        jsonObject.put(columnName, "");
+                                                }
+                                            } else {
+                                                jsonObject.put(columnName, ""); // Handle null cells
                                             }
-                                        } else {
-                                            jsonObject.put(columnName, ""); // Handle null cells
+                                        } catch (JSONException e) {
+                                            System.out.println("JsonError");
+                                            // Handle JSONException if needed
                                         }
-                                    } catch (JSONException e) {
-                                        System.out.println("JsonError");
-                                        // Handle JSONException if needed
-                                    }
-                                });
-                        return jsonObject;
+                                    });
+                            return jsonObject;
+                        }
+                        return null;
                     })
+                    .filter(Objects::nonNull) // Filter out rows with null values
                     .collect(Collectors.collectingAndThen(Collectors.toList(), JSONArray::new));
 
             return jsonArray;
         }
     }
+
     public JSONArray csvToJson(MultipartFile csvFile, Map<String, Class<?>> columnConfig) throws IOException {
         try (Reader reader = new InputStreamReader(csvFile.getInputStream());
              CSVParser csvParser = CSVFormat.DEFAULT.withHeader().parse(reader)) {
 
             List<Map<String, Object>> records = csvParser.getRecords().stream()
                     .map(record -> {
-                        Map<String, Object> map = new HashMap<>();
-                        for (Map.Entry<String, String> entry : record.toMap().entrySet()) {
-                            String columnName = entry.getKey();
-                            String columnValue = entry.getValue();
-                            Class<?> columnType = columnConfig.get(columnName);
+                        if (record.toMap().values().stream().noneMatch(Objects::isNull)) {
+                            // Process the row
+                            Map<String, Object> map = new HashMap<>();
+                            for (Map.Entry<String, String> entry : record.toMap().entrySet()) {
+                                String columnName = entry.getKey();
+                                String columnValue = entry.getValue();
+                                Class<?> columnType = columnConfig.get(columnName);
 
-                            if (columnType == Date.class) {
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                                SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
+                                if (columnValue != null && !columnValue.isEmpty()) {
+                                    if (columnType == Date.class) {
+                                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                                        SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a");
 
-                                try {
-                                    if (columnValue != null && !columnValue.isEmpty()) {
-                                        if (columnName.equals("Start Time") || columnName.equals("End Time")) {
-                                            Date time = timeFormat.parse(columnValue);
-                                            map.put(columnName, timeFormat.format(time)); // Format the time as a string
-                                        } else if (columnName.equals("Start Date") || columnName.equals("End Date")) {
-                                            Date date = dateFormat.parse(columnValue);
-                                            map.put(columnName, dateFormat.format(date)); // Format the date as a string
-                                        } else {
-                                            // Handle other date or time columns if needed
+                                        try {
+                                            if (columnName.equals("Start Time") || columnName.equals("End Time")) {
+                                                Date time = timeFormat.parse(columnValue);
+                                                map.put(columnName, timeFormat.format(time)); // Format the time as a string
+                                            } else if (columnName.equals("Start Date") || columnName.equals("End Date")) {
+                                                Date date = dateFormat.parse(columnValue);
+                                                map.put(columnName, dateFormat.format(date)); // Format the date as a string
+                                            }
+                                        } catch (ParseException e) {
+                                            e.printStackTrace(); // Handle parsing exceptions
+                                            map.put(columnName, null);
                                         }
                                     } else {
-                                        // Handle cases where the columnValue is empty or null
-                                        map.put(columnName, null);
+                                        // Handle other columns as strings or based on their data types
+                                        map.put(columnName, columnValue);
                                     }
-                                } catch (ParseException e) {
-                                    e.printStackTrace(); // Handle parsing exceptions
+                                } else {
+                                    // Handle cases where the columnValue is empty or null
                                     map.put(columnName, null);
                                 }
-                            } else {
-                                // Handle other columns as strings or based on their data types
-                                map.put(columnName, columnValue);
                             }
+                            return map;
                         }
-                        return map;
+                        return null;
                     })
+                    .filter(Objects::nonNull) // Filter out rows with null values
                     .collect(Collectors.toList());
 
             try {
@@ -162,7 +180,6 @@ public class DataImporterService {
             }
         }
     }
-
 
     public JSONArray filterColumns(JSONArray jsonArray, String... selectedColumns) throws JSONException {
         JSONArray filteredArray = new JSONArray();
@@ -261,36 +278,21 @@ public class DataImporterService {
         }
     }
 
-    public UploadStatusDetails saveDtoListToPostgres(List<AttendanceRecord> dtoList, AttendanceRepository repository) {
-        int total = dtoList.size();
-        int uploaded = 0;
-        int skipped = 0;
-
-        List<AttendanceRecord> entityList = new ArrayList<>();
-
+    public List<AttendanceRecord> saveDtoListToPostgres(List<AttendanceRecord> dtoList, AttendanceRepository repository) {
+        List<AttendanceRecord> savedEntities = new ArrayList<>();
         for (AttendanceRecord dto : dtoList) {
             if (isDtoEffectivelyEmpty(dto)) {
-                skipped++;
                 continue;
             }
-
             if (!checkIfDataExists(dto)) {
                 AttendanceRecord entity = getAttendanceRecord(dto);
-
-                entityList.add(entity);
-                uploaded++;
-            } else {
-                skipped++;
+                AttendanceRecord savedEntity = repository.save(entity);
+                savedEntities.add(savedEntity);
             }
         }
-
-        try {
-            repository.saveAll(entityList);
-            return new UploadStatusDetails(total, uploaded, skipped, true, null);
-        } catch (Exception e) {
-            return new UploadStatusDetails(total, uploaded, skipped, false, e.getMessage());
-        }
+        return savedEntities;
     }
+
 
     private static AttendanceRecord getAttendanceRecord(AttendanceRecord dto) {
         AttendanceRecord entity = new AttendanceRecord();
@@ -311,156 +313,147 @@ public class DataImporterService {
         return entity;
     }
 
-    public boolean convertResultDtoListToEntities(List<StudentResult> dtoList, StudentResultRepository repository, Long instituteId) throws ValidationException {
+    public ValidationResultDto convertResultDtoListToEntities(List<StudentResult> dtoList, StudentResultRepository repository, Long instituteId) {
         List<StudentResult> entityList = new ArrayList<>();
         boolean isValid = true;
-        List<String> validationErrors = new ArrayList<>();
+        List<String> validationErrors = new ArrayList();
 
         for (StudentResult dto : dtoList) {
             boolean isDuplicate = checkIfDataExists(dto);
 
             if (!isDuplicate) {
                 if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
-                    validationErrors.add("- First Name is invalid: " + dto.getFirstName());
+                    validationErrors.add("- First Name is invalid: " + dto.getFirstName() + " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isLastNameValid(dto.getLastName())) {
-                    validationErrors.add("- Last Name is invalid: " + dto.getLastName());
+                    validationErrors.add("- Last Name is invalid: " + dto.getLastName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isEnrollmentNumberValid(dto.getEnrollmentNumber())) {
-                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber());
+                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber()+" Enrollment number has to contain numerical values prefixed with EN");
                 }
                 if (!DataValidation.isMotherNameValid(dto.getMotherName())) {
-                    validationErrors.add("- Mother's Name is invalid: " + dto.getMotherName());
+                    validationErrors.add("- Mother's Name is invalid: " + dto.getMotherName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isFatherNameValid(dto.getFatherName())) {
-                    validationErrors.add("- Father's Name is invalid: " + dto.getFatherName());
+                    validationErrors.add("- Father's Name is invalid: " + dto.getFatherName()+ " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isCourseNameValid(dto.getCourse_name())) {
-                    validationErrors.add("- Course Name is invalid: " + dto.getCourse_name());
+                    validationErrors.add("- Course Name is invalid: " + dto.getCourse_name()+ " Course name has to contain alpha-numeric values, eg:ANM1\n");
                 }
                 if (!DataValidation.isExamCycleValid(dto.getExamCycle_name())) {
-                    validationErrors.add("- Exam Cycle is invalid: " + dto.getExamCycle_name());
+                    validationErrors.add("- Exam Cycle is invalid: " + dto.getExamCycle_name()+ " Exam cycle name has to contain alpha-numeric values, eg: Fall 2023\n");
                 }
                 if (!DataValidation.isExamValid(dto.getExam_name())) {
-                    validationErrors.add("- Exam is invalid: " + dto.getExam_name());
+                    validationErrors.add("- Exam is invalid: " + dto.getExam_name()+ " Exam name has to contain alpha-numeric values, eg:Microbiology_1\n");
                 }
                 if (!DataValidation.isMarksValid(dto.getInternalMarks())) {
-                    validationErrors.add("- Internal Marks is invalid: " + dto.getInternalMarks());
+                    validationErrors.add("- Internal Marks is invalid: " + dto.getInternalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingInternalMarks())) {
-                    validationErrors.add("- Passing Internal Marks is invalid: " + dto.getPassingInternalMarks());
+                    validationErrors.add("- Passing Internal Marks is invalid: " + dto.getPassingInternalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getInternalMarksObtained())) {
-                    validationErrors.add("- Internal Marks Obtained is invalid: " + dto.getInternalMarksObtained());
+                    validationErrors.add("- Internal Marks Obtained is invalid: " + dto.getInternalMarksObtained()+ " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getPracticalMarks())) {
-                    validationErrors.add("- Practical Marks is invalid: " + dto.getPracticalMarks());
+                    validationErrors.add("- Practical Marks is invalid: " + dto.getPracticalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingPracticalMarks())) {
-                    validationErrors.add("- Passing Practical Marks is invalid: " + dto.getPassingPracticalMarks());
+                    validationErrors.add("- Passing Practical Marks is invalid: " + dto.getPassingPracticalMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPracticalMarksObtained())) {
-                    validationErrors.add("- Practical Marks Obtained is invalid: " + dto.getPracticalMarksObtained());
+                    validationErrors.add("- Practical Marks Obtained is invalid: " + dto.getPracticalMarksObtained() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarks())) {
-                    validationErrors.add("- Other Marks is invalid: " + dto.getOtherMarks());
+                    validationErrors.add("- Other Marks is invalid: " + dto.getOtherMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isPassingMarksValid(dto.getPassingOtherMarks())) {
-                    validationErrors.add("- Passing Other Marks is invalid: " + dto.getPassingOtherMarks());
+                    validationErrors.add("- Passing Other Marks is invalid: " + dto.getPassingOtherMarks() + " Marks has to be with in 0 and 100");
                 }
                 if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
-                    validationErrors.add("- Other Marks Obtained is invalid: " + dto.getOtherMarksObtained());
-                }
-                if (!DataValidation.isGradeValid(dto.getGrade())) {
-                    validationErrors.add("- Grade is invalid: " + dto.getGrade());
-                }
-                if (!DataValidation.isResultValid(dto.getResult())) {
-                    validationErrors.add("- Result is invalid: " + dto.getResult());
+                    validationErrors.add("- Other Marks Obtained is invalid: " + dto.getOtherMarksObtained() + " Marks has to be with in 0 and 100");
                 }
 
-                if (!validationErrors.isEmpty()) {
-                    isValid = false;
-                } else {
-                    StudentResult entity = getStudentResult(dto,instituteId);
+                if (validationErrors.isEmpty()) {
+                    StudentResult entity = getStudentResult(dto, instituteId);
                     entityList.add(entity);
+                } else {
+                    isValid = false;
                 }
             }
         }
+
+        ValidationResultDto resultDto = new ValidationResultDto();
         if (!validationErrors.isEmpty()) {
-            StringBuilder errorMessage = new StringBuilder("Validation failed. The following fields contain invalid values:\n");
-
-            for (String validationError : validationErrors) {
-                errorMessage.append(validationError).append("\n");
-            }
-            throw new ValidationException(isValid, errorMessage.toString());
+            resultDto.setValid(false);
+            resultDto.setValidationErrors(validationErrors);
+        } else {
+            resultDto.setValid(true);
+            repository.saveAll(entityList);
+            resultDto.setSavedEntities(entityList);
         }
-        repository.saveAll(entityList);
 
-        return isValid;
+        return resultDto;
     }
 
-    public boolean convertResultDtoListToEntitiesExternalMarks(List<StudentResult> dtoList, StudentResultRepository repository) throws ValidationException {
+    public ValidationResultDto convertResultDtoListToEntitiesExternalMarks(List<StudentResult> dtoList, StudentResultRepository repository) {
         List<StudentResult> entityList = new ArrayList<>();
-        boolean isValid = true;
         List<String> validationErrors = new ArrayList<>();
 
         for (StudentResult dto : dtoList) {
             boolean isDuplicate = checkIfDataExists(dto);
-
+            //fetch data from student_exam_registration and set the flag there, if the record is not found break and return data invalid
             if (isDuplicate) {
                 if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
-                    validationErrors.add("- First Name is invalid: " + dto.getFirstName());
+                    validationErrors.add("- First Name is invalid: " + dto.getFirstName() + " First name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isLastNameValid(dto.getLastName())) {
-                    validationErrors.add("- Last Name is invalid: " + dto.getLastName());
+                    validationErrors.add("- Last Name is invalid: " + dto.getLastName() + " Last name has to contain alphabetic values only");
                 }
                 if (!DataValidation.isEnrollmentNumberValid(dto.getEnrollmentNumber())) {
-                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber());
+                    validationErrors.add("- Enrollment Number is invalid: " + dto.getEnrollmentNumber() + " Enrollment number has to contain numerical values prefixed with EN");
                 }
-                if (!DataValidation.isMarksValid(dto.getOtherMarks())) {
-                    validationErrors.add("- External marks is invalid: " + dto.getOtherMarks());
+                if (!DataValidation.isMarksValid(dto.getExternalMarks())) {
+                    validationErrors.add("- External marks is invalid: " + dto.getExternalMarks() + " Marks have to be within 0 and 100");
                 }
-                if (!DataValidation.isPassingMarksValid(dto.getPassingOtherMarks())) {
-                    validationErrors.add("- Passing External Marks is invalid: " + dto.getPassingOtherMarks());
+                if (!DataValidation.isPassingMarksValid(dto.getPassingExternalMarks())) {
+                    validationErrors.add("- Passing External Marks is invalid: " + dto.getPassingExternalMarks() + " Marks have to be within 0 and 100");
                 }
-                if (!DataValidation.isMarksValid(dto.getOtherMarksObtained())) {
-                    validationErrors.add("- External Marks Obtained is invalid: " + dto.getOtherMarksObtained());
-                }
-
-
-                if (!validationErrors.isEmpty()) {
-                    isValid = false;
-                } else {
-                    // Search for an existing entity based on first name, last name, and enrollment number
-                    StudentResult existingEntity = repository.findByFirstNameAndLastNameAndEnrollmentNumber(dto.getFirstName(), dto.getLastName(), dto.getEnrollmentNumber());
-//                    List<StudentResult> marks = calculateResult(dto.getInternalMarks(),dto.getPassingInternalMarks(),dto.getInternalMarksObtained(),dto.getPracticalMarks(),
-//                            dto.getPassingPracticalMarks(),dto.getPracticalMarksObtained(),dto.getExternalMarks(),dto.getPassingExternalMarks(),dto.getExternalMarksObtained());
-                    if (existingEntity != null) {
-                        // Update the specific columns
-                        existingEntity.setExternalMarks(dto.getExternalMarks());
-                        existingEntity.setPassingExternalMarks(dto.getPassingExternalMarks());
-                        existingEntity.setExternalMarksObtained(dto.getExternalMarksObtained());
-//                        existingEntity.setTotalMarks(marks.get(0).getTotalMarks());
-//                        existingEntity.setPassingTotalMarks(marks.get(0).getPassingTotalMarks());
-//                        existingEntity.setTotalMarksObtained(marks.get(0).getTotalMarksObtained());
-                    } else {
-                        throw new ValidationException(false, "Record not found for: " + dto.getFirstName() + " " + dto.getLastName() + " Enrollment Number: " + dto.getEnrollmentNumber());
-                    }
+                if (!DataValidation.isMarksValid(dto.getExternalMarksObtained())) {
+                    validationErrors.add("- External Marks Obtained is invalid: " + dto.getExternalMarksObtained() + " Marks have to be within 0 and 100");
                 }
             }
+            if (validationErrors.isEmpty()) {
+                StudentResult existingEntity = repository.findByFirstNameAndLastNameAndEnrollmentNumber(dto.getFirstName(), dto.getLastName(), dto.getEnrollmentNumber());
+                List<StudentResult> marks = calculateResult(existingEntity.getInternalMarks(), existingEntity.getPassingInternalMarks(), existingEntity.getInternalMarksObtained(), existingEntity.getPracticalMarks(),
+                        existingEntity.getPassingPracticalMarks(), existingEntity.getPracticalMarksObtained(), dto.getExternalMarks(), dto.getPassingExternalMarks(), dto.getExternalMarksObtained());
+
+                existingEntity.setExternalMarks(dto.getExternalMarks());
+                existingEntity.setPassingExternalMarks(dto.getPassingExternalMarks());
+                existingEntity.setExternalMarksObtained(dto.getExternalMarksObtained());
+                existingEntity.setFinalMarkFlag(true);
+                existingEntity.setTotalMarks(marks.get(0).getTotalMarks());
+                existingEntity.setPassingTotalMarks(marks.get(0).getPassingTotalMarks());
+                existingEntity.setTotalMarksObtained(marks.get(0).getTotalMarksObtained());
+                existingEntity.setResult(marks.get(0).getResult());
+                existingEntity.setGrade(marks.get(0).getGrade());
+
+                entityList.add(existingEntity);
+            }
         }
+
+        ValidationResultDto resultDto = new ValidationResultDto();
         if (!validationErrors.isEmpty()) {
-            StringBuilder errorMessage = new StringBuilder("Validation failed. The following fields contain invalid values:\n");
-
-            for (String validationError : validationErrors) {
-                errorMessage.append(validationError).append("\n");
-            }
-            throw new ValidationException(isValid, errorMessage.toString());
+            resultDto.setValid(false);
+            resultDto.setValidationErrors(validationErrors);
+        } else {
+            resultDto.setValid(true);
+            repository.saveAll(entityList);
+            resultDto.setSavedEntities(entityList);
         }
-        repository.saveAll(entityList);
-
-        return isValid;
+        return resultDto;
     }
+
 
     private List<StudentResult> calculateResult(
             Integer internalMarks, Integer passingInternalMarks, Integer internalMarksObtained,
@@ -702,7 +695,11 @@ public class DataImporterService {
 
     private StudentResult getStudentResult(StudentResult dto, Long instituteId) {
         StudentResult entity = new StudentResult();
-        Institute institute = instituteRepository.findById(instituteId).orElse(null);
+
+//        Course course = courseRepository.findByCourseNameIgnoreCase(dto.getCourse_name()).orElseThrow();
+//        Exam exam = examRepository.findByExamName(dto.getExam_name()).orElseThrow();
+//        ExamCycle examCycle = cycleRepository.findByExamCycleName(dto.getExamCycle_name());
+//        Student student = studentRepository.findByEnrollmentNumber(dto.getEnrollmentNumber()).orElseThrow();
 
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -721,14 +718,17 @@ public class DataImporterService {
         entity.setOtherMarks(dto.getOtherMarks());
         entity.setPassingOtherMarks(dto.getPassingOtherMarks());
         entity.setOtherMarksObtained(dto.getOtherMarksObtained());
-        entity.setGrade(dto.getGrade());
-        entity.setResult(dto.getResult());
-        entity.setInstituteId(dto.getInstituteId());
+        entity.setInternalMarkFlag(true);
+        entity.setInstituteId(instituteId);
+//        entity.setCourse(course);
+//        entity.setExam(exam);
+//        entity.setExamCycle(examCycle);
+//        entity.setStudent(student);
         return entity;
     }
 
     private boolean checkIfDataExists(StudentResult dto) {
-        return studentResultRepository.existsByEnrollmentNumber(dto.getEnrollmentNumber());
+        return studentResultRepository.existsByEnrollmentNumberAndFirstNameAndLastName(dto.getEnrollmentNumber(),dto.getFirstName(),dto.getLastName());
     }
 
     private boolean checkIfDataExists(AttendanceRecord dto) {

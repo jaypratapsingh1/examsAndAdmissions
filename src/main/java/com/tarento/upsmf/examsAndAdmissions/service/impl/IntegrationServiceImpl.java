@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -52,6 +54,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 
     @Autowired
     private RedisUtil redisUtil;
+
+    @Autowired
+    private JavaMailSender javaMailSender;
 
 
     private ResponseEntity<String> getUserDetailsFromKeycloak(ResponseEntity response, ObjectMapper mapper) throws Exception {
@@ -241,6 +246,10 @@ public class IntegrationServiceImpl implements IntegrationService {
             }
         }
         String generatePassword = validateAndCreateDefaultPassword(user);
+        // setting enable value as true
+        user.setEnabled(true);
+        // setting EmailVerified value as false
+        user.setEmailVerified(false);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         JsonNode jsonNodeObject = mapper.convertValue(user, JsonNode.class);
@@ -275,6 +284,8 @@ public class IntegrationServiceImpl implements IntegrationService {
                 if (getUsersJsonNode.size() > 0) {
                     JsonNode userContentData = getUsersJsonNode;
                     User newUser = createUserWithApiResponse(userContentData);
+                    // todo send mail
+                    sendMail(newUser, generatePassword);
                     return new ResponseEntity<>(newUser, HttpStatus.OK);
                 }
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -284,6 +295,22 @@ public class IntegrationServiceImpl implements IntegrationService {
             }
         } else {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void sendMail(User newUser, String generatePassword) {
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("Dear ").append(newUser.getFirstName()).append(", We are writing to inform you that your account has been created by the administrator. Please use following email and Password to login. \\n Email:")
+                    .append(newUser.getEmail()).append("  Password: ").append(generatePassword).append(" Kindly do not share the credentials with anyone. Regards UPSMF Team");
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setText(stringBuilder.toString());
+            message.setSubject("Account Login Credentials");
+            message.setTo(newUser.getEmail());
+            message.setFrom("upsmf.otp@upsmfac.org");
+            javaMailSender.send(message);
+        } catch (Exception e) {
+            log.info("Error in send email");
         }
     }
 

@@ -24,6 +24,9 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
 
     Optional<StudentExamRegistration> findByIdAndStudent_DateOfBirth(Long id, LocalDate localDate);
 
+    @Query(value = "SELECT * from student_exam_registration where student_id=:id and exam_cycle_id=:examCycleId", nativeQuery = true)
+    List<StudentExamRegistration> findAllByStudent_IdAndExam_Id(Long id, Long examCycleId);
+
     List<StudentExamRegistration> findByExamCenter(ExamCenter originalExamCenter);
 
     List<StudentExamRegistration> findByInstituteIdAndExamCenterIsNull(Long instituteId);
@@ -35,8 +38,13 @@ public interface StudentExamRegistrationRepository extends JpaRepository<Student
 
 
     @Modifying
-    @Query(value = "update student_exam_registration set is_fees_paid =:status where student_id =:studentId", nativeQuery = true)
-    void updateExamFeeByStudentId(@Param("status") Boolean status, @Param("studentId") Long studentId);
+    @Query(value = "update student_exam_registration set remarks=:remarks, status=:status, is_fees_paid =:is_fees_paid " +
+            "where student_id =:studentId and institute_id=:institute_id " +
+            "and exam_cycle_id=:exam_cycle_id and exam_id=:exam_id", nativeQuery = true)
+    void updateExamFeeByStudentId(@Param("is_fees_paid") Boolean isFeesPaid, @Param("status") String status,
+                                  @Param("remarks") String remarks, @Param("studentId") Long studentId,
+                                  @Param("institute_id") Long instituteId, @Param("exam_cycle_id") Long examCycleId,
+                                  @Param("exam_id") Long examId);
 
     List<StudentExamRegistration> findByExamCenterIsNullAndInstitute(Institute institute);
 

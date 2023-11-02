@@ -15,5 +15,5 @@ import java.util.List;
 public class ExamSearchResponseDto implements Serializable {
 
     private long count;
-    private List<ExamFee> examFees;
+    private List<InstituteExamFeeResponse> examFees;
 }

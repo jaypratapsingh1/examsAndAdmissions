@@ -9,7 +9,9 @@ import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.codehaus.jettison.json.JSONArray;
@@ -19,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +33,8 @@ public class StudentResultService {
     @Autowired
     private StudentRepository studentRepository;
 
+    @Autowired
+    private InstituteRepository instituteRepository;
     @Autowired
     private CourseRepository courseRepository;
 
@@ -404,9 +406,9 @@ public class StudentResultService {
         return response;
     }
 
-    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId) {
+    public ResponseDto findByEnrollmentNumberAndDateOfBirth(String enrollmentNumber, Long examCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_FIND_BY_ENROLLMENT_NUMBER_AND_DOB);
-        List<StudentResult> studentResultList = studentResultRepository.findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(enrollmentNumber, dateOfBirth, examCycleId, true);
+        List<StudentResult> studentResultList = studentResultRepository.findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(enrollmentNumber, examCycleId, true);
 
         if (!studentResultList.isEmpty()) {
             StudentResultDTO studentResultDTO = mapToDTO(studentResultList);
@@ -592,32 +594,35 @@ public class StudentResultService {
 
             switch (fileType.toLowerCase()) {
                 case Constants.CSV:
-                    jsonArray = dataImporterService.csvToJson(file,columnConfig);
+                    jsonArray = dataImporterService.csvToJson(file, columnConfig);
                     break;
                 case Constants.EXCEL:
                     jsonArray = dataImporterService.excelToJson(file);
                     break;
                 default:
-                    // Handle unsupported file type
                     return ResponseDto.setErrorResponse(response, "UNSUPPORTED_FILE_TYPE", "Unsupported file type", HttpStatus.BAD_REQUEST);
             }
 
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
+            ValidationResultDto validationResult = dataImporterService.convertResultDtoListToEntities(dtoList, studentResultRepository, instituteId);
 
-            if (success) {
-                response.put(Constants.MESSAGE, "File processed successfully.");
+            if (validationResult.isValid()) {
+                response.put(Constants.MESSAGE, "Bulk upload success");
+                response.put("Data",validationResult.getSavedEntities());
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+                if (!validationResult.getValidationErrors().isEmpty()) {
+                    response.put("validationErrors", validationResult.getValidationErrors());
+                    response.setResponseCode(HttpStatus.BAD_REQUEST);
+                } else {
+                    return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
 
+            return response; // Return the ResponseDto without using ResponseEntity
         } catch (Exception e) {
-            log.error("Error processing bulk result upload", e);
-            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     }
 
     public ResponseDto processBulkResultUploadWithExternals(MultipartFile file, String fileType) {
@@ -640,21 +645,24 @@ public class StudentResultService {
             String[] selectedColumns = { "First Name", "Last Name", "Enrolment Number","External Marks", "Passing External Marks", "External Marks Obtained" };
             JSONArray filteredJsonArray = dataImporterService.filterColumns(jsonArray, selectedColumns);
             List<StudentResult> dtoList = dataImporterService.convertJsonToDtoList(filteredJsonArray, StudentResult.class);
-            boolean success = dataImporterService.convertResultDtoListToEntitiesExternalMarks(dtoList, studentResultRepository);
+            ValidationResultDto validationResult = dataImporterService.convertResultDtoListToEntitiesExternalMarks(dtoList, studentResultRepository);
 
-            if (success) {
-                response.put(Constants.MESSAGE, "File processed successfully.");
+            if (validationResult.isValid()) {
+                response.put(Constants.MESSAGE, "Bulk upload success");
+                response.put("Data",validationResult.getSavedEntities());
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "File processing failed.", HttpStatus.INTERNAL_SERVER_ERROR);
+                if (!validationResult.getValidationErrors().isEmpty()) {
+                    response.put("validationErrors", validationResult.getValidationErrors());
+                    response.setResponseCode(HttpStatus.BAD_REQUEST);
+                } else {
+                    return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
-
+            return response;
         } catch (Exception e) {
-            log.error("Error processing bulk result upload", e);
-            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: "+ e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     }
 
 
@@ -697,31 +705,15 @@ public class StudentResultService {
     }
     public ResponseDto getExamResultsByExamCycle(Long examCycle) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_MANAGE_RESULTS);
-
-        List<StudentExamRegistration> results = studentExamRegistrationRepository.findByExamCycleId(examCycle);
+        String examCycleName = examCycleRepository.getExamCycleNameById(examCycle);
+        List<StudentResult> results = studentResultRepository.findByExamCycleName(examCycleName);
 
         if (results == null || results.isEmpty()) {
             ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "No record found for the given exam cycle.", HttpStatus.NOT_FOUND);
             return response;
         }
 
-        Map<Long, ProcessedResultDto> processedResults = new HashMap<>();
-        for (StudentExamRegistration result : results) {
-            Institute institute = result.getStudent().getInstitute();
-            Long instituteId = institute.getId();
-
-            ProcessedResultDto instituteResult = processedResults.computeIfAbsent(instituteId, id -> {
-                ProcessedResultDto dto = new ProcessedResultDto();
-                dto.setInstituteId(instituteId);
-                dto.setInstituteName(institute.getInstituteName());
-                dto.setCourse(result.getStudent().getCourse().getCourseName());
-                return dto;
-            });
-            instituteResult.setHasFinalMarks(result.isInternalMarkFlag());
-            instituteResult.setHasFinalMarks(result.isFinalMarkFlag());
-            instituteResult.setHasRevisedFinalMarks(result.isRevisedFinalMarkFlag());
-
-        }
+        Map<Long, ProcessedResultDto> processedResults = getProcessedResults(results);
 
         response.put(Constants.MESSAGE, "Results fetched successfully.");
         response.put(Constants.RESPONSE, new ArrayList<>(processedResults.values()));
@@ -729,9 +721,32 @@ public class StudentResultService {
         return response;
     }
 
+    private Map<Long, ProcessedResultDto> getProcessedResults(List<StudentResult> results) {
+        Map<Long, ProcessedResultDto> processedResults = new HashMap<>();
+        for (StudentResult result : results) {
+            Long instituteId = result.getInstituteId();
+            Institute institute = instituteRepository.findById(instituteId).orElseThrow();
+
+            ProcessedResultDto instituteResult = processedResults.computeIfAbsent(instituteId, id -> {
+                ProcessedResultDto dto = new ProcessedResultDto();
+                dto.setInstituteId(instituteId);
+                dto.setInstituteName(institute.getInstituteName());
+                dto.setCourse(result.getCourse_name());
+                return dto;
+            });
+            instituteResult.setHasFinalMarks(result.isInternalMarkFlag());
+            instituteResult.setHasFinalMarks(result.isFinalMarkFlag());
+            instituteResult.setHasRevisedFinalMarks(result.isRevisedFinalMarkFlag());
+
+        }
+        return processedResults;
+    }
+
     public ResponseDto getMarksByInstituteAndExamCycle(Long examCycle, Long exam, Long institute) {
         ResponseDto response = new ResponseDto(Constants.API_SINGLE_EXAM_MARK);
-        List<StudentResult> studentResults = studentResultRepository.findByExamCycleAndExamAndInstitute(examCycle, exam, institute);
+        String examCycleName = examCycleRepository.getExamCycleNameById(examCycle);
+        String examName = examRepository.getExamNameById(exam);
+        List<StudentResult> studentResults = studentResultRepository.findByExamCycleNameAndExamNameAndInstitute(examCycleName, examCycleName, institute);
 
         // If no results found, return a not found response.
         if(studentResults.isEmpty()) {
@@ -775,7 +790,7 @@ public class StudentResultService {
                 dto.setLastDateToUploadInternalMarks(exam.getLastDateToUploadMarks());
 
                 // Now check for student results for this exam and institute
-                List<StudentResult> resultsForExam = studentResultRepository.findByExamIdAndInstituteId(exam.getId(), instituteId);
+                List<StudentResult> resultsForExam = studentResultRepository.findByExamNameAndInstituteId(exam.getExamName(), instituteId);
 
                 if (!resultsForExam.isEmpty()) {
                     // If we find any student result records, it means internal marks have been uploaded
@@ -793,12 +808,12 @@ public class StudentResultService {
                 response.put(Constants.RESPONSE, dtos);
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                ResponseDto.setErrorResponse(response, "NO_EXAMS_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
+                return ResponseDto.setErrorResponse(response, "NO_EXAMS_FOUND", "No exams found for the provided exam cycle.", HttpStatus.NOT_FOUND);
             }
 
         } catch (Exception e) {
             // Handle any unexpected errors that might occur during the process.
-            ResponseDto.setErrorResponse(response, "INTERNAL_SERVER_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseDto.setErrorResponse(response, "INTERNAL_SERVER_ERROR", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return response;

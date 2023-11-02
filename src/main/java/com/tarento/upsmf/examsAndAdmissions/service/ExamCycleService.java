@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.ConstraintViolationException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -366,24 +367,24 @@ public class ExamCycleService {
         List<ExamCycleDTO> examCycleDTOs = Collections.EMPTY_LIST;
         StringBuilder stringBuilder = new StringBuilder("select * from exam_cycle where date_part('year', start_date) = '")
                 .append(searchExamCycleDTO.getStartYear()).append("' and obsolete = 0 ");
-        try{
-            if(searchExamCycleDTO.getCourseId() != null && !searchExamCycleDTO.getCourseId().isBlank()) {
+        try {
+            if (searchExamCycleDTO.getCourseId() != null && !searchExamCycleDTO.getCourseId().isBlank()) {
                 stringBuilder.append(" and course_id = '").append(searchExamCycleDTO.getCourseId()).append("' ");
             }
-            if(searchExamCycleDTO.getEndYear() != null && searchExamCycleDTO.getEndYear() > 0) {
+            if (searchExamCycleDTO.getEndYear() != null && searchExamCycleDTO.getEndYear() > 0) {
                 stringBuilder.append("and date_part('year', end_date) <= '").append(searchExamCycleDTO.getEndYear()).append("' ");
             }
             List<ExamCycle> examCycles = jdbcTemplate.query(stringBuilder.toString(), new ResultSetExtractor<List<ExamCycle>>() {
                 @Override
                 public List<ExamCycle> extractData(ResultSet rs) throws SQLException, DataAccessException {
                     List<ExamCycle> examCycleList = new ArrayList<>();
-                    while(rs.next()) {
+                    while (rs.next()) {
                         examCycleList.add(ExamCycle.builder().examCycleName(rs.getString("exam_cycle_name")).id(rs.getLong("id")).build());
                     }
                     return examCycleList;
                 }
             });
-            if(examCycles != null && !examCycles.isEmpty()) {
+            if (examCycles != null && !examCycles.isEmpty()) {
                 examCycleDTOs = examCycles.stream().map(record -> toDTO(record)).collect(Collectors.toList());
             }
             response.put(Constants.MESSAGE, Constants.SUCCESS);
@@ -398,10 +399,10 @@ public class ExamCycleService {
     }
 
     private void validateSearchExamCyclePayload(SearchExamCycleDTO searchExamCycleDTO) {
-        if(searchExamCycleDTO == null) {
+        if (searchExamCycleDTO == null) {
             throw new InvalidRequestException(Constants.INVALID_REQUEST_ERROR_MESSAGE);
         }
-        if(searchExamCycleDTO.getStartYear() == null || searchExamCycleDTO.getStartYear() <= 0) {
+        if (searchExamCycleDTO.getStartYear() == null || searchExamCycleDTO.getStartYear() <= 0) {
             throw new InvalidRequestException(Constants.MISSING_SEARCH_PARAM_START_ACADEMIC_YEAR);
         }
     }
@@ -444,5 +445,9 @@ public class ExamCycleService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
+    public List<ExamCycle> getExamCyclesByExamCycleAndCourse(Long instituteId) {
+        List<Course> courses = courseRepository.findAllByInstituteId(instituteId);
+        LocalDate currentDate = LocalDate.now();
+        return repository.findByCourseInAndEndDateAfter(courses, currentDate);
+    }
 }

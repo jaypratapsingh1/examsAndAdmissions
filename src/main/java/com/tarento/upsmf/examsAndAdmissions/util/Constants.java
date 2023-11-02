@@ -171,6 +171,7 @@ public class Constants {
     public static final String API_UPLOAD_DISPATCH_DETAILS = "api.upload.dispatchDetails";
   
     public static final String API_HALLTICKET_GET = "api.hallticket.get";
+    public static final String API_HALLTICKET_GET_BY_ID = "api.hallticket.get.id";
     public static final String API_HALLTICKET_REQUEST_DATA_CORRECTION = "api.hallticket.requestDataCorrection";
     public static final String API_HALLTICKET_GET_ALL_DATA_CORRECTION_REQUESTS = "api.hallticket.getAllDataCorrectionRequests";
     public static final String API_HALLTICKET_APPROVE_DATA_CORRECTION = "api.hallticket.approveDataCorrection";

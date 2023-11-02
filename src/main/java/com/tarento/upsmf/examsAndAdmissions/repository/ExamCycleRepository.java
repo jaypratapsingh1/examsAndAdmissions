@@ -15,6 +15,9 @@ public interface ExamCycleRepository extends JpaRepository<ExamCycle, Long> {
     // Fetch all non-obsolete records
     List<ExamCycle> findByObsolete(Integer value);
 
+    @Query("SELECT ec.examCycleName FROM ExamCycle ec WHERE ec.id = :examCycleId")
+    String getExamCycleNameById(@Param("examCycleId") Long examCycleId);
+
     // Fetch a non-obsolete record by ID
     Optional<ExamCycle> findByIdAndObsolete(Long id, Integer value);
     ExamCycle findByExamCycleName(String name);
@@ -26,4 +29,6 @@ public interface ExamCycleRepository extends JpaRepository<ExamCycle, Long> {
 
     @Query(value = "select * from exam_cycle ec  where ec.course_id =:courseId and date_part('year', ec.start_date) = :startYear and date_part('year', ec.end_date) <= :endYear", nativeQuery = true)
     List<ExamCycle> searchExamCycleByCourseIdAndStartYearAndEndYear(@Param("courseId") String courseId, @Param("startYear") Integer startYear, @Param("endYear") Integer endYear);
+
+    List<ExamCycle> findByCourseInAndEndDateAfter(List<Course> courses, LocalDate currentDate);
 }

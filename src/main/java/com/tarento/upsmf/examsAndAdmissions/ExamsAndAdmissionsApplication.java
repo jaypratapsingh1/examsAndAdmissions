@@ -51,8 +51,10 @@ public class ExamsAndAdmissionsApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedOriginPatterns("http://localhost:*")
-                        .allowedHeaders("*");
+                        .allowedOriginPatterns("*")
+                        .maxAge(3600)
+                        .allowedHeaders("*")
+                        .exposedHeaders("Authorization");
             }
 
             @Autowired
@@ -70,7 +72,7 @@ public class ExamsAndAdmissionsApplication {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-    	config.addAllowedOriginPattern("http://localhost:*");
+    	config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);

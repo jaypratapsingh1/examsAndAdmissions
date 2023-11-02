@@ -251,16 +251,17 @@ public class AttendanceService {
             }
 
             List<AttendanceRecord> dtoList = dataImporterService.convertJsonToDtoList(jsonArray, AttendanceRecord.class);
-            UploadStatusDetails statusDetails = dataImporterService.saveDtoListToPostgres(dtoList, attendanceRepository);
+            List<AttendanceRecord> savedEntities = dataImporterService.saveDtoListToPostgres(dtoList, attendanceRepository);
 
-            if (statusDetails.isSuccess()) {
-                String message = String.format("Bulk attendance upload: %d total, %d uploaded, %d skipped.",
-                        statusDetails.getTotalRecords(), statusDetails.getUploadedRecords(), statusDetails.getSkippedRecords());
+            if (!savedEntities.isEmpty()) {
+                String message = String.format("Bulk attendance upload: %d records saved.", savedEntities.size());
                 response.put(Constants.MESSAGE, message);
+                response.put("savedRecords", savedEntities); // Add the saved records to the response
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", statusDetails.getErrorMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                return ResponseDto.setErrorResponse(response, "FILE_PROCESSING_FAILED", "No records were saved.", HttpStatus.INTERNAL_SERVER_ERROR);
             }
+
         } catch (Exception e) {
             return ResponseDto.setErrorResponse(response, "INTERNAL_ERROR", "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -269,8 +270,8 @@ public class AttendanceService {
     }
     public ResponseDto getByExamCycleId(Long ExamCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_ATTENDANCE_BY_EXAM_CYCLE_ID);
-        List<AttendanceRecord> records = attendanceRepository.findByExamCycleId(ExamCycleId);
-
+        String examCycleName = examCycleRepository.getExamCycleNameById(ExamCycleId);
+        List<AttendanceRecord> records = attendanceRepository.findByExamCycleData(examCycleName);
         if (records.isEmpty()) {
             ResponseDto.setErrorResponse(response, "NO_RECORDS_FOUND", "No attendance records found", HttpStatus.NOT_FOUND);
         } else {

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.util.Map;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,7 +18,7 @@ public class ExamFeeDto implements Serializable {
 
     private Long instituteId;
 
-    private Map<String, Map<Long,Double>> studentExam;
+    private List<StudentExamDto> studentExam;
 
     private Double amount;
 

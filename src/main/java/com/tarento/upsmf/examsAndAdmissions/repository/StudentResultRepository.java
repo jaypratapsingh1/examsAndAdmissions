@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.repository;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -20,9 +21,9 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
 
     List<StudentResult> findByCourse_IdAndExam_ExamCycleIdAndPublished(Long courseId, Long examCycleId, boolean b);
 
-    List<StudentResult> findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId, boolean published);
+//    List<StudentResult> findByStudent_EnrollmentNumberAndStudent_DateOfBirthAndExamCycle_IdAndPublished(String enrollmentNumber, LocalDate dateOfBirth, Long examCycleId, boolean published);
 
-    boolean existsByEnrollmentNumber(String enrollmentNumber);
+    boolean existsByEnrollmentNumberAndFirstNameAndLastName(String enrollmentNumber,String firstName, String lastName);
 
     List<StudentResult> findByExamCycleAndExam(Long examCycle, Exam exam);
 
@@ -50,6 +51,17 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
 
     Optional<StudentResult> findByExamId(Long id);
 
-    List<StudentResult> findByExamIdAndInstituteId(Long id, Long instituteId);
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.exam_name = :examName AND sr.instituteId = :instituteId")
+    List<StudentResult> findByExamNameAndInstituteId(@Param("examName") String examName, @Param("instituteId") Long instituteId);
+
+    List<StudentResult> findByExamExamNameAndInstituteId(String examName, Long instituteId);
+
+    List<StudentResult> findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(String enrollmentNumber, Long examCycleId, boolean b);
+
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.examCycle_name = :examCycleName AND sr.exam_name = :examName AND sr.student.institute.id = :institute")
+    List<StudentResult> findByExamCycleNameAndExamNameAndInstitute(String examCycleName, String examName, Long institute);
+
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.examCycle_name = :examCycleName")
+    List<StudentResult> findByExamCycleName(String examCycleName);
 }
 

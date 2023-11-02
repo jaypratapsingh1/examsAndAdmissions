@@ -52,10 +52,11 @@ public class FeeController {
         }
     }
 
-    @GetMapping("/{refNo}/details")
-    public ResponseEntity<ResponseDto> getStudentDetailsByRefNo(@PathVariable("refNo") String refNo) {
+    @GetMapping("/{examCycleId}/{instituteId}/details")
+    public ResponseEntity<ResponseDto> getStudentDetailsByRefNo(@PathVariable("examCycleId") Long examCycleId,
+                                                                @PathVariable("instituteId") Long instituteId) {
         try {
-            List<StudentExamFeeDto> studentExam = feeService.getStudentDetailsByRefNo(refNo);
+            List<StudentExamFeeDto> studentExam = feeService.getStudentDetailsByExamCycleIdAndInstituteId(examCycleId, instituteId);
             return handleSuccessResponse(studentExam);
         } catch (Exception e) {
             return handleErrorResponse(e);
@@ -71,7 +72,6 @@ public class FeeController {
             return handleErrorResponse(e);
         }
     }
-
     public static ResponseEntity<ResponseDto> handleSuccessResponse(Object response) {
         ResponseParams params = new ResponseParams();
         params.setStatus(HttpStatus.OK.getReasonPhrase());
