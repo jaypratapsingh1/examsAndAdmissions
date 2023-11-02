@@ -52,6 +52,8 @@ public class AccessTokenValidator {
 	@Autowired
 	private RedisUtil redisUtil;
 
+	private List<String> userRoleList = Arrays.asList(userRoles.split(","));
+
 	public String verifyUserToken(String token, boolean checkActive, String uri) {
 		String userId = Constants.Parameters.UNAUTHORIZED;
 		try {
