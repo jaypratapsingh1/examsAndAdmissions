@@ -246,6 +246,10 @@ public class IntegrationServiceImpl implements IntegrationService {
             }
         }
         String generatePassword = validateAndCreateDefaultPassword(user);
+        // setting enable value as true
+        user.setEnabled(true);
+        // setting EmailVerified value as false
+        user.setEmailVerified(false);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         JsonNode jsonNodeObject = mapper.convertValue(user, JsonNode.class);
