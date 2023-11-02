@@ -402,7 +402,7 @@ public class DataImporterService {
 
         for (StudentResult dto : dtoList) {
             boolean isDuplicate = checkIfDataExists(dto);
-
+            //fetch data from student_exam_registration and set the flag there, if the record is not found break and return data invalid
             if (isDuplicate) {
                 if (!DataValidation.isFirstNameValid(dto.getFirstName())) {
                     validationErrors.add("- First Name is invalid: " + dto.getFirstName() + " First name has to contain alphabetic values only");

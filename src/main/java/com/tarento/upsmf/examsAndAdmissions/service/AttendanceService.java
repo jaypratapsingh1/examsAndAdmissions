@@ -270,8 +270,8 @@ public class AttendanceService {
     }
     public ResponseDto getByExamCycleId(Long ExamCycleId) {
         ResponseDto response = new ResponseDto(Constants.API_ATTENDANCE_BY_EXAM_CYCLE_ID);
-        List<AttendanceRecord> records = attendanceRepository.findByExamCycleId(ExamCycleId);
-
+        String examCycleName = examCycleRepository.getExamCycleNameById(ExamCycleId);
+        List<AttendanceRecord> records = attendanceRepository.findByExamCycleData(examCycleName);
         if (records.isEmpty()) {
             ResponseDto.setErrorResponse(response, "NO_RECORDS_FOUND", "No attendance records found", HttpStatus.NOT_FOUND);
         } else {
