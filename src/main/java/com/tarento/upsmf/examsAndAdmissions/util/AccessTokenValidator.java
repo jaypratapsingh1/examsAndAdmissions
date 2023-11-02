@@ -52,8 +52,6 @@ public class AccessTokenValidator {
 	@Autowired
 	private RedisUtil redisUtil;
 
-	private List<String> userRoleList = Arrays.asList(userRoles.split(","));
-
 	public String verifyUserToken(String token, boolean checkActive, String uri) {
 		String userId = Constants.Parameters.UNAUTHORIZED;
 		try {
@@ -79,6 +77,7 @@ public class AccessTokenValidator {
 			log.error("Missing Appropriate Roles.");
 			return Constants.Parameters.UNAUTHORIZED;
 		}
+		List<String> userRoleList = Arrays.asList(userRoles.split(","));
 		boolean roleMatches = roles.stream().anyMatch(x -> userRoleList.contains(x.toLowerCase()));
 		log.debug("Role matched - {}", roleMatches);
 		if(roleMatches) {
