@@ -2,6 +2,7 @@ package com.tarento.upsmf.examsAndAdmissions.repository;
 
 import com.tarento.upsmf.examsAndAdmissions.model.Exam;
 import com.tarento.upsmf.examsAndAdmissions.model.ExamCycle;
+import com.tarento.upsmf.examsAndAdmissions.model.StudentExamRegistration;
 import com.tarento.upsmf.examsAndAdmissions.model.StudentResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -56,5 +57,11 @@ public interface StudentResultRepository extends JpaRepository<StudentResult, Lo
     List<StudentResult> findByExamExamNameAndInstituteId(String examName, Long instituteId);
 
     List<StudentResult> findByStudent_EnrollmentNumberAndExamCycle_IdAndPublished(String enrollmentNumber, Long examCycleId, boolean b);
+
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.examCycle_name = :examCycleName AND sr.exam_name = :examName AND sr.student.institute.id = :institute")
+    List<StudentResult> findByExamCycleNameAndExamNameAndInstitute(String examCycleName, String examName, Long institute);
+
+    @Query("SELECT sr FROM StudentResult sr WHERE sr.examCycle_name = :examCycleName")
+    List<StudentResult> findByExamCycleName(String examCycleName);
 }
 

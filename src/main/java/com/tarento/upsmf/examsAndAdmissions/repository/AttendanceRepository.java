@@ -11,4 +11,6 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, Lo
     boolean existsByStudentEnrollmentNumber(String studentEnrollmentNumber);
     AttendanceRecord findByStudentEnrollmentNumber(String studentEnrollmentNumber);
     List<AttendanceRecord> findByExamCycleId(Long examCycleId);
+
+    List<AttendanceRecord> findByExamCycleData(String examCycleName);
 }
