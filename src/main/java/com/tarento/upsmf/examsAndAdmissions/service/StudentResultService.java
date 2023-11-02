@@ -9,7 +9,9 @@ import com.tarento.upsmf.examsAndAdmissions.repository.*;
 import com.tarento.upsmf.examsAndAdmissions.util.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.codehaus.jettison.json.JSONArray;
@@ -19,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +33,8 @@ public class StudentResultService {
     @Autowired
     private StudentRepository studentRepository;
 
+    @Autowired
+    private InstituteRepository instituteRepository;
     @Autowired
     private CourseRepository courseRepository;
 
@@ -703,8 +705,8 @@ public class StudentResultService {
     }
     public ResponseDto getExamResultsByExamCycle(Long examCycle) {
         ResponseDto response = new ResponseDto(Constants.API_EXAM_CYCLE_MANAGE_RESULTS);
-
-        List<StudentExamRegistration> results = studentExamRegistrationRepository.findByExamCycleId(examCycle);
+        String examCycleName = examCycleRepository.getExamCycleNameById(examCycle);
+        List<StudentResult> results = studentResultRepository.findByExamCycleName(examCycleName);
 
         if (results == null || results.isEmpty()) {
             ResponseDto.setErrorResponse(response, "RECORD_NOT_FOUND", "No record found for the given exam cycle.", HttpStatus.NOT_FOUND);
@@ -719,17 +721,17 @@ public class StudentResultService {
         return response;
     }
 
-    private static Map<Long, ProcessedResultDto> getProcessedResults(List<StudentExamRegistration> results) {
+    private Map<Long, ProcessedResultDto> getProcessedResults(List<StudentResult> results) {
         Map<Long, ProcessedResultDto> processedResults = new HashMap<>();
-        for (StudentExamRegistration result : results) {
-            Institute institute = result.getStudent().getInstitute();
-            Long instituteId = institute.getId();
+        for (StudentResult result : results) {
+            Long instituteId = result.getInstituteId();
+            Institute institute = instituteRepository.findById(instituteId).orElseThrow();
 
             ProcessedResultDto instituteResult = processedResults.computeIfAbsent(instituteId, id -> {
                 ProcessedResultDto dto = new ProcessedResultDto();
                 dto.setInstituteId(instituteId);
                 dto.setInstituteName(institute.getInstituteName());
-                dto.setCourse(result.getStudent().getCourse().getCourseName());
+                dto.setCourse(result.getCourse_name());
                 return dto;
             });
             instituteResult.setHasFinalMarks(result.isInternalMarkFlag());
@@ -742,7 +744,9 @@ public class StudentResultService {
 
     public ResponseDto getMarksByInstituteAndExamCycle(Long examCycle, Long exam, Long institute) {
         ResponseDto response = new ResponseDto(Constants.API_SINGLE_EXAM_MARK);
-        List<StudentResult> studentResults = studentResultRepository.findByExamCycleAndExamAndInstitute(examCycle, exam, institute);
+        String examCycleName = examCycleRepository.getExamCycleNameById(examCycle);
+        String examName = examRepository.getExamNameById(exam);
+        List<StudentResult> studentResults = studentResultRepository.findByExamCycleNameAndExamNameAndInstitute(examCycleName, examCycleName, institute);
 
         // If no results found, return a not found response.
         if(studentResults.isEmpty()) {
